@@ -13,12 +13,13 @@ from desnivel.music.phrases import Phrase
 class VoiceDeviceServer:
     """Server locale da usare nel thread che governa la sessione musicale."""
 
-    def __init__(self, voices, port=9006, on_message=None):
+    def __init__(self, voices, port=9006, on_message=None, on_error=None):
         from pythonosc.dispatcher import Dispatcher
         from pythonosc.osc_server import BlockingOSCUDPServer
         from pythonosc.udp_client import SimpleUDPClient
         self.clients = {}
         self.on_message = on_message
+        self.on_error = on_error
 
         def send(port, address, message):
             payload = json.dumps(message, separators=(',', ':'), allow_nan=False).encode('utf-8')
@@ -47,7 +48,10 @@ class VoiceDeviceServer:
         except (ValueError, KeyError, TypeError, OverflowError, OSError) as error:
             if isinstance(message, dict):
                 self.bridge.error(message, error)
-            print(f'Voice device: {error}', flush=True)
+            if self.on_error:
+                self.on_error(str(error))
+            else:
+                print(f'Voice device: {error}', flush=True)
 
     def close(self):
         for voice in list(self.bridge.connections):

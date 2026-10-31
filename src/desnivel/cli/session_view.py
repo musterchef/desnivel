@@ -1,5 +1,7 @@
 """Vista globale del terminale, aggiornata anche senza cambi di stato."""
 import sys
+import shutil
+import textwrap
 import time
 
 
@@ -80,6 +82,39 @@ def render_session(state):
     return '\n'.join(rows)
 
 
+def fit_terminal(frame, width, height):
+    """Impagina senza wrap implicito e conserva stato, voci, errori e comandi."""
+    width, height = max(1, width-1), max(1, height-1)
+    rows = frame.splitlines()
+    wrapped = [line for row in rows for line in textwrap.wrap(
+        row, width=width, subsequent_indent='  ', replace_whitespace=False) or ['']]
+    if len(wrapped) <= height:
+        return '\n'.join(wrapped)
+    # Riduce prima i dettagli; stato, collegamenti, errori e comandi restano visibili.
+    required = {i for i, row in enumerate(rows) if i < 3 or row.startswith((
+        'Coordinator:', 'ERRORE:', 'COMANDO:', 'Tappa conclusa.', 'C:'))
+        or ' | in organico | ' in row or ' | fuori organico' in row}
+    selected = {i: [textwrap.shorten(rows[i], width=width, placeholder='…')] for i in required}
+    available = height-len(selected)-1
+    for i, row in enumerate(rows):
+        if i in selected:
+            continue
+        lines = textwrap.wrap(row, width=width, subsequent_indent='  ', replace_whitespace=False) or ['']
+        if len(lines) <= available:
+            selected[i] = lines
+            available -= len(lines)
+    compact = [line for i in sorted(selected) if i != len(rows)-1 for line in selected[i]]
+    footer = [textwrap.shorten('Dettagli ridotti: ampliare il terminale; stato completo nel file JSON.',
+                               width=width, placeholder='…'),
+              textwrap.shorten(rows[-1], width=width, placeholder='…')]
+    if len(compact)+len(footer) > height:
+        # Terminali estremamente bassi: precedenza agli errori e ai comandi.
+        errors = [textwrap.shorten(row, width=width, placeholder='…') for row in rows
+                  if row.startswith(('ERRORE:', 'COMANDO:'))]
+        compact = compact[:max(0, height-len(footer)-len(errors))]+errors
+    return '\n'.join((compact+footer)[-height:])
+
+
 class TerminalSessionView:
     def __init__(self, stream=None, clock=time.monotonic, interval=1.):
         self.stream = stream if stream is not None else sys.stdout
@@ -92,8 +127,9 @@ class TerminalSessionView:
             return
         frame = render_session(state)
         if self.stream.isatty():
-            prefix = '\x1b[2J' if self.last_refresh is None else ''
-            self.stream.write(prefix+'\x1b[H'+frame+'\x1b[J\n')
+            size = shutil.get_terminal_size()
+            frame = fit_terminal(frame, size.columns, size.lines)
+            self.stream.write('\x1b[H\x1b[2J'+frame+'\x1b[J')
         else:
             self.stream.write(frame+'\n\n')
         self.stream.flush()

@@ -301,6 +301,10 @@ def main(argv=None):
     last_write = 0.
     view = TerminalSessionView()
     command_error = None
+    def report_device_error(message):
+        nonlocal command_error
+        command_error = message
+    server.on_error = report_device_error
     print(f'Python pronto su 127.0.0.1:{args.port}. Chiudi il ricevitore diagnostico prima di avviare questa sessione.', flush=True)
     print(f'Stato globale: {args.status_file}', flush=True)
     with TerminalControls() as keyboard:

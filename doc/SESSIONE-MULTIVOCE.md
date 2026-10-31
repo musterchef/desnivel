@@ -360,3 +360,13 @@ sul GPX Firenze–San Gimignano. La prova in Live ha confermato l'esecuzione
 delle parti melodica e di accompagnamento; Marco ha inoltre confermato
 l'ascolto di atmosfera e drums nella prova a quattro voci. Configurazione
 e comportamenti musicali costituiscono un banco di prova da affinare.
+
+
+### Dimensioni della vista terminale
+
+La plancia adatta le righe alla larghezza del terminale. Se il contenuto
+supera l'altezza disponibile, mantiene stato, collegamenti delle voci,
+riepilogo del piano, errori e comandi, mostrando i dettagli che entrano.
+Un messaggio segnala la riduzione. Allargando la finestra i dettagli
+riappaiono; lo snapshot JSON conserva sempre lo stato completo. L'output
+reindirizzato a file mantiene la vista integrale.

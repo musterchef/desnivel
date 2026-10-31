@@ -73,3 +73,51 @@ def test_allocated_view_shows_musical_budget_instead_of_replay_speed():
     assert 'timeline 24 / 480 beat' in text
     assert '12 beat/km' in text
     assert 'replay' not in text
+
+
+def test_tty_frame_fits_viewport_and_does_not_scroll_on_refresh(monkeypatch):
+    from os import terminal_size
+    class Terminal(StringIO):
+        def isatty(self):
+            return True
+    monkeypatch.setattr('desnivel.cli.session_view.shutil.get_terminal_size', lambda: terminal_size((60, 18)))
+    output = Terminal()
+    state = snapshot()
+    state['voices']['voice_02']['controls'] = {f'parametro_{i}': {'value': .7} for i in range(20)}
+    view = TerminalSessionView(output)
+    view.update(state)
+    frame = output.getvalue().removeprefix('\x1b[H\x1b[2J').removesuffix('\x1b[J')
+    assert len(frame.splitlines()) <= 17
+    assert all(len(row) < 60 for row in frame.splitlines())
+    assert 'voice_02' in frame
+    assert 'Ctrl+C' in frame or 'C: collega' in frame
+    assert not output.getvalue().endswith('\n')
+
+
+def test_compact_terminal_keeps_errors_and_expands_again_when_resized():
+    from desnivel.cli.session_view import fit_terminal
+    state = snapshot()
+    state['error'] = 'connessione assente'
+    state['control_error'] = 'comando non riuscito'
+    state['voices']['voice_02']['controls'] = {f'parametro_{i}': {'value': .7} for i in range(20)}
+    frame = render_session(state)
+    compact = fit_terminal(frame, 80, 12)
+    assert 'ERRORE: connessione assente' in compact
+    assert 'COMANDO: comando non riuscito' in compact
+    assert 'Dettagli ridotti' in compact
+    large = fit_terminal(frame, 160, 100)
+    assert 'parametro_19' in large
+    assert 'Dettagli ridotti' not in large
+
+
+def test_device_errors_can_enter_the_panel_without_printing_over_it(capsys):
+    from desnivel.cli.voice_device import VoiceDeviceServer
+    server = VoiceDeviceServer.__new__(VoiceDeviceServer)
+    messages = []
+    server.on_error = messages.append
+    server._receive('/invalid', -1)
+    assert messages == ['attesi byte UTF-8 come interi OSC']
+    assert capsys.readouterr().out == ''
+    server.on_error = None
+    server._receive('/invalid', -1)
+    assert 'Voice device:' in capsys.readouterr().out
