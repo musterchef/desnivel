@@ -7,7 +7,7 @@ root e scala risolte sono condivise da tutte le voci.
 
 ## Avvio
 
-`organico.json` e `dialogo.json` contengono
+`organico.json` contiene
 `"direction": "direzione-viaggio.json"`, relativo alla cartella del file.
 La direzione viene quindi caricata anche senza un'opzione aggiuntiva:
 

@@ -11,7 +11,20 @@ from desnivel.music.phrases import Note, Phrase
 
 
 def definition():
-    return json.loads(Path('presets/dialogo.json').read_text())['generators']['percussion']
+    spec = json.loads(Path('presets/organico.json').read_text())['generators']['percussion']
+    spec.update(material='spaced_dialogue', standard_material='regular_pulse_offbeats')
+    spec['settings']['displacement_beats'] = .25
+    return spec
+
+
+def generator(spec=None):
+    spec = dict(spec or definition())
+    # Le prove delle operazioni modificano solo l'istanza, non il catalogo.
+    development = spec.pop('development', None)
+    compose = build_generator(spec).generator.generate
+    if development is not None:
+        compose.development = tuple(development)
+    return compose
 
 
 def request(start=0, length=4, silent=False, **parameters):
@@ -32,14 +45,13 @@ def events(phrase, offset=0):
 
 
 def test_none_preserves_existing_material_and_profiles_need_explicit_mapping():
-    a, b = build_generator(definition()).generator.generate, build_generator(definition()).generator.generate
+    a, b = generator(), generator()
     for start in range(0, 64, 4):
         assert compose(a, request(start)).phrase == compose(b, request(start, style='none')).phrase
-    spec = definition()
-    del spec['style_lanes']
-    g = build_generator(spec)
-    with pytest.raises(ValueError, match='style_lanes'):
-        g.generator.validate('percussion', {'style': 'house_classic'})
+    g = generator()
+    g.style_lanes = None
+    with pytest.raises(ValueError, match='ruoli kick'):
+        g.validate('percussion', {'style': 'house_classic'})
     assert g.describe_controls('percussion', {})['style']['inactive_reason']
     with pytest.raises(ValueError, match='sconosciuto'):
         a.validate('percussion', {'style': 'unknown'})
@@ -51,7 +63,7 @@ def test_identity_survives_silent_sources_and_full_transformations(style, amount
     spec = definition()
     spec['development'] = ['statement', 'subtract', 'displace', 'accent']
     spec['settings']['variation'] = 1
-    gen = build_generator(spec).generator.generate
+    gen = generator(spec)
     for start in range(0, 32, 4):
         result = compose(gen, request(start, silent=True, style=style, variation=amount, velocity_ratio=1))
         cores = [(round(b-start, 8), p, v) for b, p, v, core in
@@ -68,7 +80,7 @@ def test_phase_and_swing_are_independent_of_window_partition(style, amount):
     # Isola fase e sviluppo: il filtro interattivo legge soltanto le note
     # della finestra corrente, non gli attacchi della finestra futura.
     spec['settings']['answer_clearance_beats'] = 0
-    full, split = build_generator(spec).generator.generate, build_generator(spec).generator.generate
+    full, split = generator(spec), generator(spec)
     whole = compose(full, request(length=16, style=style, variation=amount)).phrase
     pieces = [compose(split, request(start, style=style, variation=amount)).phrase for start in range(0, 16, 4)]
     assert events(whole) == [event for i, part in enumerate(pieces) for event in events(part, 4*i)]
@@ -83,7 +95,7 @@ def test_phase_and_swing_are_independent_of_window_partition(style, amount):
 def test_styles_are_distinct_and_guide_contains_the_selected_structural_rhythm():
     signatures = []
     for style in STYLE_BY_ID:
-        gen = build_generator(definition()).generator.generate
+        gen = generator()
         req = request(style=style, variation=0, velocity_ratio=1)
         prepared = gen.prepare_reference(req)
         result = compose(gen, req)
@@ -94,14 +106,14 @@ def test_styles_are_distinct_and_guide_contains_the_selected_structural_rhythm()
 
 
 def test_switch_keeps_position_and_other_controls_and_silence_is_explicit():
-    gen = build_generator(definition()).generator.generate
+    gen = generator()
     compose(gen, request(style='house_classic'))
     plan = compose(gen, request(4, style='boom_bap_90s', variation=.25))
     assert gen.position == 8 and plan.decision['logical_start'] == 4
     assert gen.settings['variation'] == .7 and 'conceptuality' not in gen.settings
     spec = definition()
     spec['development'] = ['statement', 'silence']
-    gen = build_generator(spec).generator.generate
+    gen = generator(spec)
     assert not compose(gen, request(4, style='house_classic', variation=1)).phrase.notes
     assert compose(gen, request(8, style='house_classic', variation=0)).phrase.notes
 
@@ -117,7 +129,7 @@ def test_profiles_have_finite_consistent_events_without_unintended_duplicates():
 def test_style_vocabulary_evolves_and_zero_variation_fixes_the_figure():
     for style in STYLE_BY_ID:
         varied, fixed = [], []
-        a, b = build_generator(definition()).generator.generate, build_generator(definition()).generator.generate
+        a, b = generator(), generator()
         for start in range(0, 128, 4):
             varied.append(tuple(events(compose(a, request(start, style=style)).phrase)))
             fixed.append(tuple(events(compose(b, request(start, style=style, variation=0)).phrase)))
@@ -128,7 +140,7 @@ def test_style_vocabulary_evolves_and_zero_variation_fixes_the_figure():
 
 def test_transition_interpolates_common_anchors_swing_and_redirects_from_current_mix():
     from desnivel.music.percussion.styles import transition_events
-    gen = build_generator(definition()).generator.generate
+    gen = generator()
     compose(gen, request(style='house_classic', variation=0))
     req = request(4, style='boom_bap_90s', variation=0, velocity_ratio=1)
     prepared = gen.prepare_reference(req)
@@ -155,7 +167,7 @@ def test_transition_interpolates_common_anchors_swing_and_redirects_from_current
 
 
 def test_transition_is_independent_of_window_partition_and_zero_is_immediate():
-    a, b = build_generator(definition()).generator.generate, build_generator(definition()).generator.generate
+    a, b = generator(), generator()
     for gen in (a, b):
         compose(gen, request(style='house_classic', variation=0))
     whole = compose(a, request(4, length=16, style='boom_bap_90s', variation=0)).phrase
@@ -169,7 +181,7 @@ def test_reference_state_commits_while_producer_is_not_assigned_and_failed_plan_
     from desnivel.music.coordinator import MusicCoordinator, Voice
     from desnivel.music.arrangement import Assignment
     from desnivel.music.interactions import VoicePlan
-    gen = build_generator(definition()).generator.generate
+    gen = generator()
     failed = [False]
     def stage(req):
         if failed[0]:
@@ -231,7 +243,7 @@ def test_single_variation_axis_has_audible_development_within_four_bars(style):
     spec['settings']['answer_clearance_beats'] = 0
     results = []
     for amount in (0, .5, 1):
-        gen = build_generator(spec).generator.generate
+        gen = generator(spec)
         plan = compose(gen, request(length=16, style=style, variation=amount))
         results.append(events(plan.phrase))
         assert plan.decision['variation'] == amount
@@ -239,7 +251,7 @@ def test_single_variation_axis_has_audible_development_within_four_bars(style):
     assert results[0] != results[1] != results[2]
     assert results[0] != results[2]
     # Lo sviluppo non attende la durata del materiale legacy.
-    gen = build_generator(spec).generator.generate
+    gen = generator(spec)
     compose(gen, request(style=style, variation=1))
     plan = compose(gen, request(4, style=style, variation=1))
     assert plan.decision['cycles'] == [{'cycle': 1, 'operation': 'subtract'}]
@@ -253,7 +265,7 @@ def test_intermediate_variation_keeps_the_displaced_hat_figure_coherent(monkeypa
         tuple(hit for hit in figure if not hit.response) for figure in style.variants)))
     spec = definition()
     spec['development'] = ['statement', 'displace']
-    gen = build_generator(spec).generator.generate
+    gen = generator(spec)
     for start in range(0, 32, 4):
         plan = compose(gen, request(start, style='house_classic', variation=.5,
                                     displacement_beats=.25, velocity_ratio=1))

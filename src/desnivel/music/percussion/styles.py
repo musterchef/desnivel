@@ -1,94 +1,30 @@
-"""Profili ritmici in 4/4: ruoli percussivi, accenti e timing espliciti."""
-from __future__ import annotations
-
-from dataclasses import dataclass, replace
+"""Scelta delle figure e transizioni del materiale percussivo."""
+from dataclasses import dataclass
 import math
 import random
 
-
-@dataclass(frozen=True)
-class StyleHit:
-    beat: float
-    role: str
-    velocity: int
-    structural: bool = False
-    response: bool = False
+from .catalog import STYLE_BY_ID
 
 
-@dataclass(frozen=True)
-class DrumStyle:
-    id: str
-    label: str
-    variants: tuple[tuple[StyleHit, ...], ...]
-    swing_delay: float = 0.
-    cycle_beats: float = 4.
-    meter: tuple[int, int] = (4, 4)
-
-    def variant(self, cycle, seed, variation=.7):
-        # Frasi di quattro battute: esposizione, richiamo, variazione, chiusura.
-        # Il sorteggio riguarda figure intere, non singoli colpi.
-        if variation == 0:
-            return 0
-        phrase, bar = divmod(cycle, 4)
-        rng = random.Random(f'{self.id}:{seed}:{phrase}')
-        main = phrase % 2 if rng.random() < variation else 0
-        if bar == 0 or rng.random() > variation:
-            return main
-        choices = (2, 3) if bar == 3 else (1-main, 2)
-        return rng.choice(choices)
-
-
-def _hits(kicks, hats, extra=()):
-    core = [StyleHit(b, 'kick', v, True) for b, v in kicks]
-    core += [StyleHit(1, 'snare', 102, True), StyleHit(3, 'snare', 98, True)]
-    return tuple(sorted(core+[StyleHit(b, 'hat', v) for b, v in hats]+list(extra), key=lambda h: (h.beat, h.role)))
-
-
-STYLES = (
-    DrumStyle('house_classic', 'House classica', (
-        _hits(((0, 110), (1, 104), (2, 108), (3, 104)),
-              ((.5, 76), (1.5, 68), (2.5, 74), (3.5, 68))),
-        _hits(((0, 110), (1, 104), (2, 108), (3, 104)),
-              ((.5, 76), (1.5, 68), (2.5, 74), (3.5, 68)), (StyleHit(3.75, 'hat', 38, response=True),)),
-    )),
-    DrumStyle('boom_bap_90s', 'Boom bap', (
-        _hits(((0, 112), (1.75, 88), (2, 105)),
-              tuple((i*.5, 64 if i % 2 == 0 else 43) for i in range(8))),
-        _hits(((0, 112), (2, 105), (2.75, 82)),
-              tuple((i*.5, 64 if i % 2 == 0 else 43) for i in range(8)),
-              (StyleHit(2.75, 'snare', 34, response=True),)),
-    ), swing_delay=.08),
-    DrumStyle('breakbeat_house', 'Breakbeat house', (
-        _hits(((0, 110), (1.5, 97), (2.75, 104)),
-              tuple((i*.5, 40 if i % 2 == 0 else 67) for i in range(8)),
-              (StyleHit(3.75, 'hat', 35, response=True),)),
-        _hits(((0, 110), (1.75, 97), (2.5, 104)),
-              tuple((i*.5, 40 if i % 2 == 0 else 67) for i in range(8)),
-              (StyleHit(2.75, 'snare', 36, response=True),)),
-    ), swing_delay=.04),
-)
-
-
-def _vocabulary(style):
-    base = style.variants[0]
-    # Una figura più rada di piatti e una chiusura con levare di cassa.
-    sparse = tuple(replace(h, velocity=max(1, h.velocity-8)) if h.role == 'hat' else h
-                   for h in base if h.role != 'hat' or h.beat % 1 == .5)
-    closing = tuple(h for h in style.variants[1] if h.beat != 3.75)
-    closing += (StyleHit(3.75, 'kick', 68, True), StyleHit(3.5, 'snare', 32, response=True))
-    return replace(style, variants=style.variants+(sparse, tuple(sorted(closing, key=lambda h: (h.beat, h.role)))))
-
-
-STYLES = tuple(_vocabulary(style) for style in STYLES)
-STYLE_BY_ID = {style.id: style for style in STYLES}
-STYLE_OPTIONS = (('none', 'Nessuno'),)+tuple((style.id, style.label) for style in STYLES)
+def style_variant(style, cycle, seed, variation=.7):
+    # Frasi di quattro battute: esposizione, richiamo, variazione, chiusura.
+    # Il sorteggio riguarda figure intere, non singoli colpi.
+    if variation == 0:
+        return 0
+    phrase, bar = divmod(cycle, 4)
+    rng = random.Random(f'{style.id}:{seed}:{phrase}')
+    main = phrase % 2 if rng.random() < variation else 0
+    if bar == 0 or rng.random() > variation:
+        return main
+    choices = (2, 3) if bar == 3 else (1-main, 2)
+    return rng.choice(choices)
 
 
 def style_events(style, lanes, start, end, seed, variation=.7):
     """Attacchi assoluti (beat, MIDI, velocity, struttura), prima dello sviluppo."""
     result = []
     for cycle in range(math.floor(start/style.cycle_beats), math.ceil(end/style.cycle_beats)):
-        variant = style.variants[style.variant(cycle, seed, variation)]
+        variant = style.variants[style_variant(style, cycle, seed, variation)]
         for hit in variant:
             delay = style.swing_delay if hit.role == 'hat' and hit.beat % 1 == .5 else 0.
             beat = cycle*style.cycle_beats+hit.beat+delay
@@ -108,7 +44,7 @@ class StyleTransition:
     def variant(self, name, cycle, seed, variation):
         style = STYLE_BY_ID[name]
         offset = dict(self.variant_offsets).get(name, 0) if variation else 0
-        return (style.variant(cycle, seed, variation)+offset) % len(style.variants)
+        return (style_variant(style, cycle, seed, variation)+offset) % len(style.variants)
 
     def weights(self, beat):
         amount = min(1., max(0., (beat-self.start)/self.duration)) if self.duration else 1.
@@ -144,7 +80,7 @@ def transition_for(previous, target, start, duration, seed=7, variation=.7):
                     for hit in STYLE_BY_ID[target].variants[index] if hit.structural}
             return sum(abs(source.get(key, 0.)-hits.get(key, 0.)) for key in source.keys() | hits.keys())
         style = STYLE_BY_ID[target]
-        preferred = style.variant(cycle, seed, variation)
+        preferred = style_variant(style, cycle, seed, variation)
         closest = min(range(len(style.variants)), key=lambda i: (distance(i), i != preferred, i))
         offsets[target] = (closest-preferred) % len(style.variants)
     return StyleTransition(target, sources, start, duration, tuple(sorted(offsets.items())))

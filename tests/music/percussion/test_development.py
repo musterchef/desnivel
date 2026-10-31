@@ -6,21 +6,22 @@ from pathlib import Path
 
 import pytest
 
-from desnivel.cli.generators import build_generator
+from desnivel.cli.generators import build_generator, percussion_definition
 from desnivel.music.coordinator import PlanningRequest
 from desnivel.music.phrases import Note, Phrase
 from desnivel.music.percussion.development import PercussionPhraseGenerator
 
 
-def definition():
+def configuration():
     return json.loads(Path('presets/organico.json').read_text())['generators']['percussion']
 
 
+def definition():
+    return percussion_definition(configuration())
+
+
 def generator(spec=None):
-    spec = spec or definition()
-    return PercussionPhraseGenerator(spec['lanes'], spec['material'], spec['anchor_beats'],
-                                    spec['development'], spec['interaction'], spec.get('settings'),
-                                    standard_material=spec.get('standard_material'))
+    return PercussionPhraseGenerator(**(spec or definition()))
 
 
 def request(start=0, length=4, **parameters):
@@ -86,7 +87,7 @@ def test_replanning_same_start_does_not_consume_material_twice():
 
 
 def test_notes_are_bounded_and_registered_with_existing_device_controls():
-    registered = build_generator(definition())
+    registered = build_generator(configuration())
     assert registered.reset is not None
     assert 'pattern' not in registered.controls
     assert set(registered.controls) == {'style', 'transition_beats', 'variation', 'displacement_beats', 'velocity_ratio', 'gate_beats', 'seed',
@@ -112,7 +113,7 @@ def test_control_applicability_and_single_development_axis():
     assert 'displacement_beats' not in compose.describe_controls('percussion', {'variation': 1})
     compose.development = ('statement', 'accent')
     assert 'inactive_reason' in compose.describe_controls('percussion', {'variation': 1})['displacement_beats']
-    registered = build_generator(definition())
+    registered = build_generator(configuration())
     assert registered.presets == {}
     assert 'conceptuality' not in registered.controls
     with pytest.raises(ValueError, match='sconosciuti'):
@@ -153,7 +154,7 @@ def test_phase_stays_on_common_window_boundary_when_live_planning_skips_a_window
     compose = generator()
     first = compose(request(4))
     following = compose(request(12))
-    low = definition()['lanes']['low']
+    low = definition()['lanes']['kick']
     assert any(n.pitch == low and n.beat == 0 for n in first.notes)
     assert any(n.pitch == low and n.beat == 0 for n in following.notes)
     assert compose.last_decision['logical_start'] == 4
@@ -169,7 +170,7 @@ def test_support_follows_actual_reference_attacks_instead_of_fixed_material():
     compose = generator()
     first = compose(ensemble_request([0], [0]))
     shifted = compose(ensemble_request([.5], [0]))
-    low = definition()['lanes']['low']
+    low = definition()['lanes']['kick']
     assert [n.beat for n in first.notes if n.pitch == low] == [0]
     assert [n.beat for n in shifted.notes if n.pitch == low] == [.5]
     distant = compose(ensemble_request([2], [0]))

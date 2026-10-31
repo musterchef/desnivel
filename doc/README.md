@@ -45,13 +45,12 @@ Guida alla documentazione di **Desnivel**, organizzata per aree tematiche.
 Materiale di progettazione separato dalla documentazione del sistema attuale.
 
 - [Revisione dei controlli](proposte/REVISIONE-CONTROLLI.md): ridondanze verificate negli altri device e interventi proposti.
-
 - [Ruoli musicali e organico](proposte/RUOLI-MUSICALI.md): impostazione condivisa, vocabolario proposto e decisioni aperte.
 - [Catalogo e assegnazioni per sezione](proposte/CATALOGO-E-SEZIONI.md): bozza JSON di vocabolario, strumenti e organico manuale.
 - [Plancia globale](proposte/PLANCIA.md): informazioni da mostrare e decisioni aperte sull’interfaccia.
 - [Sezioni guidate dal viaggio](proposte/SEZIONI-GUIDATE-DAL-VIAGGIO.md): assetti delle macrosezioni operativi e variazioni interne ancora da definire.
 - [Mappatura temporale](proposte/MAPPATURA-TEMPORALE.md): stato dell'integrazione della timeline e proposta di preavvisi per le transizioni musicali.
-- [Evoluzione degli stili percussivi](proposte/STILI-PERCUSSIVI.md): design del catalogo e futura combinazione di influenze da 0 a 1.
+- [Contratto delle percussioni](proposte/STILI-PERCUSSIVI.md): centralizzazione del materiale, generazione a regole, dialogo e influenze stilistiche.
 - [Coordinamento ritmico](proposte/COORDINAMENTO-RITMICO.md): direzione architetturale e confini del primo blocco implementato.
 - [Contratti per le relazioni musicali](proposte/RELAZIONI-MUSICALI.md): specifica generale, stato dell'implementazione e relazioni ancora da realizzare.
 - [Evoluzione melodica](proposte/EVOLUZIONE-MELODICA.md): regole adottate per il fraseggio e decisioni ancora aperte sul collegamento al GPX.

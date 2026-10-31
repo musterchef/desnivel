@@ -16,7 +16,7 @@ Un beat è una semiminima; le posizioni sotto partono da zero.
 | `boom_bap_90s` | Boom bap | Cassa su 0 e 2, con anticipo su 1,75 oppure risposta su 2,75; rullante su 1 e 3; hi-hat in ottavi con accenti alternati e ritardo dei levare di 0,08 beat; una variante aggiunge un rullante debole |
 | `breakbeat_house` | Breakbeat house | Cassa su 0, 1,5 e 2,75 oppure 0, 1,75 e 2,5; rullante su 1 e 3; hi-hat in ottavi con levare accentati e ritardati di 0,04 beat; complementi deboli diversi fra le varianti |
 
-Il catalogo in `music/percussion/styles.py` contiene ruoli percussivi,
+Il catalogo in `music/percussion/catalog.py` contiene ruoli percussivi,
 posizioni, velocity, struttura e timing. Le figure sono interpretazioni
 circoscritte per il confronto all'ascolto. I ritardi 0,08 e 0,04 sono valori
 del catalogo Desnivel; non sono conversioni di percentuali MPC o Maschine.
@@ -33,16 +33,10 @@ memoria del dialogo coprono quattro battute.
 
 ## Collegamento alla voce
 
-Il generatore richiede una mappa esplicita dei ruoli verso tre `lanes`
-distinte già definite nella stessa voce:
-
-```json
-"style_lanes": {"kick": "low", "snare": "mid", "hat": "high"}
-```
-
-In `presets/organico.json` e `presets/dialogo.json` corrispondono alle note
-MIDI 36, 38 e 42. Un profilo non contiene numeri MIDI. Senza questa mappa
-si può usare `none`; selezionare altri valori produce un errore esplicito.
+I ruoli musicali `kick`, `snare` e `hat` sono associati alle note MIDI
+36, 38 e 42 dalla mappa unica in `adapters/percussion.py`. Il catalogo
+musicale non contiene numeri MIDI. La CLI collega questa mappa al
+generatore insieme ai riferimenti presenti in `organico.json`.
 
 Il parametro è `settings.style`, `assignments.<voce>.parameters.style`
 oppure l'override manuale del device. Valore iniziale: `none`. La scelta
@@ -61,7 +55,7 @@ musicale. La modifica agisce sulle finestre ancora da pianificare.
 ## Generazione e dialogo
 
 Lo stile alimenta sia il riferimento condiviso con le altre voci sia
-il materiale percussivo. Con stile attivo, `material.hits`, `anchor_beats`
+il materiale percussivo. Con stile attivo, il materiale e le ancore dei riferimenti `material`
 e `standard_material` non forniscono gli attacchi né la durata dei cicli.
 La sequenza `development` applica le trasformazioni alle battute dello stile.
 
@@ -142,7 +136,7 @@ verso `none` sono immediati: `none` usa materiali configurati separatamente.
 
 1. Ricostruire e ricaricare il [device di voce](VOCE-M4L.md#costruzione),
    conservando insieme `.amxd` e i due script JavaScript.
-2. Avviare la sessione con `--config presets/dialogo.json`, usando il
+2. Avviare la sessione con `--config presets/organico.json`, usando il
    [comando completo](DIALOGO-MUSICALE.md#configurazione-dascolto).
 3. In `voice_04`, scegliere il parametro **Stile**, poi il profilo nel menu.
 4. Confrontare Variazione a 0, 0,5 e 1 per almeno quattro battute;

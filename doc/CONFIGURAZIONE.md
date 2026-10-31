@@ -24,12 +24,10 @@ In `presets/organico.json`:
 | `relations` | Lista facoltativa delle influenze storiche; campi, limiti e politiche in [Dialogo ritmico](DIALOGO-MUSICALE.md#relazioni-storiche) |
 
 Un beat è una semiminima. `window_beats: 4` non definisce da solo un metro.
-`presets/dialogo.json` attiva guida e scambi ritmici fra le quattro voci.
-Anche `presets/organico.json` abilita `rhythm_voice: "voice_04"`, storia
+`presets/organico.json` abilita `rhythm_voice: "voice_04"`, storia
 di 64 beat e relazione ritmica dalle drums precedenti verso la melodia.
-In entrambe le configurazioni l'adesione iniziale al groove è 0,3 per la
-melodia e 0,7 per il basso. I parametri di sezione e gli override mantengono
-la precedenza su questi valori iniziali.
+L'adesione iniziale al groove è 0,3 per la melodia e 0,7 per il basso.
+I parametri di sezione e gli override mantengono la precedenza.
 Il controllo `groove_follow` di `motif` e `responsive_line` vale inizialmente
 0 e accetta 0…1; richiede `rhythm_voice`. Modella le posizioni degli attacchi
 già composti, conservando materiale e numero delle note. È distinto da
@@ -37,8 +35,8 @@ già composti, conservando materiale e numero delle note. È distinto da
 Algoritmo, limiti e comportamento nei silenzi in [Dialogo ritmico](DIALOGO-MUSICALE.md).
 `percussion_phrase` espone inoltre `style`, una scelta nominale inizialmente
 `none`. Gli altri valori sono `house_classic`, `boom_bap_90s` e
-`breakbeat_house`; richiedono la mappa `style_lanes` da ruoli `kick`,
-`snare`, `hat` verso tre lanes distinte. Dettagli e ascolto in
+`breakbeat_house`. I ruoli `kick`, `snare`, `hat` sono risolti dalla
+mappa della destinazione in `adapters/percussion.py`. Dettagli e ascolto in
 [Stili percussivi](STILI-PERCUSSIVI.md).
 Con `--timing linear` (predefinito) la velocità di replay si sceglie con `--speed`.
 Con `--timing allocated` la durata dipende da `timeline` e dal BPM di Live;
@@ -278,25 +276,30 @@ frasi ricevute; il contesto armonico non determina le note percussive.
 
 | Campo della definizione | Contenuto |
 |---|---|
-| `lanes` | Nomi locali associati a note MIDI distinte, come per `percussion_pattern` |
-| `material` | Un materiale con `name`, `length_beats` e `hits`, con gli stessi vincoli dei pattern espliciti |
-| `standard_material` | Figura base opzionale nello stesso formato di `material`; se assente, la base è `material` ripetuto senza trasformazioni |
-| `anchor_beats` | Lista non vuota di posizioni distinte presenti nel materiale; tutti gli attacchi a queste posizioni sono protetti dalle trasformazioni locali |
-| `development` | Lista non vuota di operazioni; deve iniziare con `statement` |
-| `interaction` | `support_source`, `support_lanes`, `answer_source`, `answer_lanes`: sorgenti e canali per sostegno e risposta. Ogni canale va assegnato una volta a una delle due funzioni |
+| `material` | Identificativo del catalogo: `spaced_impacts` o `spaced_dialogue`; include attacchi, ancore, sviluppo e ruoli di sostegno |
+| `standard_material` | Figura base opzionale per identificativo: `regular_pulse_eighths` o `regular_pulse_offbeats`; se assente, la base è `material` senza trasformazioni |
+| `interaction` | Soltanto `support_source` e `answer_source`: identificativi delle frasi da usare come sostegno e risposta |
+| `settings` | Valori iniziali dei controlli elencati sotto |
+| `presets` | Assetti dei controlli; nella configurazione fornita non ci sono preset base per le drums |
+
+Colpi, ancore e sequenze di sviluppo risiedono in
+`music/percussion/catalog.py`. La CLI risolve i riferimenti e collega la
+mappa dei pad di `adapters/percussion.py`. Riferimenti sconosciuti,
+materiali di sviluppo incompleti e definizioni incorporate come `lanes`
+o `style_lanes` producono un errore.
 
 Il materiale corrente, `spaced_impacts`, distribuisce 40 attacchi su 32 beat.
 La configurazione della prova copre i 16 pad del 909 Core Kit:
 
 | Nota MIDI | Canale | Suono |
 |---|---|---|
-| 36 | `low` | Bass Drum |
+| 36 | `kick` | Bass Drum |
 | 37 | `rim` | Rim Shot |
-| 38 | `mid` | Snare Drum |
+| 38 | `snare` | Snare Drum |
 | 39 | `clap` | Hand Clap |
 | 40 | `kick_alt` | Bass Drum alternativa |
 | 41 | `snare_alt` | Snare Drum |
-| 42 | `high` | Closed Hi Hat |
+| 42 | `hat` | Closed Hi Hat |
 | 43 | `snare_alt_2` | Snare Drum |
 | 44 | `tom_low` | Low Tom |
 | 45 | `tom_mid` | Mid Tom |
@@ -308,13 +311,14 @@ La configurazione della prova copre i 16 pad del 909 Core Kit:
 | 51 | `ride_alt` | Ride alternativo |
 
 I nomi locali distinguono i pad; il timbro effettivo dipende dal Rack caricato.
-Entrambe le casse appartengono a `support_lanes`; gli altri pad a
-`answer_lanes`. Le posizioni protette sono definite in `anchor_beats`.
+Il materiale `spaced_impacts` assegna entrambe le casse al sostegno;
+gli altri ruoli rispondono alla melodia. Ancore e assegnazioni musicali
+appartengono al catalogo.
 Gli attacchi sono su una griglia di 0,25 beat; i sostegni proposti ogni
 quattro beat vengono adattati alla frase ricevuta.
 La prova imposta `displacement_beats: 0`; il controllo regola
 l’ampiezza degli spostamenti, per esempio 0,25 beat. Mappa, attacchi, posizioni protette e sequenza di
-sviluppo sono definiti in `organico.json`.
+sviluppo sono definiti nel catalogo; i valori iniziali sono in `organico.json`.
 
 Con `style: none`, ogni ciclo del materiale prepara un'operazione della lista `development`;
 la lista viene ripercorsa in ordine. Le operazioni disponibili sono:
@@ -348,13 +352,13 @@ o ometterlo per rispettare le frasi di riferimento.
 | `answer_clearance_beats` | 0,25 | 0…1 beat | Distanza minima degli attacchi di risposta dagli attacchi della sorgente principale |
 
 Nella prova, `voice_04` richiede la frase di `voice_01` e legge quella di
-`voice_02` come dipendenza facoltativa. I canali `low` e `kick_alt` cercano l'attacco più
+`voice_02` come dipendenza facoltativa. I ruoli `kick` e `kick_alt` cercano l'attacco più
 vicino della frase di `voice_02` entro la tolleranza: lo raggiungono e mediano
 la propria velocity con quella della sorgente. Se manca un attacco vicino,
 il colpo viene omesso. In caso di parità di distanza prevale l'attacco con
 velocity maggiore, poi quello precedente.
 
-I canali elencati in `answer_lanes` omettono gli attacchi troppo vicini a quelli di
+I ruoli di risposta del materiale omettono gli attacchi troppo vicini a quelli di
 `voice_01`, lasciandogli spazio. Usano le posizioni del materiale rimaste
 dopo lo sviluppo, senza aggiungere colpi per ogni nota melodica. Se la
 frase melodica è silenziosa, le risposte vengono omesse. Se entrambe le
@@ -389,7 +393,7 @@ disponibile come tipo distinto.
 Con `style: none`, la base è `standard_material`, se presente; altrimenti
 è `material` senza trasformazioni. Il candidato sviluppato usa `material`,
 `development` e `interaction`. Nella configurazione fornita la base
-`regular_pulse` dura quattro beat: cassa su 0 e 2, rullante su 1 e 3,
+`regular_pulse_eighths` dura quattro beat: cassa su 0 e 2, rullante su 1 e 3,
 hi-hat ogni mezzo beat.
 
 Fra 0 e 1, gli attacchi comuni mantengono la posizione e interpolano la

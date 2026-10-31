@@ -24,8 +24,7 @@ Dalla radice del repository:
 
 Per verificare configurazione e generazione delle sezioni senza aprire porte o inviare note, aggiungere `--dry-run`.
 
-Per la sessione con guida delle drums e influenze reciproche usare
-`--config presets/dialogo.json`. Il [riferimento del dialogo ritmico](DIALOGO-MUSICALE.md)
+La configurazione fornita abilita guida delle drums e influenze reciproche. Il [riferimento del dialogo ritmico](DIALOGO-MUSICALE.md)
 descrive adesione delle voci, memoria, configurazione e diagnostica.
 
 `--track` accetta FIT e GPX; `--gpx` resta un alias. Per una prova con FIT:
@@ -70,8 +69,8 @@ Nella configurazione fornita:
 
 Impostare l'identificativo in **Voce** e premere **Collega** sulle istanze,
 quindi avviare il trasporto di Live. La prova usa il 909 Core Kit con i
-16 pad sulle note MIDI 36…51. La mappa completa è configurata in
-`generators.percussion.lanes` e descritta nel riferimento di configurazione. Lo strumento atmosferico riceve una nota
+16 pad sulle note MIDI 36…51. La mappa completa è definita in
+`adapters/percussion.py` e descritta nel riferimento di configurazione. Lo strumento atmosferico riceve una nota
 sostenuta monofonica per finestra: il suono si sceglie nello strumento Live.
 Tutte le voci attive devono essere collegate, altrimenti la sessione attende
 in `waiting_for_devices`.
@@ -250,9 +249,10 @@ famiglia del terreno conserva la posizione; Stop e reset la azzerano.
 Le famiglie regolano soltanto il rapporto di velocity della voce. I
 controlli di sviluppo e i preset sono descritti nel
 [riferimento di configurazione](CONFIGURAZIONE.md#parametri-del-generatore-percussion_phrase).
-La mappa in `organico.json` copre i 16 pad MIDI 36…51 del 909 Core Kit
+La mappa in `adapters/percussion.py` copre i 16 pad MIDI 36…51 del 909 Core Kit
 della prova, con entrambe le casse assegnate al sostegno. Il timbro dipende dai suoni caricati su quei pad. Le note MIDI e le
-regole ritmiche risiedono nel modulo della voce e nella sua configurazione;
+regole ritmiche risiedono rispettivamente nell’adattatore e nel catalogo
+della voce;
 Director, Coordinator e dispositivo usano le interfacce comuni.
 
 ## Stato globale

@@ -24,17 +24,18 @@ I percorsi `analysis` e `grouping` nella direzione sono relativi al file di
 direzione. I criteri possono essere condivisi fra analisi visuale e ascolto.
 Il riferimento dei campi e delle precedenze è in
 [Configurazione](../doc/CONFIGURAZIONE.md).
-`organico.json` e `dialogo.json` caricano la direzione tramite il campo
+`organico.json` carica la direzione tramite il campo
 `direction`. Soglie, tavolozze, motivo e override sono descritti in
 [Direzione musicale dal percorso](../doc/DIREZIONE-MUSICALE.md).
 `--manual-sections` mantiene l'ascolto delle sezioni esplicite del file.
 
-`dialogo.json` è una sessione alternativa completa a quattro voci: guida
-percussiva, adesione regolabile di melodia e basso, tessitura coordinata e
-influenza ritmica dalle drums precedenti verso la melodia. Si avvia con
-`ensemble --config presets/dialogo.json`, fornendo la traccia con `--track`.
-Configurazione, note MIDI e comando completo in
-[Dialogo ritmico](../doc/DIALOGO-MUSICALE.md#configurazione-dascolto).
+I colpi e i profili percussivi sono definiti una sola volta nel catalogo
+`src/desnivel/music/percussion/catalog.py`. La configurazione contiene
+riferimenti come `material: "spaced_impacts"` e
+`standard_material: "regular_pulse_eighths"`, senza liste di colpi.
+La mappa del Drum Rack è in `src/desnivel/adapters/percussion.py`.
+Per coordinare la tessitura con la melodia usare **Segui sorgente** nel
+device; per gli spostamenti percussivi usare `displacement_beats`.
 
 ## Altre configurazioni operative
 
@@ -53,8 +54,8 @@ caricate dalla sessione.
 
 - Mantenere i dati della stessa sessione nei rispettivi file di organico e
   direzione; usare i preset interni per le varianti di parametri di una voce.
-- Creare un file alternativo quando rappresenta una configurazione d'ascolto
-  distinta da conservare, documentandone comando e differenze.
+- Per le varianti della stessa sessione usare controlli e preset utente;
+  conservare un solo organico operativo e riferimenti al catalogo musicale.
 - Conservare le frasi esplicite in `phrases/` e le configurazioni di tappa
   del relativo comando in `tappe/`.
 - Salvare analisi e report generati in `output/`, separati dai preset.

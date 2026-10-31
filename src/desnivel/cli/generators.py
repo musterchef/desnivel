@@ -1,6 +1,7 @@
 """Registro esplicito dei generatori e dei controlli esposti nella sessione."""
 from dataclasses import asdict, dataclass, field
 
+from desnivel.adapters.percussion import PAD_NOTES
 from desnivel.adapters.percussion_presets import migrate_preset as migrate_percussion_preset
 from desnivel.adapters.voice_device import Control, ChoiceControl
 from desnivel.cli.ensemble import Generator
@@ -8,7 +9,7 @@ from desnivel.music.melodic.generator import MotifGenerator, ROLES
 from desnivel.music.bass.voice import BassVoice
 from desnivel.music.percussion.generator import PercussionGenerator, ROLES as PERCUSSION_ROLES
 from desnivel.music.percussion.development import PercussionPhraseGenerator
-from desnivel.music.percussion.styles import STYLE_OPTIONS
+from desnivel.music.percussion.catalog import STYLE_OPTIONS, reference_material
 from desnivel.music.texture.generator import TextureGenerator, ROLES as TEXTURE_ROLES
 
 
@@ -22,6 +23,26 @@ class RegisteredGenerator:
     describe_controls: object = None
     preset_defaults: dict = field(default_factory=dict)
     migrate_preset: object = None
+
+
+def percussion_definition(spec):
+    """Risolve i riferimenti musicali e collega la mappa della destinazione."""
+    allowed = {'type', 'material', 'standard_material', 'interaction', 'settings', 'presets'}
+    if spec.keys()-allowed:
+        raise ValueError('campi percussivi sconosciuti: usare riferimenti al catalogo')
+    material = reference_material(spec['material'])
+    if not material.anchor_beats or not material.development:
+        raise ValueError('il materiale di sviluppo richiede ancore e operazioni')
+    sources = spec['interaction']
+    if not isinstance(sources, dict) or set(sources) != {'support_source', 'answer_source'}:
+        raise ValueError('interaction richiede soltanto support_source e answer_source')
+    lanes = dict(PAD_NOTES)
+    standard = reference_material(spec['standard_material']).pattern() if 'standard_material' in spec else None
+    return dict(lanes=lanes, material=material.pattern(), anchor_beats=list(material.anchor_beats),
+                development=list(material.development),
+                interaction={**sources, 'support_lanes': list(material.support_roles),
+                             'answer_lanes': [r for r in lanes if r not in material.support_roles]},
+                settings=spec.get('settings'), standard_material=standard)
 
 
 def build_generator(spec):
@@ -50,9 +71,7 @@ def build_generator(spec):
         roles = TEXTURE_ROLES
         values = compose.settings
     elif kind == 'percussion_phrase':
-        compose = PercussionPhraseGenerator(spec['lanes'], spec['material'], spec['anchor_beats'],
-                                           spec['development'], spec['interaction'], spec.get('settings'),
-                                           standard_material=spec.get('standard_material'), style_lanes=spec.get('style_lanes'))
+        compose = PercussionPhraseGenerator(**percussion_definition(spec))
         controls = {'style': ChoiceControl(STYLE_OPTIONS), 'transition_beats': Control(0, 128), 'variation': Control(0, 1), 'displacement_beats': Control(0, 1),
                     'velocity_ratio': Control(.05, 1), 'gate_beats': Control(.01, 1),
                     'seed': Control(0, 2147483647, True), 'support_tolerance_beats': Control(0, 1),

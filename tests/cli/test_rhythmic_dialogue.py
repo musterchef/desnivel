@@ -12,7 +12,14 @@ from desnivel.trip.track import Track
 
 
 def configuration():
-    return json.loads(Path('presets/dialogo.json').read_text())
+    config = json.loads(Path('presets/organico.json').read_text())
+    config['generators']['percussion'].update(material='spaced_dialogue', standard_material='regular_pulse_offbeats')
+    config['generators']['percussion']['settings']['displacement_beats'] = .25
+    config['generators']['atmosphere']['settings']['follow_source'] = 1
+    config['sections'] = [dict(name='dialogue', from_progress=0, root=57, scale='dorian',
+                               assignments={name: {'role': role} for name, role in zip(config['voices'],
+                                            ('melody', 'bass_line', 'sustained_texture', 'percussion'))})]
+    return config
 
 
 def runtime(config=None):

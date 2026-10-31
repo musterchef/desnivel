@@ -10,7 +10,8 @@ from desnivel.music.phrases import Note, Phrase
 from .generator import PercussionGenerator, ROLES
 from desnivel.music.interactions import VoicePlan, GestureSpan
 from desnivel.music.rhythm import PreparedRhythm, RhythmReference
-from .styles import STYLE_BY_ID, StyleMaterial, transition_for, transition_events
+from .catalog import STYLE_BY_ID, STYLE_ROLES
+from .styles import StyleMaterial, transition_for, transition_events
 
 
 DEFAULTS = {'style': 'none', 'transition_beats': 16., 'variation': .7, 'displacement_beats': .25, 'velocity_ratio': .85,
@@ -19,8 +20,8 @@ OPERATIONS = {'statement', 'subtract', 'displace', 'accent', 'silence'}
 
 
 class PercussionPhraseGenerator:
-    def __init__(self, lanes, material, anchor_beats, development, interaction, settings=None, *, standard_material=None,
-                 style_lanes=None):
+    def __init__(self, lanes, material, anchor_beats, development, interaction, settings=None, *,
+                 standard_material=None):
         # Riutilizza la validazione dei materiali espliciti e della mappa MIDI.
         parsed = PercussionGenerator(lanes, [material])
         self.name, self.cycle, self.hits = parsed.patterns[0]
@@ -51,13 +52,7 @@ class PercussionPhraseGenerator:
             raise ValueError('ogni canale deve essere assegnato una volta al sostegno o alla risposta')
         self.interaction = deepcopy(interaction)
         self.support_pitches = frozenset(lanes[lane] for lane in support)
-        self.style_lanes = None
-        if style_lanes is not None:
-            if (not isinstance(style_lanes, dict) or set(style_lanes) != {'kick', 'snare', 'hat'}
-                    or any(not isinstance(lane, str) or lane not in lanes for lane in style_lanes.values())
-                    or len(set(style_lanes.values())) != 3):
-                raise ValueError('style_lanes richiede kick, snare e hat su tre lanes distinte')
-            self.style_lanes = {role: lanes[lane] for role, lane in style_lanes.items()}
+        self.style_lanes = {role: lanes[role] for role in STYLE_ROLES} if set(STYLE_ROLES) <= lanes.keys() else None
         if settings is not None and not isinstance(settings, dict):
             raise ValueError('settings deve essere una mappa di parametri')
         self.settings = {**DEFAULTS, **deepcopy(settings or {})}
@@ -78,7 +73,7 @@ class PercussionPhraseGenerator:
         if values['style'] == 'none':
             details['transition_beats']['inactive_reason'] = 'Richiede uno stile selezionato'
         if self.style_lanes is None:
-            details['style']['inactive_reason'] = 'Richiede style_lanes nella configurazione'
+            details['style']['inactive_reason'] = 'Richiede i ruoli kick, snare e hat nella mappa'
         if values['variation'] == 0:
             for name in ('displacement_beats', 'support_tolerance_beats', 'answer_clearance_beats', 'seed'):
                 details[name] = {'inactive_reason': 'Figura base: nessuno sviluppo o interazione'}
@@ -98,7 +93,7 @@ class PercussionPhraseGenerator:
         if not isinstance(values['style'], str) or values['style'] not in ('none', *STYLE_BY_ID):
             raise ValueError('stile percussivo sconosciuto')
         if values['style'] != 'none' and self.style_lanes is None:
-            raise ValueError('style_lanes richiesto per selezionare uno stile')
+            raise ValueError('ruoli kick, snare e hat richiesti per selezionare uno stile')
         for key in ('variation', 'displacement_beats', 'velocity_ratio', 'gate_beats',
                     'support_tolerance_beats', 'answer_clearance_beats'):
             value = values[key]

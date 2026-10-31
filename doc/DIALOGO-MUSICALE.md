@@ -149,31 +149,31 @@ ed `empty_fragment`.
 
 ## Configurazione d'ascolto
 
-[`presets/dialogo.json`](../presets/dialogo.json) collega quattro voci:
-guida percussiva, adesione melodica 0,3, adesione del basso 0,7, tessitura
-coordinata e relazione storica drums → melodia con peso 0,4. Le drums
-usano MIDI 36, 38 e 42; i dispositivi mantengono gli identificativi
-`voice_01`…`voice_04`.
-
-Anche `presets/organico.json` abilita guida, adesione melodica 0,3,
-adesione del basso 0,7 e relazione storica drums → melodia con peso 0,4.
-Conserva il suo materiale percussivo di 32 beat e le sezioni esistenti:
-il primo gesto drums completo è quindi disponibile dopo otto finestre.
+[`presets/organico.json`](../presets/organico.json) collega quattro voci:
+guida percussiva, adesione melodica 0,3, adesione del basso 0,7 e relazione
+storica drums → melodia con peso 0,4. La tessitura segue la sezione oppure
+la melodia secondo lo switch **Segui sorgente**. La mappa dei pad è unica
+in `adapters/percussion.py`; i device usano `voice_01`…`voice_04`.
 
 ```sh
 .venv/bin/python -m desnivel.cli.ensemble \
   --gpx gpx/tappa05_Firenze_San_Gimignano.gpx \
-  --config presets/dialogo.json --speed 50
+  --config presets/organico.json --speed 50
 ```
 
-Il ciclo percussivo dura 8 beat: la prima influenza storica è disponibile
-dalla terza finestra. La configurazione carica normalmente la
-[direzione musicale GPX](DIREZIONE-MUSICALE.md). Con `--manual-sections`
-usa invece la singola sezione dorica configurata nel file.
-La [selezione dello stile](STILI-PERCUSSIVI.md) cambia la guida e il materiale
-percussivo. Le ulteriori relazioni dei
-[contratti proposti](proposte/RELAZIONI-MUSICALI.md) restano da implementare.
+La configurazione carica la [direzione musicale GPX](DIREZIONE-MUSICALE.md).
+Con `--manual-sections` usa le sezioni esplicite dell'organico.
+Con Stile **Nessuno**, `spaced_impacts` dura 32 beat: il primo gesto completo
+può essere disponibile dopo otto finestre. Con uno stile selezionato il
+gesto dura quattro battute, cioè quattro finestre nella configurazione
+fornita. La disponibilità effettiva dipende anche da presenza e silenzi.
 
+Il catalogo conserva anche `spaced_dialogue` di 8 beat e la base
+`regular_pulse_offbeats`. Per usarli, impostare i due riferimenti
+`material` e `standard_material` nella stessa configurazione. Non occorre
+un altro file di sessione. La [selezione dello stile](STILI-PERCUSSIVI.md)
+cambia la guida e il materiale; le ulteriori relazioni dei
+[contratti proposti](proposte/RELAZIONI-MUSICALI.md) restano da implementare.
 
 ### Accettazione del riferimento ritmico
 

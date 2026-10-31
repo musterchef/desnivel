@@ -1,252 +1,202 @@
-# Stili percussivi
+# Contratto delle percussioni
 
-Stato: selezione nominale implementata con i profili House classica,
-Boom bap e Breakbeat house. Configurazione e comportamento effettivi sono
-descritti in [Selezione dello stile percussivo](../STILI-PERCUSSIVI.md).
-Le parti di design che usano `conceptuality` sono superate dal controllo
-unico `variation` documentato nel sistema corrente.
-Questo documento conserva il design del catalogo e la proposta ancora
-non implementata della combinazione di influenze da 0 a 1.
-Memoria dei gesti, relazioni fra voci e accettazione dei piani sono definite
-nei [contratti per le relazioni musicali](RELAZIONI-MUSICALI.md).
+Stato: contratto approvato. Centralizzazione e consolidamento della
+configurazione implementati; generazione a regole ancora da implementare. Il comportamento disponibile è descritto in
+[Stili percussivi](../STILI-PERCUSSIVI.md). Il design precedente, comprese
+fonti e proposte conservate, è in [archivio](../archivio/STILI-PERCUSSIVI.md).
 
 ## Obiettivo
 
-Dare alla percussione un carattere ritmico riconoscibile, conservando
-sviluppo nel tempo, relazione con le altre voci e controlli esistenti.
-Il selettore **Stile** rappresenta la componente ritmica di un genere:
-disposizione degli attacchi, accenti, suddivisioni e groove.
-Il timbro rimane nello strumento e il BPM nel trasporto della sessione.
+Un solo catalogo per il materiale percussivo, una sola mappa per la
+destinazione attuale, una configurazione operativa della sessione.
+La composizione deve poter produrre nuove figure applicando regole
+musicali, usando i pattern di riferimento per verificare lo stile.
 
-Un genere può usare più pattern e uno stesso pattern può apparire in
-generi diversi, come mostrano gli esempi di
-[Ableton Learning Music](https://learningmusic.ableton.com/make-beats/rock-and-house.html).
-Il catalogo deve quindi descrivere profili circoscritti, per esempio
-`house_classic`, evitando di presentare un singolo loop come definizione
-completa di House o Hip-hop.
+## Stato verificato
 
-## Punto di partenza verificato nel codice
+- Il catalogo conserva i materiali `spaced_impacts`, `spaced_dialogue`,
+  `regular_pulse_eighths`, `regular_pulse_offbeats` e i tre profili stilistici.
+- La CLI risolve i riferimenti senza caricare definizioni di colpi dai JSON.
+- La mappa MIDI è in `adapters/percussion.py`; l'avvio usa `organico.json`.
+- Il motore continua a sviluppare materiale precomposto. Il compositore
+  a regole descritto nelle sezioni successive non è ancora disponibile.
 
-`music/percussion/development.py` contiene `PercussionPhraseGenerator`:
+## 1. Unica fonte per ciascuna responsabilità
 
-1. Legge `material`, `anchor_beats`, `development` e `interaction`.
-2. Applica ripetizione, sottrazione, spostamento, accento o silenzio.
-3. Allinea i sostegni alla sorgente configurata e omette le risposte troppo vicine agli attacchi melodici.
-4. Combina il risultato con `standard_material` attraverso `conceptuality`.
-5. Applica fattore di velocity, durate MIDI e limiti della frase.
+Catalogo, mappa e collegamento CLI della tabella sono presenti. La
+conversione finale degli eventi in `Phrase` è ancora eseguita dal motore
+esistente; il trasferimento al confine adattatore accompagna il compositore a regole.
 
-Con `style: none`, il materiale di `organico.json` dura 32 beat e il groove
-standard quattro. La posizione logica avanza fra richieste. Con uno stile
-attivo, il suo vocabolario alimenta entrambi i rami e la guida ritmica;
-casse e backbeat strutturali restano protetti dall'interazione. Il
-registro e il device supportano scelte nominali tramite `ChoiceControl`.
-
-Sostituire soltanto `standard_material` non soddisfa l'obiettivo: con
-`conceptuality = 1` quel ramo non contribuisce al risultato. Inoltre una
-cassa regolare può scomparire se la sorgente di sostegno non suona.
-
-## Rappresentazione di uno stile
-
-Si propone un piccolo catalogo di dati musicali, interpretato dal modulo
-della percussione. Ogni profilo contiene soltanto informazioni usate dalla
-generazione:
-
-| Informazione | Funzione |
+| Sede | Responsabilità |
 |---|---|
-| Identificativo stabile e nome | Selezione, configurazione, preset e stato leggibile |
-| Metro e lunghezza del ciclo | Interpretazione delle posizioni e della fase del materiale |
-| Poche varianti coerenti | Vocabolario ritmico, con relazioni fra cassa, rullante e piatti |
-| Attacchi strutturali e complementari | Identità del groove e materiale disponibile per trasformazioni e dialogo |
-| Accenti relativi | Rapporti di velocity, prima di `velocity_ratio` |
-| Suddivisione e timing | Posizioni dritte, swing o altre articolazioni specificate esplicitamente |
-| Fonti e motivazione musicale | Riscontro dei caratteri scelti e riferimento per l'ascolto |
+| `music/percussion/catalog.py` | Identificativi dei ruoli percussivi, materiali di riferimento e profili stilistici. Un solo catalogo Python, senza numeri MIDI o nomi di device |
+| `music/percussion/` | Generazione, memoria musicale, dialogo e transizioni. Legge il catalogo, senza ridefinirne i dati in altri moduli |
+| `adapters/percussion.py` | Unica mappa dei ruoli verso i pad della destinazione attuale e conversione degli eventi musicali in `Phrase` |
+| `presets/organico.json` | Voci, dipendenze, destinazioni, valori iniziali e riferimenti ai materiali necessari durante la migrazione. Nessuna lista di colpi o copia della mappa MIDI |
+| `presets/direzione-viaggio.json` | Politiche musicali delle sezioni e collegamento ai dati del percorso. Nessuna sequenza di colpi |
 
-I profili usano ruoli percussivi come cassa, rullante e hi-hat, senza
-numeri MIDI. La definizione della voce li associa alle `lanes` esistenti;
-la mappa MIDI rimane unica. Non sono preset del generatore: selezionare
-uno stile non deve sovrascrivere `variation`, `conceptuality` o gli altri
-valori manuali.
+`styles.py` deve importare le definizioni dal catalogo; non deve conservarne
+una seconda copia. La CLI collega generatore e adattatore. Director,
+Coordinator, device comune e modelli generici non acquisiscono nomi o
+regole delle percussioni.
 
-Le varianti devono indicare un riferimento e le figure alternative che
-lo sviluppo può usare. Non è previsto scegliere a caso un nuovo loop a
-ogni finestra: il materiale mantiene la propria fase e la sequenza di
-sviluppo conserva la responsabilità delle trasformazioni.
+`dialogo.json` è ritirato dall'uso operativo; prove e riferimenti sono migrati. I materiali musicalmente diversi vengono
+conservati nel catalogo con identificativi univoci. Le modalità della
+tessitura e i valori delle drums restano regolabili dai controlli esistenti.
+Non si aggiungono file JSON per genere, kit o variante, né un sistema di
+ereditarietà fra configurazioni. I file di analisi del percorso conservano
+la propria responsabilità separata.
 
-Per la prima implementazione si propongono tre profili in 4/4, con cicli di una o due
-battute e almeno due varianti semplici per profilo:
+## 2. Centralizzazione: risultato musicale invariato
 
-| Profilo proposto | Caratteri da specificare e confrontare |
+Intervento implementato, verificato confrontando eventi, guida e dialogo
+multivoce prima e dopo la centralizzazione. La generazione a regole resta
+il passaggio successivo.
+
+- Trasferire nel catalogo tutti i materiali e le figure attuali.
+- Assegnare identificativi distinti ai due `regular_pulse`.
+- Conservare ruoli, intensità, posizioni, ancore e sequenze di sviluppo.
+- Risolvere la mappa dei pad una sola volta nell'adattatore, mantenendo
+  esattamente le destinazioni MIDI attuali.
+- Sostituire le definizioni incorporate nei JSON con riferimenti al catalogo.
+- Verificare l'identità degli eventi prima/dopo per entrambe le configurazioni,
+  compresi variazione, silenzi delle sorgenti e transizioni.
+- Rifiutare riferimenti o ruoli sconosciuti con errore esplicito.
+
+La configurazione operativa viene consolidata dopo il confronto delle due
+configurazioni originali; l'eliminazione della seconda configurazione non
+comporta l'eliminazione dei suoi materiali o delle prove utili.
+
+## 3. Contratto della generazione a regole
+
+### Ingressi
+
+Il generatore riceve posizione logica, durata richiesta, fase musicale,
+stile, controlli esistenti, contesto della sezione, frasi dipendenti e
+memoria accettata. Utilizza le interfacce di pianificazione già esistenti.
+Non legge GPX, JSON o stato del device durante la composizione.
+
+### Regole dello stile
+
+Il profilo definisce vincoli e preferenze verificabili:
+
+- appoggi caratterizzanti per ruolo, distinguendo obblighi e preferenze;
+- suddivisioni ammesse e quantità compatibili con i ruoli;
+- relazioni fra cassa, backbeat e accompagnamento;
+- rapporti di accento e regole di timing;
+- possibilità di risposta, variazione e chiusura della frase.
+
+Per esempio, la cassa sui quattro movimenti è un vincolo coerente della
+House classica. La costruzione dei complementi e delle loro relazioni
+resta una decisione del generatore.
+
+Le regole devono produrre combinazioni di attacchi non limitate alle
+figure scritte nel catalogo. I pattern di riferimento servono al confronto
+musicale e ai test: il generatore a regole non li sceglie come frasi da
+riprodurre e non vi ricorre come ripiego.
+
+### Eventi e pianificazione
+
+Ogni evento musicale descrive posizione in beat, ruolo percussivo,
+intensità e durata. La conversione verso i pad avviene nel confine
+adattatore prima della consegna della `Phrase` al coordinamento.
+
+Il generatore prepara un intervallo musicale completo anche quando viene
+richiesta soltanto una sua porzione. Fase, seed e memoria determinano
+scelte riproducibili. Le porzioni della stessa battuta non vengono composte
+indipendentemente.
+
+Le scelte riguardano relazioni fra parti e figure coerenti. Il sorteggio
+indipendente di ogni colpo non costituisce la strategia compositiva.
+Riprese e silenzi musicali rimangono possibili.
+
+### Dialogo
+
+1. Le drums preparano gli appoggi strutturali della guida condivisa.
+2. Le altre voci compongono ricevendo la guida e le influenze disponibili.
+3. Le drums completano i complementi usando le frasi delle altre voci.
+4. La memoria del risultato accettato influenza le scelte successive.
+
+I complementi possono adattarsi al basso e lasciare spazio alla melodia.
+Gli appoggi già comunicati non vengono spostati retroattivamente in risposta
+alla stessa finestra. Presenza e sospensioni musicali esplicite possono
+silenziare la voce; la guida può restare disponibile secondo il contratto
+multivoce attuale. Preparazione e tentativi falliti non avanzano la memoria.
+
+## 4. Controlli
+
+| Controllo | Responsabilità |
 |---|---|
-| House classica | Cassa regolare sui quattro movimenti, backbeat e hi-hat in levare |
-| Boom bap anni Novanta | Relazione sincopata fra cassa e backbeat, accenti e swing documentato |
-| Breakbeat house | Cassa spezzata, relazione con rullante/clap e articolazione dei piatti |
+| Stile | Vincoli e preferenze musicali applicati alla generazione |
+| Variazione 0–1 | Libertà rispetto alla figura base derivata dalle regole: a zero è stabile nello stesso contesto; a uno usa tutto lo sviluppo consentito |
+| Transizione in beat | Durata del passaggio fra i profili, mantenendo fase e continuità |
+| `displacement_beats` | Ampiezza degli spostamenti consentiti, distinta dalla probabilità di usarli |
+| `support_tolerance_beats`, `answer_clearance_beats` | Distanze musicali per sostegno e risposta |
+| `velocity_ratio`, `gate_beats`, `seed` | Dinamica finale, durata MIDI e riproducibilità |
 
-Questi tre profili sono disponibili nel catalogo iniziale per l'ascolto.
-Le fonti propongono esempi concreti, non valori universali per tutti i
-brani del genere. I primi due profili permettono inoltre di verificare
-che la differenza non dipenda soltanto dal numero dei colpi.
+Nessun controllo aggiunto per compensare doppioni interni. Un controllo
+conservato deve avere un effetto verificabile e risultare inattivo quando
+non applicabile.
 
-Il metro è una proprietà del profilo percussivo, non una deduzione da
-`window_beats`. Una finestra rimane un intervallo di pianificazione.
-La verifica musicale iniziale usa Live in 4/4; non introduce cambi di metro
-globali o adeguamenti automatici del BPM.
+Nella centralizzazione, **Nessuno** mantiene il comportamento attuale.
+Nel generatore a regole significherà assenza di vincoli stilistici specifici:
+si applicheranno le regole ritmiche generali dello stesso motore, senza
+un secondo percorso basato su sequenze precomposte.
 
-## Inserimento nel generatore
+## 5. Collegamento al GPX proposto
 
-Ordine proposto, con distinzione fra attacchi strutturali e complementari:
+L'intensità musicale normalizzata della sezione esiste già come
+`section.direction.target_intensity`, da 0 a 1. La proposta iniziale è
+usarla come valore automatico di Variazione per la voce percussiva.
+È una scelta compositiva esplicita: maggiore intensità autorizza maggiore
+sviluppo, senza imporre BPM, genere o casualità aggiuntivi.
 
-```text
-materiale corrente + profilo di stile
-                 ↓
-materiale ritmico, accenti e attacchi strutturali
-                 ├── riferimento regolare
-                 └── sviluppo → interazione con le altre voci
-                                      ↓
-                    combinazione con conceptuality
-                                      ↓
-                    velocity_ratio e gate_beats → Phrase
-```
+La traduzione appartiene al collegamento fra direzione del viaggio e voce,
+non al Coordinator generico. Un valore di sezione esplicitamente assegnato
+prevale sul calcolo automatico; l'override manuale prevale su entrambi.
+L'origine del valore deve risultare nello stato. Con sezioni manuali si
+usano i valori configurati. Questa mappatura non è attualmente implementata.
 
-Lo stile deve orientare entrambi i rami. `conceptuality` conserva la
-responsabilità di scegliere fra riferimento e materiale sviluppato;
-non diventa un controllo dell'intensità del genere.
+## 6. Transizioni e influenze multiple
 
-Gli attacchi strutturali del profilo selezionato mantengono posizione e
-funzione anche quando la melodia occupa lo stesso istante o il basso è
-silenzioso. L'interazione lavora sui complementi: può allinearli al basso
-o diradarli per lasciare spazio alla melodia. `variation` agisce sui
-complementi; `displacement_beats` resta l'ampiezza degli spostamenti
-previsti dalla sequenza di sviluppo.
+La generazione interpola preferenze compatibili e conserva appoggi comuni.
+I conflitti vengono risolti musicalmente per ruoli e frase; non si sommano
+due loop completi. Si mantiene il metro 4/4 del banco di prova attuale.
+Un cambio durante una transizione riparte dallo stato musicale raggiunto.
 
-Il coordinamento definito prevede che con uno stile attivo alcune
-figure diventano autonome dalle sorgenti, per conservarne l'identità.
-La presenza della voce e l'operazione esplicita `silence` continuano a
-poter sospendere l'intera parte. Sul ramo regolare il comportamento di
-`silence` resta quello attuale: è un'operazione del ramo sviluppato.
+La miscela manuale di generi rimane un'estensione futura. Un peso indica
+influenza stilistica sulle scelte, non volume o percentuale esatta di colpi.
+La semantica proposta resta:
 
-Gli attacchi strutturali vanno identificati per evento e funzione, non
-soltanto per beat: una cassa caratterizzante non deve proteggere anche
-qualsiasi altro colpo che capita alla stessa posizione.
-Swing e timing del profilo hanno una funzione distinta dallo spostamento
-compositivo `displace`. I loro effetti devono essere tracciabili separatamente.
+- somma zero: regole generali senza stile specifico;
+- somma fino a uno: i pesi conservano il proprio valore; la quota residua
+  appartiene alle regole generali;
+- somma superiore a uno: normalizzazione dei pesi alla somma uno.
 
-Con **Stile: nessuno** si percorre esattamente il comportamento attuale,
-senza cambiare materiali, regole di interazione, fase o risultato MIDI.
-Con uno stile selezionato si usa il suo vocabolario; non si rinomina il
-materiale attuale assegnandogli soltanto un'etichetta.
+House 0,2 lascia quindi 0,8 alle regole generali; House 1 e Boom bap 1
+risolvono in 0,5 ciascuno. Non si aggiungono ora controlli per questa estensione.
 
-## Controlli e integrazione
+## 7. Verifiche richieste
 
-Per la selezione del genere si aggiunge il controllo **Stile**, con scelta nominale e
-valore iniziale **nessuno**. Il catalogo usa identificativi testuali
-stabili, mai indici dipendenti dall'ordine di un menu.
+- Centralizzazione: stesso risultato musicale e stessa mappa dei pad,
+  senza definizioni duplicate nei JSON e nei moduli.
+- Generazione a regole: capacità di comporre figure assenti dal catalogo;
+  modificare le sole figure di riferimento non cambia l'algoritmo compositivo.
+- Differenze stilistiche spiegabili con regole esplicite e confronto
+  all'ascolto, mantenendo kit, BPM e seed costanti.
+- Variazione 0/intermedia/1 e influenza della sezione verificabili sulle scelte.
+- Dialogo in entrambe le direzioni, senza cicli nella stessa finestra o
+  alterazioni dei piani già accettati.
+- Fase invariata al cambio di stile e fra finestre; nessun doppio avanzamento
+  dopo tentativi scartati. I confronti fra partizioni usano gli stessi input musicali.
+- Coincidenze gestite, durate valide e limite di 128 attacchi rispettato;
+  nessuna soppressione silenziosa per aggirare errori o limiti.
 
-Il device richiede una scelta enumerata generica definita da Python.
-Il JavaScript presenta le opzioni e trasmette l'identificativo; nomi e
-regole dei generi restano nel modulo percussivo e nei suoi dati.
-Il ruolo rimane `percussion`, distinto dallo stile. I controlli di adesione
-ritmica delle altre voci appartengono ai loro generatori, secondo il
-contratto di [coordinamento](COORDINAMENTO-RITMICO.md).
+## Ordine degli interventi
 
-La scelta deve entrare nelle assegnazioni, negli override manuali e nei
-preset, conservando le precedenze della sessione. L'aggiunta del controllo
-richiede una gestione esplicita dei preset utente già salvati: oggi viene
-richiesta la corrispondenza esatta delle chiavi. La proposta è aggiungere
-`nessuno` ai preset compatibili precedenti, senza scartare altri campi o
-riscrivere la libreria automaticamente.
-
-Le modifiche si applicano alle finestre ancora da pianificare, mantenendo
-la posizione logica e i periodi di sviluppo. Gli eventi di un ciclo che
-attraversa più finestre vanno selezionati dalla stessa fase. Non si
-riavvia il motivo al cambio di stile e non si modifica un piano già inviato.
-
-## Influenze multiple: semantica proposta per il futuro
-
-Un peso da 0 a 1 esprime quanto un profilo orienta le scelte musicali,
-non il volume della batteria, una classificazione del brano o una quota
-esatta di note appartenenti a un genere.
-
-La rappresentazione musicale interna prevista è una mappa di pesi per
-identificativo. La prima interfaccia nominale corrisponde a un unico
-peso 1; **nessuno** corrisponde alla mappa vuota. L'interfaccia con più
-pesi non viene implementata nella prima versione.
-
-Indicando con `S` la somma dei pesi:
-
-- Se `S = 0`, rimane soltanto il materiale corrente.
-- Se `0 < S ≤ 1`, ogni peso conserva il valore impostato e al materiale
-  corrente resta `1 − S`.
-- Se `S > 1`, i pesi vengono divisi per `S`; il materiale corrente non
-  contribuisce. Lo stato deve mostrare sia i pesi richiesti sia quelli risolti.
-
-| Pesi richiesti | Contributi risolti |
-|---|---|
-| House 0,2 | Materiale corrente 0,8; House 0,2 |
-| House 0,6; boom bap 0,3 | Materiale corrente 0,1; House 0,6; boom bap 0,3 |
-| House 1; boom bap 1 | House 0,5; boom bap 0,5 |
-
-Normalizzare sempre i soli generi sarebbe scorretto per questa semantica:
-un unico peso 0,2 diventerebbe indistinguibile da 1.
-
-Per combinare gli stili si propone di scegliere e combinare figure
-coerenti: relazione cassa/rullante come gruppo, articolazione dei piatti
-come altro gruppo. Non si sommano interi loop né si estraggono tutti i
-singoli colpi indipendentemente. Un risultato può così avere appoggi di
-uno stile e piatti di un altro nella stessa frase, senza essere soltanto
-un'alternanza di battute etichettate con generi diversi.
-
-La scelta dei gruppi e delle varianti deve essere riproducibile con seed,
-posizione logica e pesi. Timing incompatibili e conflitti fra figure
-richiedono regole di compatibilità esplicite: la definizione concreta del
-miscelatore resta da definire e non è necessaria alla prima versione.
-
-## Criteri di verifica
-
-- Con **nessuno**, identità del risultato rispetto al generatore corrente,
-  comprese le combinazioni dei controlli e i silenzi delle dipendenze.
-- Stile riconoscibile a `conceptuality = 0` e a `1`, durante le frasi non
-  sospese; presenza, `silence` e fine finestra continuano a essere rispettati.
-- Stesso seed e stesse richieste producono lo stesso risultato; suddividere
-  un ciclo fra finestre non ne riavvia fase, swing o figure caratteristiche.
-- Nessun raddoppio involontario, sovrapposizione della stessa nota o
-  superamento dei 128 attacchi; nessuna riduzione silenziosa del materiale.
-- Selezione dello stile senza modifica degli altri parametri; salvataggio,
-  ricarica e compatibilità esplicita dei preset precedenti.
-- Ascolto A/B dello stesso tratto con kit, BPM e seed uguali, prima con
-  ogni stile isolato e poi con l'interazione attiva. Secondo confronto ai
-  tempi di riferimento, impostati manualmente, per valutare il feel.
-
-La scelta finale dei profili e la taratura richiedono ascolto. Una fonte
-testuale o la distanza fra due griglie non certificano il risultato musicale.
-
-## Fonti esaminate e uso proposto
-
-Le scelte architetturali e la semantica dei pesi sopra sono proposte per
-Desnivel; non sono ricavate come prescrizioni dalle fonti.
-
-| Fonte | Informazione utile e impiego |
-|---|---|
-| [LANDR — Drum programming](https://blog.landr.com/drum-programming/) | Raccolta iniziale di esempi per House, Techno, Trap, Hip-hop e DnB; distingue programmazione, dinamica, timbro e arrangiamento. Utile per orientare il confronto fra famiglie. |
-| [Drum Patterns — presentazione](https://drum-patterns.com/about/) | Libreria condivisa di pattern e loop; le griglie, le categorie e le varianti osservate nel sito sono esempi da confrontare per costruire il vocabolario dei profili. Le etichette dei contributi non sono una definizione normativa dei generi. |
-| [Roland — Creating beats for dance styles](https://www.roland.com/uk/blog/creating-beats-dance-styles-dj-808/) | Dimostrazioni e sequenze per stili dance, con dettagli su suoni e shuffle. Riferimento operativo per la House classica e per separare pattern e scelta del kit. |
-| [Attack — Breakbeat House](https://www.attackmagazine.com/technique/beat-dissected/breakbeat-house-beats/) | Tutorial originale con costruzione del groove, parti percussive, accenti e indicazioni di swing. Riferimento per un profilo circoscritto e le sue varianti. |
-| [BandLab — How to make a boom bap beat](https://blog.bandlab.com/how-to-make-a-boom-bap-beat-on-bandlab/) | Tutorial originale con progetto di riferimento, programmazione delle parti, dinamica e scostamenti dalla griglia. Base operativa per il profilo boom bap, da confrontare con altri esempi. |
-| [Roland — Trap and lo-fi beats](https://articles.roland.com/trap-and-lo-fi-beats-with-zenbeats-and-roland-cloud/) | Confronto di due approcci produttivi con esempi dell'autore; utile per distinguere figurazioni, tempo e suoni prima di estendere il catalogo. |
-| [Roger Linn — Swing e groove, intervista](https://www.attackmagazine.com/features/interview/roger-linn-swing-groove-magic-mpc-timing/) | Spiegazione diretta del timing alternato e della dinamica. Il suo swing usa 50% per il dritto: non va confuso con percentuali di altre macchine né con il futuro peso di stile. |
-| [Ableton — Tempo and genre](https://learningmusic.ableton.com/make-beats/tempo-and-genre.html) | Il riconoscimento di genere dipende anche da tempo e suoni. I tempi tipici sono riferimenti d'ascolto, non vincoli o cambi automatici della sessione. |
-| [Magenta — GrooVAE](https://magenta.tensorflow.org/groovae) | Distinzione fra disposizione delle parti, dinamica e microtiming. Utile come riferimento di analisi; non richiede di adottare il modello generativo. |
-| [Magenta — Groove MIDI Dataset](https://magenta.tensorflow.org/datasets/groove) | Esecuzioni MIDI umane annotate per stile e tempo, utili per confrontare varianti e accenti. La mappatura dei suoni differisce in parte dal General MIDI e richiede conversione esplicita. Nessun dataset è stato importato. |
-
-Prima di inserire un profilo operativo occorrono esempi completi verificati,
-una descrizione dei tratti effettivamente modellati e un confronto all'ascolto.
-La prima implementazione non richiede addestramento di modelli o raccolta automatica di pattern.
-
-
-## Evoluzione e transizioni implementate
-
-Il sistema sviluppa figure stilistiche su frasi di quattro battute e
-interpola eventi e timing nel cambio di stile tramite `transition_beats`.
-I pesi multipli sono stato interno della transizione, non controlli di
-miscela indipendenti. Il comportamento disponibile è descritto in
-[STILI-PERCUSSIVI.md](../STILI-PERCUSSIVI.md). La miscela manuale di più
-generi rimane una proposta.
+1. Contratto approvato.
+2. Materiale e mappa centralizzati, identità musicale verificata.
+3. Avvio consolidato su `organico.json`, guide e prove aggiornate.
+4. Definire i profili di regole dei tre stili e implementare il compositore,
+   il collegamento al GPX proposto e le transizioni sulle regole.
+5. Verificare all'ascolto prima di ampliare generi o controlli.
