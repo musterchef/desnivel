@@ -51,7 +51,7 @@ def build_generator(spec):
         compose = PercussionPhraseGenerator(spec['lanes'], spec['material'], spec['anchor_beats'],
                                            spec['development'], spec['interaction'], spec.get('settings'),
                                            standard_material=spec.get('standard_material'), style_lanes=spec.get('style_lanes'))
-        controls = {'style': ChoiceControl(STYLE_OPTIONS), 'conceptuality': Control(0, 1), 'variation': Control(0, 1), 'displacement_beats': Control(0, 1),
+        controls = {'style': ChoiceControl(STYLE_OPTIONS), 'transition_beats': Control(0, 128), 'conceptuality': Control(0, 1), 'variation': Control(0, 1), 'displacement_beats': Control(0, 1),
                     'velocity_ratio': Control(.05, 1), 'gate_beats': Control(.01, 1),
                     'seed': Control(0, 2147483647, True), 'support_tolerance_beats': Control(0, 1),
                     'answer_clearance_beats': Control(0, 1)}
@@ -83,7 +83,8 @@ def build_generator(spec):
     rhythmic_roles = ('melody', 'bass_line') if kind == 'motif' else ('bass_line',) if kind == 'responsive_line' else ()
     return RegisteredGenerator(Generator(compose, roles, validate, describe,
                                          compose.stage, compose.accept,
-                                         getattr(compose, 'prepare_reference', None), rhythmic_roles), controls,
+                                         getattr(compose, 'prepare_reference', None), rhythmic_roles,
+                                         getattr(compose, 'accept_reference', None)), controls,
                                initial, presets, getattr(compose, 'reset', None),
                                getattr(compose, 'describe_controls', None),
-                               {'groove_follow': 0.} if rhythmic_roles else {'style': 'none'} if kind == 'percussion_phrase' else {})
+                               {'groove_follow': 0.} if rhythmic_roles else {'style': 'none', 'transition_beats': 16.} if kind == 'percussion_phrase' else {})

@@ -25,6 +25,7 @@ class Generator:
     accept: Callable | None = None
     prepare_reference: Callable | None = None
     rhythmic_roles: tuple[str, ...] = ()
+    accept_reference: Callable | None = None
 
 
 class EnsembleSession:
@@ -49,7 +50,7 @@ class EnsembleSession:
                                  generator.supported_roles, generator.describe,
                                  tuple(spec.get('optional_dependencies', ())),
                                  generator.stage, generator.accept, generator.prepare_reference,
-                                 generator.rhythmic_roles)
+                                 generator.rhythmic_roles, generator.accept_reference)
             self._destinations[name] = destinations[spec['destination']]
         self.director = MusicDirector(config['sections'])
         for voice in voices.values():

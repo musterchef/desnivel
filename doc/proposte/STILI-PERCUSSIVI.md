@@ -238,3 +238,13 @@ Desnivel; non sono ricavate come prescrizioni dalle fonti.
 Prima di inserire un profilo operativo occorrono esempi completi verificati,
 una descrizione dei tratti effettivamente modellati e un confronto all'ascolto.
 La prima implementazione non richiede addestramento di modelli o raccolta automatica di pattern.
+
+
+## Evoluzione e transizioni implementate
+
+Il sistema sviluppa figure stilistiche su frasi di quattro battute e
+interpola eventi e timing nel cambio di stile tramite `transition_beats`.
+I pesi multipli sono stato interno della transizione, non controlli di
+miscela indipendenti. Il comportamento disponibile è descritto in
+[STILI-PERCUSSIVI.md](../STILI-PERCUSSIVI.md). La miscela manuale di più
+generi rimane una proposta.

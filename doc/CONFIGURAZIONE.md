@@ -337,6 +337,8 @@ o ometterlo per rispettare le frasi di riferimento.
 
 | Controllo | Predefinito | Intervallo nella sessione | Effetto |
 |---|---:|---|---|
+| `style` | `none` | Scelta nominale | Profilo ritmico; [figure e transizioni](STILI-PERCUSSIVI.md) |
+| `transition_beats` | 16 | 0…128 beat | Durata del prossimo cambio fra stili; zero immediato |
 | `conceptuality` | 1 | 0…1 | A 0 ripete il groove standard; a 1 usa sviluppo e interazione; i valori intermedi combinano i due insiemi di attacchi |
 | `variation` | 0,7 | 0…1 | Quota degli attacchi non protetti trasformati, arrotondata verso l'alto; intensità della modifica degli accenti. A zero tutte le operazioni diventano `statement`, inclusa `silence` |
 | `displacement_beats` | 0,25 | 0…1 beat | Ampiezza dello spostamento temporale |
@@ -399,7 +401,8 @@ attacchi per finestra; configurazioni che lo superano vengono rifiutate.
 Nel device `conceptuality` è etichettato **Concettualità**; la
 chiave JSON resta invariata. A zero, `variation`, `displacement_beats`,
 `support_tolerance_beats`, `answer_clearance_beats` e `seed` sono segnalati
-come inattivi. Il fattore di velocity e la durata MIDI restano applicati.
+come inattivi con `style: none`. Con uno stile selezionato, `variation`
+e `seed` governano le figure anche a concettualità zero. Il fattore di velocity e la durata MIDI restano applicati.
 Lo spostamento è inoltre inattivo con `variation: 0` o senza operazioni
 `displace` nella sequenza configurata. I valori rimangono modificabili e
 vengono usati quando si riattiva la modalità pertinente.

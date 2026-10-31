@@ -42,6 +42,7 @@ class Voice:
     accept: Callable | None = None
     prepare_reference: Callable | None = None
     rhythmic_roles: tuple[str, ...] = ()
+    accept_reference: Callable | None = None
 
 
 class MusicCoordinator:
@@ -217,6 +218,8 @@ class MusicCoordinator:
                         next_used.add((r.spec.id, r.gesture.span.start, r.gesture.span.end))
         for name, result in staged.items():
             self._voices[name].accept(result)
+        if prepared is not None and self._voices[self.rhythm_source].accept_reference:
+            self._voices[self.rhythm_source].accept_reference(prepared)
         self.last_plan = {'start': start, 'length_beats': length_beats,
                           'order': order, 'voices': decisions}
         if self._interactive:

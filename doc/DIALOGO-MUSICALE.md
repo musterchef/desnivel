@@ -172,3 +172,14 @@ usa invece la singola sezione dorica configurata nel file.
 La [selezione dello stile](STILI-PERCUSSIVI.md) cambia la guida e il materiale
 percussivo. Le ulteriori relazioni dei
 [contratti proposti](proposte/RELAZIONI-MUSICALI.md) restano da implementare.
+
+
+### Accettazione del riferimento ritmico
+
+Una voce può fornire `prepare_reference(request)` e, se mantiene stato
+associato alla guida, `accept_reference(prepared)`. Il primo prepara un
+`PreparedRhythm` senza mutare lo stato; il secondo riceve lo stesso oggetto
+solo dopo la validazione del piano completo, anche quando il produttore
+non è assegnato alla sezione. Il generatore attivo riceve il materiale
+preparato in `PlanningRequest.prepared_material`. Le regole degli stili e
+le transizioni restano nel modulo percussivo.
