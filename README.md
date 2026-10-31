@@ -36,6 +36,7 @@ Il motore è organizzato in strati indipendenti:
 ## Per iniziare
 
 - [Comandi rapidi e installazione](doc/COMANDI.md): come configurare l'ambiente, avviare il replay di una tappa e provare le sessioni di ascolto.
+- [Guida pratica ai device](doc/GUIDA-DEVICE.md): quali valori impostare per ottenere i comportamenti musicali desiderati.
 - [Le tappe e i percorsi modali](doc/TAPPE-E-PRESET.md): guida all'ascolto delle tappe (Levanto, Firenze, Sabaudia, Peschici) e delle loro evoluzioni armoniche.
 - [Architettura del sistema](doc/ARCHITETTURA.md): organizzazione dei package, flusso dati e contratti.
 - [Indice completo della documentazione](doc/README.md).

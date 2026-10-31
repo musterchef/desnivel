@@ -11,6 +11,7 @@ Guida alla documentazione di **Desnivel**, organizzata per aree tematiche.
 | [Presentazione](../README.md) | Origine del progetto, viaggio da Torino a Castel del Monte e i tre livelli di lettura. |
 | [Architettura](ARCHITETTURA.md) | Pipeline modulare, flusso dei dati, modelli musicali e organizzazione del codice. |
 | [Sessione multivoce Python](SESSIONE-MULTIVOCE.md) | Comando unico, replay, generatori, dispositivi e stato globale. |
+| [Guida pratica ai device](GUIDA-DEVICE.md) | Valori di partenza per ottenere risultati su melodia, basso, tessitura e drums. |
 | [Configurazione](CONFIGURAZIONE.md) | Campi JSON, unità, limiti dei controlli, ruoli e precedenze. |
 | [Direzione musicale dal percorso](DIREZIONE-MUSICALE.md) | Profilo della tappa, tavolozze armoniche, motivo automatico e override. |
 | [Dialogo ritmico](DIALOGO-MUSICALE.md) | Guida percussiva, adesione delle voci, memoria dei gesti e influenze storiche operative. |
@@ -42,6 +43,8 @@ Guida alla documentazione di **Desnivel**, organizzata per aree tematiche.
 ## Proposte di sviluppo
 
 Materiale di progettazione separato dalla documentazione del sistema attuale.
+
+- [Revisione dei controlli](proposte/REVISIONE-CONTROLLI.md): ridondanze verificate negli altri device e interventi proposti.
 
 - [Ruoli musicali e organico](proposte/RUOLI-MUSICALI.md): impostazione condivisa, vocabolario proposto e decisioni aperte.
 - [Catalogo e assegnazioni per sezione](proposte/CATALOGO-E-SEZIONI.md): bozza JSON di vocabolario, strumenti e organico manuale.
