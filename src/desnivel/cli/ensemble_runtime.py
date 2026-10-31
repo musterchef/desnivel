@@ -54,6 +54,7 @@ class EnsembleRuntime:
         self.playing = False
         self.beat = 0.
         self.epoch = None
+        self._restart_epoch = None
         self.instance = None
         self.transport_serial = -1
         self.error = None
@@ -146,6 +147,13 @@ class EnsembleRuntime:
                 or type(playing) is not int or playing not in (0, 1)
                 or type(epoch) is not int or epoch < 0):
             raise ValueError('stato del trasporto non valido')
+        # Durante il riavvolgimento possono arrivare notifiche inviate prima
+        # del comando. Il device cambia epoch allo Stop o al ritorno al beat zero.
+        if self._restart_epoch is not None:
+            if self.instance == message['instance'] and epoch <= self._restart_epoch:
+                self.transport_serial = message['serial']
+                return
+            self._restart_epoch = None
         self.advance()
         if self.instance == message['instance'] and beat >= self.beat and self.epoch == epoch:
             self._consume_windows(beat)
@@ -167,8 +175,11 @@ class EnsembleRuntime:
             self.next_window = 0
             self.error = None
             self.paused = False
+            self._restart_epoch = self.epoch
+            self.playing = False
+            self.beat = 0.
             self.restart_count += 1
-            self.state = 'waiting_for_transport'
+            self.state = 'stopped'
         elif action == 'pause':
             self._consume_windows(self.beat)
             self.reset()

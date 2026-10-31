@@ -97,7 +97,7 @@ Live fornisce beat e stato Play/Stop. Stop spegne le note, cancella i piani e me
 
 Il cambio di sezione modifica le assegnazioni alla successiva pianificazione. Alle parti uscenti viene inviata una frase vuota per la nuova finestra, lasciando terminare quella precedente. Se manca una parte attiva o la sorgente del trasporto perde il collegamento, la sessione cancella i piani dei dispositivi raggiungibili e attende, sospendendo il replay. I dispositivi non raggiungibili eseguono il proprio Panic per mancata conferma.
 
-Al termine del viaggio la sessione spegne le note e mostra `finished`. Ctrl+C chiude il server e scrive lo stato `closed`. Un errore di generazione porta allo stato `error`; il restart permette un nuovo tentativo dall'inizio.
+Al termine del viaggio la sessione spegne le note e mostra `finished`. Ctrl+C chiude il server e scrive lo stato `closed`. Un errore di generazione porta allo stato `error`; il restart riporta a zero; un successivo Play permette un nuovo tentativo.
 
 ### Pausa e restart
 
@@ -106,7 +106,8 @@ Voice. Usa la porta Receive 9101, configurabile con `--connect-port`,
 senza modificare il trasporto o lo stato del viaggio.
 
 Nel terminale interattivo, **Spazio** mette in pausa o riprende viaggio e
-trasporto di Live; **R** ricomincia la tappa e riporta Live al beat zero.
+trasporto di Live; **R** azzera viaggio e timeline, riporta Live al beat zero e lascia il
+trasporto fermo fino al prossimo Play.
 Non occorre premere Invio. Alla chiusura si ripristina la modalità di ingresso
 del terminale. Con ingresso rediretto, i tasti non sono attivi.
 Gli stessi comandi sono disponibili nel viewer.
@@ -121,13 +122,13 @@ sono ignorate quando la sessione è già in pausa; i device scartano comandi
 duplicati per sessione e seriale.
 
 La ripresa usa `continue_playing`; il restart usa `stop_playing`, imposta
-`current_song_time` a zero e riprende. La pausa cancella i piani e spegne
+`current_song_time` a zero senza riavviare il trasporto. La pausa cancella i piani e spegne
 le note di tutte le voci raggiungibili. Nel replay lineare conserva i secondi
 raggiunti; nella timeline allocata conserva la prima finestra non conclusa,
 che viene ripetuta alla ripresa. Il restart azzera posizione, timeline e
 memoria dei generatori, mantenendo i valori manuali e la libreria dei preset.
-A fine tappa, terminale e viewer propongono di ricominciare; non avviene una
-ripartenza automatica. Un comando non disponibile viene segnalato senza
+A fine tappa, terminale e viewer permettono di tornare a zero;
+la ripartenza richiede Play in Live oppure il comando di ripresa. Un comando non disponibile viene segnalato senza
 interrompere la sessione.
 
 ## Configurazione
@@ -335,8 +336,9 @@ di punti `[secondi attivi, latitudine, longitudine]`) e `/api/state`
 `POST /api/control` accetta `{"action":"pause"}`, `resume` o `restart`
 solo dalla stessa origine della pagina. La risposta `202` conferma
 l'accodamento; l'esito è mostrato nello snapshot successivo.
-**Pausa/Riprendi** e **Ricomincia tappa** sono disponibili durante il
-viaggio. A fine tappa compare la domanda con il pulsante **Sì, ricomincia**.
+**Pausa/Riprendi** e **Riporta a zero** sono disponibili durante il
+viaggio. A fine tappa compare la domanda con il pulsante **Sì, riporta a zero**;
+la ripartenza richiede un successivo Play.
 
 Il server ascolta solo su `127.0.0.1` e si chiude con la sessione. La porta HTTP
 deve essere libera e distinta da quella OSC. Per sessioni contemporanee usare

@@ -77,8 +77,8 @@ def render_session(state):
     if state.get('control_error'):
         rows.append('COMANDO: ' + state['control_error'])
     if state['state'] == 'finished':
-        rows.append('Tappa conclusa. Vuoi ricominciare? Premi R.')
-    rows.append('C: collega tutte le Voice | Spazio: pausa/riprendi | R: ricomincia | Ctrl+C: chiudi.')
+        rows.append('Tappa conclusa. Premi R per tornare a zero, poi Play per ripartire.')
+    rows.append('C: collega tutte le Voice | Spazio: pausa/riprendi | R: torna a zero | Ctrl+C: chiudi.')
     return '\n'.join(rows)
 
 

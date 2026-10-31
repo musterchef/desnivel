@@ -52,7 +52,7 @@ function receive(){
             else if(m.action==='resume')outlet(3,'call','continue_playing');
             else if(m.action==='restart'){
                 playerReset();outlet(3,'call','stop_playing');
-                outlet(3,'set','current_song_time',0);outlet(3,'call','continue_playing');
+                outlet(3,'set','current_song_time',0);
             }else return;
             lastTransportSerial=m.serial;return;
         }

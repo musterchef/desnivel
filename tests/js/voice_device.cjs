@@ -110,8 +110,8 @@ c.receive(JSON.stringify({...plan,voice:'part_b'}));assert.notEqual(output.at(-1
 c.receive(JSON.stringify(plan));assert.equal(output.at(-1)[1][0],'planbytes');
 const liveCommand={version:1,kind:'transport',voice:'part_a',instance:c.instance,session:'python-1',serial:100,action:'restart'};
 c.receive(JSON.stringify(liveCommand));
-assert.deepStrictEqual(output.filter(a=>a[0]===3).slice(-3),[
- [3,'call','stop_playing'],[3,'set','current_song_time',0],[3,'call','continue_playing']]);
+assert.deepStrictEqual(output.filter(a=>a[0]===3),[
+ [3,'call','stop_playing'],[3,'set','current_song_time',0]]);
 const liveCount=output.filter(a=>a[0]===3).length;
 c.receive(JSON.stringify(liveCommand));assert.equal(output.filter(a=>a[0]===3).length,liveCount);
 c.receive(JSON.stringify({...liveCommand,serial:101,action:'pause'}));

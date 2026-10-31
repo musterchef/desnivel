@@ -7,7 +7,7 @@ Le tabelle propongono valori di partenza: gli altri controlli restano come sono.
 ## Prima di regolare
 
 - Collega le Voice con **C** nel terminale e avvia **Play** in Live.
-- Cambia un controllo alla volta. Le modifiche agiscono sulle prossime frasi; ascolta almeno quattro battute. Per confrontare dallo stesso punto usa **R**, mantenendo lo stesso `seed`.
+- Cambia un controllo alla volta. Le modifiche agiscono sulle prossime frasi; ascolta almeno quattro battute. Per confrontare dallo stesso punto usa **R**, poi **Play**, mantenendo lo stesso `seed`.
 - **Presenza ×** regola quante frasi partecipano: `0` silenzia la voce; `1` segue la presenza prevista dalla sezione. Non regola il volume e non rende attiva una voce fuori organico.
 - Un controllo **[inattivo]** non interviene nel ruolo o nella modalità corrente. Modificare un parametro mantiene manuale quel parametro; caricare un preset applica invece l'assetto completo.
 - `groove_follow = 0` toglie l'adesione diretta alle drums. Le relazioni con frasi precedenti configurate nella sessione restano attive.

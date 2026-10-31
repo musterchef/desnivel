@@ -298,7 +298,7 @@ def test_pause_freezes_linear_trip_and_restart_resets_position_and_generator_mem
     assert runtime.snapshot()['controls']['restart_count'] == 1
 
 
-def test_allocated_restart_after_end_repeats_the_whole_trip():
+def test_allocated_restart_after_end_waits_for_play_before_repeating_the_trip():
     runtime, _, now, _, receive = allocated_setup()
     receive(); runtime.tick()
     runtime.timeline.seek_window(runtime.timeline.timeline.total_windows)
@@ -307,7 +307,10 @@ def test_allocated_restart_after_end_repeats_the_whole_trip():
     runtime.control('restart')
     assert runtime.progress == 0
     assert runtime.next_window == runtime.timeline.window_index == 0
-    receive(40); runtime.tick()
+    receive(0, playing=0, epoch=1); runtime.tick()
+    assert runtime.last_decisions is None
+    assert runtime.state == 'stopped'
+    receive(0, playing=1, epoch=2); runtime.tick()
     assert runtime.last_decisions['section'] == 'opening'
     runtime.control('pause')
     index, progress = runtime.timeline.window_index, runtime.progress
@@ -315,3 +318,37 @@ def test_allocated_restart_after_end_repeats_the_whole_trip():
     receive(80); runtime.tick()
     assert runtime.timeline.window_index == index and runtime.progress == progress
     assert runtime.state == 'paused'
+
+
+@pytest.mark.parametrize('allocated', [False, True])
+def test_restart_rewinds_and_stays_stopped_until_a_new_live_play(allocated):
+    runtime, bridge, now, _, receive = allocated_setup() if allocated else setup()
+    receive(); runtime.tick()
+    now[0] += .5
+    receive(beat=8); runtime.tick()
+    runtime.session.set_parameter('voice_01', 'velocity', 62)
+    runtime.control('restart')
+    assert runtime.elapsed == runtime.progress == runtime.beat == 0
+    assert not runtime.playing and not runtime.paused
+    assert runtime.last_decisions is None and not runtime.pending_windows
+    assert not runtime.sounding
+    if allocated:
+        assert runtime.timeline.window_index == runtime.next_window == 0
+    # Un messaggio già in volo non deve riavviare la simulazione.
+    now[0] += 10
+    receive(beat=9, playing=1, epoch=0); runtime.tick()
+    assert runtime.state == 'stopped'
+    assert runtime.elapsed == runtime.progress == runtime.beat == 0
+    assert runtime.last_decisions is None
+    # La conferma di Stop mantiene lo zero, anche col trascorrere del tempo.
+    receive(beat=0, playing=0, epoch=1); runtime.tick()
+    now[0] += 100
+    receive(beat=0, playing=0, epoch=1)
+    runtime.tick()
+    assert runtime.state == 'stopped' and runtime.progress == 0
+    assert runtime.last_decisions is None
+    assert runtime.session.parameters_at('voice_01', 0)['velocity'] == 62
+    # La pressione di Play in Live apre una nuova epoca e consente la ripartenza.
+    receive(beat=0, playing=1, epoch=2); runtime.tick()
+    assert runtime.state == 'playing'
+    assert runtime.last_decisions['section'] == 'opening'
