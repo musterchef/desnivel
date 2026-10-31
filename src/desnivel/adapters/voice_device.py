@@ -73,6 +73,7 @@ class DeviceVoice:
     preset_defaults: dict = field(default_factory=dict)
     preset_migrations: dict = field(default_factory=dict)
     apply_parameter: Callable[[str, float | str], None] | None = None
+    migrate_preset: Callable | None = None
 
     @classmethod
     def for_session(cls, session, voice: str, progress: Callable[[], float], **controls):

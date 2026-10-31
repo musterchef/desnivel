@@ -280,7 +280,7 @@ frasi ricevute; il contesto armonico non determina le note percussive.
 |---|---|
 | `lanes` | Nomi locali associati a note MIDI distinte, come per `percussion_pattern` |
 | `material` | Un materiale con `name`, `length_beats` e `hits`, con gli stessi vincoli dei pattern espliciti |
-| `standard_material` | Groove regolare nello stesso formato di `material`; richiesto per usare `conceptuality` inferiore a 1 |
+| `standard_material` | Figura base opzionale nello stesso formato di `material`; se assente, la base è `material` ripetuto senza trasformazioni |
 | `anchor_beats` | Lista non vuota di posizioni distinte presenti nel materiale; tutti gli attacchi a queste posizioni sono protetti dalle trasformazioni locali |
 | `development` | Lista non vuota di operazioni; deve iniziare con `statement` |
 | `interaction` | `support_source`, `support_lanes`, `answer_source`, `answer_lanes`: sorgenti e canali per sostegno e risposta. Ogni canale va assegnato una volta a una delle due funzioni |
@@ -312,24 +312,24 @@ Entrambe le casse appartengono a `support_lanes`; gli altri pad a
 `answer_lanes`. Le posizioni protette sono definite in `anchor_beats`.
 Gli attacchi sono su una griglia di 0,25 beat; i sostegni proposti ogni
 quattro beat vengono adattati alla frase ricevuta.
-La prova imposta `displacement_beats: 0`; il preset manuale `displaced`
-lo porta a 0,25 beat. Mappa, attacchi, posizioni protette e sequenza di
+La prova imposta `displacement_beats: 0`; il controllo regola
+l’ampiezza degli spostamenti, per esempio 0,25 beat. Mappa, attacchi, posizioni protette e sequenza di
 sviluppo sono definiti in `organico.json`.
 
-Ogni ciclo del materiale applica un'operazione della lista `development`;
+Con `style: none`, ogni ciclo del materiale prepara un'operazione della lista `development`;
 la lista viene ripercorsa in ordine. Le operazioni disponibili sono:
 
 - `statement`: presenta il materiale integrale;
-- `subtract`: elimina una parte degli attacchi non protetti;
-- `displace`: sposta una parte degli attacchi non protetti di
+- `subtract`: elimina gli attacchi non protetti nel candidato sviluppato;
+- `displace`: sposta gli attacchi non protetti di
   `displacement_beats`, in anticipo o in ritardo, tornando all'inizio del
   ciclo se supera il confine;
-- `accent`: modifica la velocity degli attacchi selezionati di un massimo
-  di 64 unità MIDI moltiplicato per `variation`, limitando il risultato a 1…127;
+- `accent`: modifica la velocity degli attacchi non protetti di 64 unità
+  MIDI, limitando il candidato a 1…127; Variazione interpola gli accenti comuni;
 - `silence`: sospende l'intero ciclo, inclusi gli attacchi protetti.
 
-La selezione degli attacchi e il verso delle trasformazioni dipendono da
-`seed` e indice del ciclo. Sono riproducibili a parità di sequenza delle richieste, parametri e frasi
+L’ammissione delle figure sviluppate e il verso delle trasformazioni
+dipendono da `seed` e indice del ciclo. Sono riproducibili a parità di sequenza delle richieste, parametri e frasi
 di riferimento. Le durate MIDI sono limitate ai confini delle finestre.
 In caso di coincidenza durante le trasformazioni locali sulla stessa nota,
 l’attacco protetto ha precedenza. L’interazione successiva può spostarlo
@@ -339,8 +339,7 @@ o ometterlo per rispettare le frasi di riferimento.
 |---|---:|---|---|
 | `style` | `none` | Scelta nominale | Profilo ritmico; [figure e transizioni](STILI-PERCUSSIVI.md) |
 | `transition_beats` | 16 | 0…128 beat | Durata del prossimo cambio fra stili; zero immediato |
-| `conceptuality` | 1 | 0…1 | A 0 ripete il groove standard; a 1 usa sviluppo e interazione; i valori intermedi combinano i due insiemi di attacchi |
-| `variation` | 0,7 | 0…1 | Quota degli attacchi non protetti trasformati, arrotondata verso l'alto; intensità della modifica degli accenti. A zero tutte le operazioni diventano `statement`, inclusa `silence` |
+| `variation` | 0,7 | 0…1 | A 0 figura base senza sviluppo o interazione; a 1 sviluppo completo; fra gli estremi ammissione progressiva di figure e trasformazioni |
 | `displacement_beats` | 0,25 | 0…1 beat | Ampiezza dello spostamento temporale |
 | `velocity_ratio` | 0,85 | 0,05…1 | Moltiplicatore della velocity finale di tutti gli attacchi |
 | `gate_beats` | 0,1 | 0,01…1 beat | Durata massima, accorciata alla fine della finestra e prima del prossimo attacco della stessa nota |
@@ -359,9 +358,11 @@ I canali elencati in `answer_lanes` omettono gli attacchi troppo vicini a quelli
 `voice_01`, lasciandogli spazio. Usano le posizioni del materiale rimaste
 dopo lo sviluppo, senza aggiungere colpi per ogni nota melodica. Se la
 frase melodica è silenziosa, le risposte vengono omesse. Se entrambe le
-frasi sono silenziose, anche la componente concettuale è silenziosa.
+frasi sono silenziose, anche il candidato sviluppato è silenzioso.
+Con Variazione inferiore a 1 può contribuire la figura base.
 
-La sorgente di risposta è obbligatoria; la sua assenza produce un errore.
+Con Variazione positiva la sorgente di risposta è obbligatoria;
+la sua assenza produce un errore.
 La sorgente di sostegno può essere inattiva: in quel caso i colpi di
 sostegno sono omessi e la decisione espone `support_available: false`.
 L'interazione legge soltanto gli attacchi delle frasi della finestra corrente,
@@ -370,7 +371,8 @@ cambiare quali attacchi sono disponibili vicino ai confini. Attacchi sulla
 stessa nota e allo stesso beat vengono uniti conservando la velocity maggiore.
 
 La sequenza corrente è `statement`, `statement`, `subtract`, `displace`,
-`statement`, `accent`, `silence`, `displace`: otto cicli di 32 beat.
+`statement`, `accent`, `silence`, `displace`: otto cicli di 32 beat
+con `style: none`; con uno stile selezionato, otto battute di quattro beat.
 Il primo ciclo comincia alla prima frase pianificata, indipendentemente
 dal beat assoluto di Live. La posizione avanza della durata di ciascuna
 richiesta; ripianificare lo stesso inizio riutilizza la stessa posizione.
@@ -378,34 +380,33 @@ Il cambio di famiglia del terreno conserva lo sviluppo. Il reset del
 runtime, compresi Stop e discontinuità del trasporto, lo riporta all'inizio.
 
 Il piano descrive materiale, posizione logica e operazioni dei cicli nella
-plancia. I preset `statement`, `displaced` e `reduced` regolano i controlli
-sullo stesso materiale. Una richiesta può coprire al massimo 128 cicli e
+plancia. Non sono forniti preset base per le drums; quelli utente
+possono salvare assetti completi. Una richiesta può coprire al massimo 128 cicli e
 produrre al massimo 128 attacchi. Il generatore di pattern espliciti resta
 disponibile come tipo distinto.
 
-`conceptuality` governa il passaggio fra due materiali musicali espliciti,
-non una misura estetica del risultato. Il groove `regular_pulse` della
-configurazione fornita dura quattro beat: cassa su 0 e 2, rullante su 1 e 3,
-hi-hat ogni mezzo beat. Non segue gli attacchi delle altre voci. La componente
-concettuale usa invece `material`, `development` e `interaction`.
+**Variazione** (`variation`) regola lo sviluppo attraverso un solo valore.
+Con `style: none`, la base è `standard_material`, se presente; altrimenti
+è `material` senza trasformazioni. Il candidato sviluppato usa `material`,
+`development` e `interaction`. Nella configurazione fornita la base
+`regular_pulse` dura quattro beat: cassa su 0 e 2, rullante su 1 e 3,
+hi-hat ogni mezzo beat.
 
 Fra 0 e 1, gli attacchi comuni mantengono la posizione e interpolano la
-velocity. Per gli altri, una scelta riproducibile dipendente da seed,
-posizione logica e nota conserva una quota crescente della componente
-concettuale. Il valore non garantisce una percentuale esatta di colpi nella
-singola finestra. Restano separate le regolazioni di `variation`, ampiezza
-degli spostamenti e distanze di interazione. I preset `regular`, `hybrid` e
-`conceptual` impostano rispettivamente 0, 0,5 e 1. Il limite resta di 128
-attacchi per finestra; configurazioni che lo superano vengono rifiutate.
+velocity. Gli eventi esclusivi della base o del candidato vengono scelti
+in modo coerente per canale e ciclo del materiale, usando Variazione come
+probabilità di ammettere lo sviluppo. Con uno stile selezionato la scelta
+avviene per canale e battuta; Variazione orienta anche le figure del
+catalogo. Non garantisce una percentuale esatta di colpi diversi.
 
-Nel device `conceptuality` è etichettato **Concettualità**; la
-chiave JSON resta invariata. A zero, `variation`, `displacement_beats`,
-`support_tolerance_beats`, `answer_clearance_beats` e `seed` sono segnalati
-come inattivi con `style: none`. Con uno stile selezionato, `variation`
-e `seed` governano le figure anche a concettualità zero. Il fattore di velocity e la durata MIDI restano applicati.
-Lo spostamento è inoltre inattivo con `variation: 0` o senza operazioni
-`displace` nella sequenza configurata. I valori rimangono modificabili e
-vengono usati quando si riattiva la modalità pertinente.
+A zero sono segnalati inattivi `displacement_beats`,
+`support_tolerance_beats`, `answer_clearance_beats` e `seed`.
+Velocity e durata MIDI restano applicate. Lo spostamento è inattivo anche
+senza operazioni `displace`; con uno stile selezionato la tolleranza di
+sostegno è inattiva quando nessun colpo di risposta usa `support_lanes`.
+I valori restano modificabili e vengono usati quando pertinenti.
+La conversione dei vecchi preset utente è descritta in
+[Stili percussivi](STILI-PERCUSSIVI.md#generazione-e-dialogo).
 
 ## Precedenza e applicazione delle modifiche
 

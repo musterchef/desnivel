@@ -45,7 +45,8 @@ Nel ruolo `sustained_texture` del motivo non ha effetto ed è segnalato inattivo
 I preset utente salvati prima dell'introduzione di `groove_follow` vengono
 completati in memoria con valore zero. Lo snapshot espone l'aggiunta in
 `preset_migrations`; il file viene aggiornato soltanto salvando il preset.
-Altri controlli mancanti o sconosciuti continuano a essere rifiutati.
+La migrazione dei preset percussivi è descritta in [Stili percussivi](STILI-PERCUSSIVI.md).
+Gli altri controlli mancanti o sconosciuti vengono rifiutati.
 
 La modellazione ritmica avviene dopo la composizione propria della voce.
 Mantiene numero e ordine delle note, altezze e velocity. Può spostare ogni

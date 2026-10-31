@@ -24,12 +24,12 @@ del catalogo Desnivel; non sono conversioni di percentuali MPC o Maschine.
 Le figure si organizzano in frasi di quattro battute: la prima espone il
 groove principale; le battute interne possono richiamarlo o variarlo;
 l'ultima può alleggerire i piatti o usare la chiusura. Il groove principale
-cambia fra le due figure di base a ogni frase. `variation` regola la
+può cambiare fra le due figure di base a ogni frase. `variation` regola la
 probabilità di scegliere una figura alternativa: a zero resta sempre la
 prima figura. Il seed rende le scelte riproducibili e indipendenti dai
-tagli delle finestre. La fase del
-ciclo dello stile è di quattro beat. La sequenza `development` conserva
-il proprio periodo, basato sulla durata del `material` configurato.
+tagli delle finestre. Ogni battuta dura quattro beat; la sequenza
+`development` avanza di un'operazione a battuta. I gesti conservati nella
+memoria del dialogo coprono quattro battute.
 
 ## Collegamento alla voce
 
@@ -55,40 +55,43 @@ Esempio per un'assegnazione:
 
 Selezionare lo stile lascia invariati gli altri controlli e la posizione
 musicale. La modifica agisce sulle finestre ancora da pianificare.
-**Concettualità** è il parametro numerico continuo `conceptuality`, da 0
-a 1, regolabile senza selezionare un preset. I preset che lo impostano
-sono scorciatoie; non cambiano il tipo del controllo.
+**Variazione** è il parametro numerico continuo `variation`, da 0 a 1.
+È l’unico controllo della quantità di sviluppo del groove.
 
 ## Generazione e dialogo
 
 Lo stile alimenta sia il riferimento condiviso con le altre voci sia
 il materiale percussivo. Con stile attivo, `material.hits`, `anchor_beats`
-e `standard_material.hits` non forniscono gli attacchi; la durata del
-materiale e la sequenza `development` continuano a governare lo sviluppo.
+e `standard_material` non forniscono gli attacchi né la durata dei cicli.
+La sequenza `development` applica le trasformazioni alle battute dello stile.
 
 Casse e backbeat del profilo sono eventi strutturali: conservano attacco
 e velocity prima del fattore finale, anche con melodia o basso silenziosi.
 La protezione riguarda il singolo evento. I piatti di accompagnamento sono autonomi: la melodia silenziosa non li
 elimina. Il catalogo marca esplicitamente i colpi di risposta, come ghost
 note e piccoli complementi di chiusura. Solo questi attraversano
-l'interazione configurata con basso e melodia. `variation` seleziona i
-complementi da sottrarre, spostare o accentare secondo `development`. Lo swing del profilo precede lo spostamento `displace`.
+l'interazione configurata con basso e melodia. `development` prepara una
+figura trasformata dei complementi; Variazione ne regola l'ammissione nel
+risultato. Lo swing precede lo spostamento `displace`.
 
 | Controllo | Effetto con stile attivo |
 |---|---|
-| `conceptuality = 0` | Figura regolare dello stile, comprese le varianti e il timing; nessuna interazione |
-| `conceptuality = 1` | Struttura dello stile e complementi sviluppati e reattivi |
-| Valori intermedi | Combinazione riproducibile dei rami regolare e sviluppato; non misurano l'influenza del genere |
-| `variation` | Scelta di figure alternative e quota dei complementi trasformati |
+| `variation = 0` | Prima figura dello stile, senza sviluppo o interazione |
+| `variation = 1` | Figure alternative e sviluppo completo previsto da `development`, con risposte alle altre voci |
+| Valori intermedi | Più probabilità di figure alternative e di ammettere lo sviluppo; gli accenti comuni vengono interpolati |
 | `displacement_beats` | Ampiezza dello spostamento dei complementi in `displace` |
 | `transition_beats` | Durata del prossimo cambio fra stili, 0–128 beat; default 16, zero immediato |
-| `seed` | Scelta delle figure, sviluppo e combinazione; resta pertinente anche sul ramo regolare |
+| `seed` | Scelte riproducibili di figure, trasformazioni e ammissione dello sviluppo |
 | `velocity_ratio`, `gate_beats` | Dinamica e durata MIDI finali |
 
-Presenza e operazione `silence` restano operative: `silence` sospende il
-ramo sviluppato, mentre il ramo regolare può contribuire con
-`conceptuality < 1`. Come nel generatore esistente, `variation = 0`
-disattiva le trasformazioni, inclusa `silence`.
+Per ciascun canale e battuta, la scelta fra eventi esclusivi della figura
+base o trasformata è coerente e riproducibile. I colpi comuni mantengono
+la posizione e interpolano la velocity. Variazione non indica una
+percentuale esatta di note diverse nella singola finestra.
+
+Presenza e operazione `silence` restano operative: a Variazione 1,
+`silence` sospende la battuta; ai valori intermedi può contribuire la
+figura base. A zero non vengono applicate trasformazioni, inclusa `silence`.
 I limiti restano 128 attacchi per finestra e per ciclo sviluppato; il
 superamento viene rifiutato. Coincidenze di stessa altezza e posizione
 vengono unite; le durate rispettano finestra, gesto e attacco successivo.
@@ -98,8 +101,16 @@ fine della finestra, durata della transizione, metro, fase logica e figure
 dello stile di destinazione. `swing_delay_beats` descrive il profilo di
 destinazione; durante il passaggio il timing effettivo è interpolato.
 I preset utente precedenti vengono completati in memoria con
-`style: "none"` e `transition_beats: 16`; l'aggiunta è visibile in
-`preset_migrations` e non riscrive automaticamente il file.
+`style: "none"` e `transition_beats: 16` se mancanti.
+
+I preset che contengono il controllo rimosso `conceptuality` vengono
+convertiti usando `variation = conceptuality × variation_precedente`.
+La conversione conserva lo zero di entrambi i vecchi controlli; non
+riproduce esattamente il generatore precedente. Lo snapshot
+`preset_migrations` riporta controllo rimosso, vecchio valore e nuovo
+valore di Variazione. Il file originale resta invariato fino al salvataggio
+esplicito del preset. Non sono forniti preset base per le drums; i preset
+utente possono conservare assetti completi di stile e controlli.
 
 ## Transizioni
 
@@ -134,8 +145,8 @@ verso `none` sono immediati: `none` usa materiali configurati separatamente.
 2. Avviare la sessione con `--config presets/dialogo.json`, usando il
    [comando completo](DIALOGO-MUSICALE.md#configurazione-dascolto).
 3. In `voice_04`, scegliere il parametro **Stile**, poi il profilo nel menu.
-4. Confrontare prima a `conceptuality = 0`, poi a `1`; mantenere uguali
-   kit, BPM e seed nel confronto A/B. Con `variation = 0` si ascolta la prima figura senza sviluppo.
+4. Confrontare Variazione a 0, 0,5 e 1 per almeno quattro battute;
+   mantenere uguali kit, BPM e seed nel confronto A/B.
 5. Impostare **Transizione (beat)** a 16 e cambiare stile durante Play;
    confrontare con zero per il cambio immediato.
 

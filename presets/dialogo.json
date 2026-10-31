@@ -122,8 +122,7 @@
         "gate_beats": 0.1,
         "seed": 7,
         "support_tolerance_beats": 0.5,
-        "answer_clearance_beats": 0.25,
-        "conceptuality": 1.0
+        "answer_clearance_beats": 0.25
       },
       "interaction": {
         "support_source": "voice_02",

@@ -138,7 +138,7 @@ artificiale al Live Set.
 `MusicCoordinator` continua a ordinare le dipendenze e a passare i dati.
 La preparazione e la finalizzazione delle drums devono utilizzare lo
 stesso materiale risolto, seed e fase: non due generazioni indipendenti.
-`conceptuality` continua a distinguere riferimento regolare e sviluppo
+`variation` distingue riferimento regolare e sviluppo
 della parte percussiva; non diventa l'adesione ritmica delle altre voci.
 
 ## Criteri di accettazione

@@ -53,9 +53,9 @@ def test_identity_survives_silent_sources_and_full_transformations(style, amount
     spec['settings']['variation'] = 1
     gen = build_generator(spec).generator.generate
     for start in range(0, 32, 4):
-        result = compose(gen, request(start, silent=True, style=style, conceptuality=amount, velocity_ratio=1))
+        result = compose(gen, request(start, silent=True, style=style, variation=amount, velocity_ratio=1))
         cores = [(round(b-start, 8), p, v) for b, p, v, core in
-                 style_events(STYLE_BY_ID[style], gen.style_lanes, start, start+4, 7) if core]
+                 style_events(STYLE_BY_ID[style], gen.style_lanes, start, start+4, 7, amount) if core]
         assert all(event in events(result.phrase) for event in cores)
         assert result.decision['style_weights'] == {style: 1}
 
@@ -69,22 +69,22 @@ def test_phase_and_swing_are_independent_of_window_partition(style, amount):
     # della finestra corrente, non gli attacchi della finestra futura.
     spec['settings']['answer_clearance_beats'] = 0
     full, split = build_generator(spec).generator.generate, build_generator(spec).generator.generate
-    whole = compose(full, request(length=16, style=style, conceptuality=amount)).phrase
-    pieces = [compose(split, request(start, style=style, conceptuality=amount)).phrase for start in range(0, 16, 4)]
+    whole = compose(full, request(length=16, style=style, variation=amount)).phrase
+    pieces = [compose(split, request(start, style=style, variation=amount)).phrase for start in range(0, 16, 4)]
     assert events(whole) == [event for i, part in enumerate(pieces) for event in events(part, 4*i)]
     guide = full.prepare_reference(request(length=16, style=style)).reference
     sliced = [split.prepare_reference(request(start, style=style)).reference for start in range(0, 16, 4)]
     assert [(round(b, 8), w) for b, w in guide.points] == [(round(4*i+b, 8), w) for i, part in enumerate(sliced) for b, w in part.points]
     if STYLE_BY_ID[style].swing_delay:
         assert any(round(n.beat % 1, 2) == round(.5+STYLE_BY_ID[style].swing_delay, 2)
-                   for n in compose(split, request(16, style=style, conceptuality=0)).phrase.notes)
+                   for n in compose(split, request(16, style=style, variation=0)).phrase.notes)
 
 
 def test_styles_are_distinct_and_guide_contains_the_selected_structural_rhythm():
     signatures = []
     for style in STYLE_BY_ID:
         gen = build_generator(definition()).generator.generate
-        req = request(style=style, conceptuality=0, velocity_ratio=1)
+        req = request(style=style, variation=0, velocity_ratio=1)
         prepared = gen.prepare_reference(req)
         result = compose(gen, req)
         signatures.append(events(result.phrase))
@@ -96,14 +96,14 @@ def test_styles_are_distinct_and_guide_contains_the_selected_structural_rhythm()
 def test_switch_keeps_position_and_other_controls_and_silence_is_explicit():
     gen = build_generator(definition()).generator.generate
     compose(gen, request(style='house_classic'))
-    plan = compose(gen, request(4, style='boom_bap_90s', variation=.25, conceptuality=.7))
+    plan = compose(gen, request(4, style='boom_bap_90s', variation=.25))
     assert gen.position == 8 and plan.decision['logical_start'] == 4
-    assert gen.settings['variation'] == .7 and gen.settings['conceptuality'] == 1
+    assert gen.settings['variation'] == .7 and 'conceptuality' not in gen.settings
     spec = definition()
     spec['development'] = ['statement', 'silence']
     gen = build_generator(spec).generator.generate
-    assert not compose(gen, request(8, style='house_classic', conceptuality=1)).phrase.notes
-    assert compose(gen, request(12, style='house_classic', conceptuality=0)).phrase.notes
+    assert not compose(gen, request(4, style='house_classic', variation=1)).phrase.notes
+    assert compose(gen, request(8, style='house_classic', variation=0)).phrase.notes
 
 
 def test_profiles_have_finite_consistent_events_without_unintended_duplicates():
@@ -119,8 +119,8 @@ def test_style_vocabulary_evolves_and_zero_variation_fixes_the_figure():
         varied, fixed = [], []
         a, b = build_generator(definition()).generator.generate, build_generator(definition()).generator.generate
         for start in range(0, 128, 4):
-            varied.append(tuple(events(compose(a, request(start, style=style, conceptuality=0)).phrase)))
-            fixed.append(tuple(events(compose(b, request(start, style=style, conceptuality=0, variation=0)).phrase)))
+            varied.append(tuple(events(compose(a, request(start, style=style)).phrase)))
+            fixed.append(tuple(events(compose(b, request(start, style=style, variation=0)).phrase)))
         assert len(set(varied)) >= 3
         assert len(set(fixed)) == 1
         assert any(p == 42 for _, p, _ in events(compose(a, request(128, style=style, silent=True)).phrase))
@@ -130,7 +130,7 @@ def test_transition_interpolates_common_anchors_swing_and_redirects_from_current
     from desnivel.music.percussion.styles import transition_events
     gen = build_generator(definition()).generator.generate
     compose(gen, request(style='house_classic', variation=0))
-    req = request(4, style='boom_bap_90s', conceptuality=0, variation=0, velocity_ratio=1)
+    req = request(4, style='boom_bap_90s', variation=0, velocity_ratio=1)
     prepared = gen.prepare_reference(req)
     # Preparare o scartare un tentativo non cambia lo stato accettato.
     assert gen.style_transition.target == 'house_classic'
@@ -157,9 +157,9 @@ def test_transition_interpolates_common_anchors_swing_and_redirects_from_current
 def test_transition_is_independent_of_window_partition_and_zero_is_immediate():
     a, b = build_generator(definition()).generator.generate, build_generator(definition()).generator.generate
     for gen in (a, b):
-        compose(gen, request(style='house_classic', conceptuality=0))
-    whole = compose(a, request(4, length=16, style='boom_bap_90s', conceptuality=0)).phrase
-    pieces = [compose(b, request(start, style='boom_bap_90s', conceptuality=0)).phrase for start in range(4, 20, 4)]
+        compose(gen, request(style='house_classic', variation=0))
+    whole = compose(a, request(4, length=16, style='boom_bap_90s', variation=0)).phrase
+    pieces = [compose(b, request(start, style='boom_bap_90s', variation=0)).phrase for start in range(4, 20, 4)]
     assert events(whole) == [e for i, part in enumerate(pieces) for e in events(part, 4*i)]
     instant = compose(b, request(20, style='breakbeat_house', transition_beats=0))
     assert instant.decision['style_weights'] == {'breakbeat_house': 1}
@@ -222,3 +222,43 @@ def test_old_drum_presets_acquire_transition_duration_without_rewriting_files(tm
     assert voice.presets['old']['transition_beats'] == 16
     assert voice.preset_migrations == {'old': {'transition_beats': 16}}
     assert path.read_text() == contents
+
+
+@pytest.mark.parametrize('style', STYLE_BY_ID)
+def test_single_variation_axis_has_audible_development_within_four_bars(style):
+    spec = definition()
+    spec['development'] = ['statement', 'subtract', 'displace', 'accent']
+    spec['settings']['answer_clearance_beats'] = 0
+    results = []
+    for amount in (0, .5, 1):
+        gen = build_generator(spec).generator.generate
+        plan = compose(gen, request(length=16, style=style, variation=amount))
+        results.append(events(plan.phrase))
+        assert plan.decision['variation'] == amount
+        assert 'conceptuality' not in plan.decision
+    assert results[0] != results[1] != results[2]
+    assert results[0] != results[2]
+    # Lo sviluppo non attende la durata del materiale legacy.
+    gen = build_generator(spec).generator.generate
+    compose(gen, request(style=style, variation=1))
+    plan = compose(gen, request(4, style=style, variation=1))
+    assert plan.decision['cycles'] == [{'cycle': 1, 'operation': 'subtract'}]
+    assert not any(n.pitch == 42 for n in plan.phrase.notes)
+
+
+def test_intermediate_variation_keeps_the_displaced_hat_figure_coherent(monkeypatch):
+    # Isola l'accompagnamento dai colpi di risposta che possono coincidere con esso.
+    style = STYLE_BY_ID['house_classic']
+    monkeypatch.setitem(STYLE_BY_ID, style.id, replace(style, variants=tuple(
+        tuple(hit for hit in figure if not hit.response) for figure in style.variants)))
+    spec = definition()
+    spec['development'] = ['statement', 'displace']
+    gen = build_generator(spec).generator.generate
+    for start in range(0, 32, 4):
+        plan = compose(gen, request(start, style='house_classic', variation=.5,
+                                    displacement_beats=.25, velocity_ratio=1))
+        hats = [n for n in plan.phrase.notes if n.pitch == 42 and n.velocity > 50]
+        assert hats
+        # La scelta conserva l'intera figura di piatti oppure la sposta:
+        # non combina casualmente attacchi originali e spostati della stessa figura.
+        assert {round(n.beat % 1, 8) for n in hats} in ({.5}, {.25}, {.75})

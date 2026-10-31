@@ -3,6 +3,8 @@
 Stato: selezione nominale implementata con i profili House classica,
 Boom bap e Breakbeat house. Configurazione e comportamento effettivi sono
 descritti in [Selezione dello stile percussivo](../STILI-PERCUSSIVI.md).
+Le parti di design che usano `conceptuality` sono superate dal controllo
+unico `variation` documentato nel sistema corrente.
 Questo documento conserva il design del catalogo e la proposta ancora
 non implementata della combinazione di influenze da 0 a 1.
 Memoria dei gesti, relazioni fra voci e accettazione dei piani sono definite

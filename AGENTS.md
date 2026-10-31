@@ -7,6 +7,7 @@
 
 ## Scrittura del codice e architettura
 - Codice semplice, modulare e leggibile, senza astrazioni premature, workaround o fallback silenziosi. Correggere le cause dei problemi.
+- Non introdurre ridondanze tra parametri, configurazioni, preset o logiche. Ogni controllo deve avere una responsabilità distinta e un effetto verificabile; prima di aggiungerlo, verificare ciò che esiste e riutilizzarlo o consolidarlo quando copre lo stesso scopo. I preset devono rappresentare combinazioni utili di controlli, non duplicare singoli valori già esposti. Conservare le distinzioni che hanno responsabilità musicali effettivamente diverse.
 - Separare le responsabilità:
   - `src/desnivel/trip/`: lettura GPX e metriche neutre.
   - `src/desnivel/music/`: composizione multivoce agnostica, con una cartella per voce.

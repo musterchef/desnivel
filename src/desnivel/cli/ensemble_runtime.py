@@ -98,7 +98,8 @@ class EnsembleRuntime:
             bridge.voices[name] = DeviceVoice.for_session(
                 self.session, name, lambda: self.progress,
                 controls=registered.controls, values=registered.values, presets=registered.presets,
-                describe_controls=describe_controls, preset_defaults=registered.preset_defaults)
+                describe_controls=describe_controls, preset_defaults=registered.preset_defaults,
+                migrate_preset=registered.migrate_preset)
         self.state = 'waiting_for_transport'
 
     @property

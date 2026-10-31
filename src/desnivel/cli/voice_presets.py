@@ -15,6 +15,7 @@ def connect_preset_library(library, voices):
                 raise ValueError('nome del preset non valido')
             if not isinstance(values, dict):
                 raise ValueError(f'{voice}/{name}: controlli del preset incompatibili con la voce')
+            values, changes = spec.migrate_preset(values) if spec.migrate_preset else (values, {})
             missing = spec.controls.keys()-values.keys()
             if values.keys()-spec.controls.keys() or missing-spec.preset_defaults.keys():
                 raise ValueError(f'{voice}/{name}: controlli del preset incompatibili con la voce')
@@ -22,8 +23,8 @@ def connect_preset_library(library, voices):
             for key, value in values.items():
                 spec.controls[key].validate(value)
             migrated[name] = values
-            if missing:
-                spec.preset_migrations[name] = {key: values[key] for key in sorted(missing)}
+            if missing or changes:
+                spec.preset_migrations[name] = {**changes, **{key: values[key] for key in sorted(missing)}}
         spec.presets.update(migrated)
         spec.editable_presets = set(custom)
         spec.save_preset = partial(library.save, voice)

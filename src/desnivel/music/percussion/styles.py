@@ -31,7 +31,7 @@ class DrumStyle:
             return 0
         phrase, bar = divmod(cycle, 4)
         rng = random.Random(f'{self.id}:{seed}:{phrase}')
-        main = phrase % 2
+        main = phrase % 2 if rng.random() < variation else 0
         if bar == 0 or rng.random() > variation:
             return main
         choices = (2, 3) if bar == 3 else (1-main, 2)

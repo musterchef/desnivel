@@ -1,6 +1,7 @@
 """Registro esplicito dei generatori e dei controlli esposti nella sessione."""
 from dataclasses import asdict, dataclass, field
 
+from desnivel.adapters.percussion_presets import migrate_preset as migrate_percussion_preset
 from desnivel.adapters.voice_device import Control, ChoiceControl
 from desnivel.cli.ensemble import Generator
 from desnivel.music.melodic.generator import MotifGenerator, ROLES
@@ -20,6 +21,7 @@ class RegisteredGenerator:
     reset: object = None
     describe_controls: object = None
     preset_defaults: dict = field(default_factory=dict)
+    migrate_preset: object = None
 
 
 def build_generator(spec):
@@ -51,7 +53,7 @@ def build_generator(spec):
         compose = PercussionPhraseGenerator(spec['lanes'], spec['material'], spec['anchor_beats'],
                                            spec['development'], spec['interaction'], spec.get('settings'),
                                            standard_material=spec.get('standard_material'), style_lanes=spec.get('style_lanes'))
-        controls = {'style': ChoiceControl(STYLE_OPTIONS), 'transition_beats': Control(0, 128), 'conceptuality': Control(0, 1), 'variation': Control(0, 1), 'displacement_beats': Control(0, 1),
+        controls = {'style': ChoiceControl(STYLE_OPTIONS), 'transition_beats': Control(0, 128), 'variation': Control(0, 1), 'displacement_beats': Control(0, 1),
                     'velocity_ratio': Control(.05, 1), 'gate_beats': Control(.01, 1),
                     'seed': Control(0, 2147483647, True), 'support_tolerance_beats': Control(0, 1),
                     'answer_clearance_beats': Control(0, 1)}
@@ -87,4 +89,5 @@ def build_generator(spec):
                                          getattr(compose, 'accept_reference', None)), controls,
                                initial, presets, getattr(compose, 'reset', None),
                                getattr(compose, 'describe_controls', None),
-                               {'groove_follow': 0.} if rhythmic_roles else {'style': 'none', 'transition_beats': 16.} if kind == 'percussion_phrase' else {})
+                               {'groove_follow': 0.} if rhythmic_roles else {'style': 'none', 'transition_beats': 16.} if kind == 'percussion_phrase' else {},
+                               migrate_percussion_preset if kind == 'percussion_phrase' else None)

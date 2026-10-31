@@ -130,14 +130,14 @@ def test_style_selection_updates_guide_and_survives_preset_save_reload(tmp_path)
     from desnivel.cli.voice_presets import connect_preset_library
     from desnivel.sinks.voice_presets import VoicePresetLibrary
     r = runtime()
-    r.session.set_parameters('voice_04', {'variation': .23, 'conceptuality': .8})
+    r.session.set_parameters('voice_04', {'variation': .23})
     path = tmp_path / 'presets.json'
     connect_preset_library(VoicePresetLibrary(path), r.bridge.voices)
     base = dict(version=1, voice='voice_04', instance='device', reply_port=9104)
     r.bridge.handle(dict(base, serial=1, action='hello'))
     r.bridge.handle(dict(base, serial=2, action='parameter', parameter='style', value='house_classic'))
     values = r.session.parameters_at('voice_04', 0)
-    assert values['style'] == 'house_classic' and values['variation'] == .23 and values['conceptuality'] == .8
+    assert values['style'] == 'house_classic' and values['variation'] == .23
     assert r.bridge.status()['voice_04']['controls']['style']['choices']
     r.session.plan(0, 0, 4)
     house = r.session.coordinator.last_plan['rhythm']
@@ -204,20 +204,20 @@ def test_single_controls_keep_section_changes_and_other_manual_overrides():
     assert r.session.parameters_at('voice_01', .75) == families['descent']['assignments']['voice_01']['parameters']
 
 
-def test_conceptuality_remains_continuous_without_selecting_a_preset():
+def test_variation_remains_continuous_without_selecting_a_preset():
     r = runtime()
     base = dict(version=1, voice='voice_04', instance='device', reply_port=9104)
     r.bridge.handle(dict(base, serial=1, action='hello'))
     r.bridge.handle(dict(base, serial=2, action='parameter', parameter='style', value='house_classic'))
-    r.bridge.handle(dict(base, serial=3, action='parameter', parameter='conceptuality', value=.37))
+    r.bridge.handle(dict(base, serial=3, action='parameter', parameter='variation', value=.37))
     state = r.bridge.status()['voice_04']
-    control = state['controls']['conceptuality']
-    assert control['label'] == 'Concettualità' and control['value'] == .37
+    control = state['controls']['variation']
+    assert control['label'] == 'Variazione' and control['value'] == .37
     assert control['minimum'] == 0 and control['maximum'] == 1 and not control['integer']
     assert 'choices' not in control and state['preset'] is None
     r.session.plan(0, 0, 4)
     composition = r.session.coordinator.last_plan['voices']['voice_04']['composition']
-    assert composition['style'] == 'house_classic' and composition['conceptuality'] == .37
+    assert composition['style'] == 'house_classic' and composition['variation'] == .37
 
 
 def test_main_configuration_connects_rhythm_and_historical_dialogue():
@@ -230,3 +230,38 @@ def test_main_configuration_connects_rhythm_and_historical_dialogue():
     plan = r.session.coordinator.last_plan
     assert plan['rhythm']['points']
     assert plan['voices']['voice_01']['relations'][0]['status'] == 'resolved'
+
+
+@pytest.mark.parametrize('conceptuality,variation,expected', [(0, .7, 0), (.5, .8, .4), (1, .7, .7)])
+def test_legacy_drum_preset_migration_is_explicit_and_preserves_the_file(tmp_path, conceptuality, variation, expected):
+    from desnivel.cli.voice_presets import connect_preset_library
+    from desnivel.sinks.voice_presets import VoicePresetLibrary
+    r = runtime()
+    values = {**r.bridge.voices['voice_04'].values, 'conceptuality': conceptuality, 'variation': variation}
+    path = tmp_path/'old.json'
+    text = json.dumps({'version': 1, 'voices': {'voice_04': {'saved': values}}})
+    path.write_text(text)
+    connect_preset_library(VoicePresetLibrary(path), r.bridge.voices)
+    spec = r.bridge.voices['voice_04']
+    assert spec.presets['saved']['variation'] == expected
+    assert 'conceptuality' not in spec.presets['saved']
+    assert spec.preset_migrations['saved'] == {
+        'removed_controls': {'conceptuality': conceptuality},
+        'variation': {'previous': variation, 'value': expected}}
+    assert path.read_text() == text
+    base = dict(version=1, voice='voice_04', instance='device', reply_port=9104)
+    r.bridge.handle(dict(base, serial=1, action='hello'))
+    r.bridge.handle(dict(base, serial=2, action='preset', preset='saved'))
+    assert r.session.parameters_at('voice_04', 0)['variation'] == expected
+
+
+@pytest.mark.parametrize('field,value', [('conceptuality', 1.1), ('conceptuality', True), ('variation', -.1)])
+def test_legacy_drum_preset_migration_rejects_invalid_values(tmp_path, field, value):
+    from desnivel.cli.voice_presets import connect_preset_library
+    from desnivel.sinks.voice_presets import VoicePresetLibrary
+    r = runtime()
+    values = {**r.bridge.voices['voice_04'].values, 'conceptuality': .5, field: value}
+    path = tmp_path/'invalid.json'
+    path.write_text(json.dumps({'version': 1, 'voices': {'voice_04': {'saved': values}}}))
+    with pytest.raises(ValueError, match='fuori intervallo'):
+        connect_preset_library(VoicePresetLibrary(path), r.bridge.voices)

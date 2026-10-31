@@ -117,6 +117,8 @@ def test_texture_switch_uses_coordinator_source_presence_and_existing_destinatio
 
 def test_internal_band_change_keeps_same_context_and_phrase_development(direction):
     runtime, bridge, sent = make_runtime(direction)
+    # Isola l'interazione completa dalla figura base ammessa ai valori intermedi.
+    runtime.session.set_parameter('voice_04', 'variation', 1)
     serial = 0
 
     def receive(voice, beat):

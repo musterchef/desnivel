@@ -348,30 +348,7 @@
         "gate_beats": 0.1,
         "seed": 7,
         "support_tolerance_beats": 0.5,
-        "answer_clearance_beats": 0.25,
-        "conceptuality": 1.0
-      },
-      "presets": {
-        "statement": {
-          "variation": 0
-        },
-        "displaced": {
-          "variation": 0.7,
-          "displacement_beats": 0.25
-        },
-        "reduced": {
-          "variation": 1,
-          "displacement_beats": 0
-        },
-        "regular": {
-          "conceptuality": 0
-        },
-        "hybrid": {
-          "conceptuality": 0.5
-        },
-        "conceptual": {
-          "conceptuality": 1
-        }
+        "answer_clearance_beats": 0.25
       },
       "interaction": {
         "support_source": "voice_02",
