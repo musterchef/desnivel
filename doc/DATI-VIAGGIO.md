@@ -4,7 +4,9 @@ Il modulo `desnivel.trip` legge FIT e GPX, seleziona i tratti osservati e
 ricampiona ciascun tratto a intervalli regolari. Il comando
 `desnivel.cli.stream_metrics` pubblica le grandezze fisiche via OSC.
 
-Il FIT fornisce gli eventi timer di pausa e ripresa. Un GPX può utilizzare
+Il FIT usa gli eventi timer di pausa e ripresa. Per file senza questi eventi,
+`ensemble --infer-fit-pauses` abilita esplicitamente la stima delle pause dai
+campioni GPS. Un GPX può utilizzare
 gli eventi del FIT corrispondente tramite `--timing-reference`; senza
 riferimento le soste sono stimate dalle coordinate. Lettura, provenienza
 dei canali e criteri sono descritti in

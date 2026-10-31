@@ -27,11 +27,16 @@ temporale, anche quando manca una posizione in quel secondo.
 
 Gli eventi timer `start` e `stop` delimitano i tratti registrati. I campioni
 fuori da questi intervalli sono esclusi prima del filtro GPS; i tratti
-conservati non attraversano una pausa. Il FIT deve contenere almeno un
-intervallo chiuso: eventi mancanti, timer aperto o eventi non supportati
+conservati non attraversano una pausa. Per impostazione predefinita il FIT
+deve contenere almeno un intervallo chiuso: eventi mancanti, timer aperto o eventi non supportati
 producono un errore. Start ripetuti e stop a timer già fermo vengono
-registrati nella diagnostica. Il timer attivo indica registrazione non
-in pausa, non una verifica indipendente del movimento.
+registrati nella diagnostica. In `ensemble`, `--infer-fit-pauses` consente
+la lettura di un FIT privo di eventi timer usando la stima GPS delle pause.
+Il loader espone la stessa scelta con `infer_missing_fit_timer=True`.
+L'opzione non accetta timer incompleti e non si applica al FIT usato come
+`timing_reference`. La provenienza risulta `gps_inference`; durata timer e
+intervalli restano assenti, mentre il riepilogo dichiarato viene conservato.
+Il timer attivo indica registrazione non in pausa, non una verifica indipendente del movimento.
 
 `Track.metadata.source_recording` conserva riepiloghi di sessione, eventi,
 intervalli del timer e diagnostica. Il report distingue:

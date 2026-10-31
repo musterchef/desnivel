@@ -169,3 +169,22 @@ def test_analysis_command_accepts_fit_and_reports_timer_provenance(tmp_path):
     assert data['travel_selection']['observed_duration_s'] == 4
     assert data['source_recording']['declared_timer_duration_s'] == 4
     assert 'timer FIT' in html.read_text()
+
+
+def test_missing_fit_timer_can_explicitly_use_gps_pause_inference(tmp_path):
+    path = write_fit(tmp_path/'trip.fit', events=[], records=[(i, i*10) for i in range(8)], timer=3)
+    track = load_track(path, infer_missing_fit_timer=True)
+    recording = track.metadata['source_recording']
+    assert recording['timer_intervals'] is None
+    assert recording['timer_duration_s'] is None
+    assert recording['declared_timer_duration_s'] == 3
+    assert 'timer_duration_difference_s' not in recording
+    assert recording['timer_notes'] == [{'reason': 'missing_timer_gps_inference_requested'}]
+    assert track.metadata['travel_selection']['selection_source'] == 'gps_inference'
+    assert track.duration_s == 7
+
+
+def test_missing_timer_option_preserves_real_events_and_rejects_an_incomplete_timer(tmp_path):
+    assert load_track(write_fit(tmp_path/'valid.fit'), infer_missing_fit_timer=True).duration_s == 4
+    with pytest.raises(ValueError, match='ancora aperto'):
+        load_track(write_fit(tmp_path/'open.fit', events=[(0, 0)]), infer_missing_fit_timer=True)

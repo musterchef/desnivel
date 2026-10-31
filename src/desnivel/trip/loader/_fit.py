@@ -37,7 +37,7 @@ def timer_intervals(events):
     return intervals, notes
 
 
-def parse_fit(path):
+def parse_fit(path, *, infer_missing_timer=False):
     """Unisce i messaggi record nello stesso secondo, conservando l'ultimo valore.
 
     Non trasporta valori da un secondo all'altro. I record senza coordinate
@@ -81,7 +81,10 @@ def parse_fit(path):
                                                  'total_ascent', 'total_descent', 'autopause_enabled')})
     except fitdecode.FitError as error:
         raise ValueError(f'FIT non valido: {error}') from error
-    intervals, notes = timer_intervals(events)
+    if not events and infer_missing_timer:
+        intervals, notes = None, [{'reason': 'missing_timer_gps_inference_requested'}]
+    else:
+        intervals, notes = timer_intervals(events)
     # FIT trasporta messaggi: l'ordine nel contenitore può differire da quello
     # delle misure. L'asse usa gli orari registrati, senza modificarli.
     rows = [(index, time, row) for index, (time, row) in enumerate(sorted(records.items()), 1)
@@ -103,12 +106,13 @@ def parse_fit(path):
            'gps_accuracy_m': channel('gps_accuracy')}
     metadata = {'format': 'fit', 'message_counts': dict(counts), 'sessions': sessions,
                 'timer_events': events, 'timer_intervals': intervals, 'timer_notes': notes,
-                'timer_duration_s': sum(b-a for a, b in intervals),
+                'timer_duration_s': sum(b-a for a, b in intervals) if intervals is not None else None,
                 'record_timestamp_conflicts': dict(conflicts),
                 'out_of_order_records': order_notes,
                 'record_timestamps_without_coordinates': len(records)-len(rows)}
     declared = [s['total_timer_time'] for s in sessions if 'total_timer_time' in s]
     if len(declared) == len(sessions) and declared:
         metadata['declared_timer_duration_s'] = sum(declared)
-        metadata['timer_duration_difference_s'] = metadata['timer_duration_s']-sum(declared)
+        if intervals is not None:
+            metadata['timer_duration_difference_s'] = metadata['timer_duration_s']-sum(declared)
     return raw, metadata

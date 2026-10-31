@@ -211,6 +211,8 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=main.__doc__)
     from desnivel.cli.track_source import add_track_arguments
     add_track_arguments(parser)
+    parser.add_argument('--infer-fit-pauses', action='store_true',
+                        help='Se il FIT non contiene eventi timer, stima le pause dai campioni GPS.')
     parser.add_argument('--config', type=Path, required=True)
     direction_options = parser.add_mutually_exclusive_group()
     direction_options.add_argument('--direction', type=Path,
@@ -248,7 +250,8 @@ def main(argv=None):
         speed = args.speed if args.speed is not None else 1.
         if not math.isfinite(speed) or speed <= 0 or not 1024 <= args.port <= 65535:
             raise ValueError('velocità positiva e porta tra 1024 e 65535 richieste')
-        track = load_track(args.gpx, timing_reference=args.timing_reference)
+        track = load_track(args.gpx, timing_reference=args.timing_reference,
+                           infer_missing_fit_timer=args.infer_fit_pauses)
         if direction is not None:
             from desnivel.cli.trip_direction import prepare_trip_config
             config = prepare_trip_config(track, config, direction)
@@ -262,6 +265,9 @@ def main(argv=None):
         from desnivel.cli.voice_presets import connect_preset_library
         library = VoicePresetLibrary(args.voice_presets or args.config.with_suffix('.voice-presets.json'))
         connect_preset_library(library, bridge.voices)
+        recording = track.metadata.get('source_recording', {})
+        if recording.get('format') == 'fit' and recording.get('timer_intervals') is None:
+            print('FIT senza eventi timer: pause stimate dai campioni GPS (--infer-fit-pauses).', flush=True)
         if runtime.trip_music:
             music = runtime.trip_music
             print(f"Direzione GPX: {music['palette']} · pendenza assoluta media "

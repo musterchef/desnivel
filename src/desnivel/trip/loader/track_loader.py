@@ -21,6 +21,7 @@ def load_track(
     stage_id: str | None = None,
     *,
     timing_reference: str | Path | None = None,
+    infer_missing_fit_timer: bool = False,
 ) -> Track:
     """Carica FIT o GPX, escludendo le pause prima di derivare i canali.
 
@@ -39,12 +40,14 @@ def load_track(
         stage_id: identificatore tappa; se ``None`` viene dedotto dal nome file.
         timing_reference: FIT corrispondente per usare i suoi eventi timer
             durante la lettura di un GPX; richiede copertura temporale completa.
+        infer_missing_fit_timer: consente la stima GPS delle pause quando
+            il FIT principale non contiene eventi timer; il riferimento resta rigoroso.
 
     Returns:
         `Track` con asse temporale uniforme e samples derivati.
     """
     gpx_path = Path(gpx_path)
-    raw, source = read_source(gpx_path)
+    raw, source = read_source(gpx_path, infer_missing_fit_timer=infer_missing_fit_timer)
     if timing_reference is not None:
         if source['format'] != 'gpx' or Path(timing_reference).suffix.lower() != '.fit':
             raise ValueError('il riferimento timer richiede una sorgente GPX e un riferimento FIT')
