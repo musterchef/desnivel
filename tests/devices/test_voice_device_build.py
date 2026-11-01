@@ -92,3 +92,16 @@ def test_boolean_parameter_uses_the_common_value_input():
     assert (['parameter_toggle', 0], ['toggle_prefix', 0]) in paths
     assert boxes['toggle_prefix']['text'] == 'prepend value'
     assert (['toggle_prefix', 0], ['interface', 0]) in paths
+
+
+def test_manual_mode_has_a_visible_switch_and_confirmed_status():
+    patch = json.loads((ROOT / 'm4l/desnivel_voice.maxpat').read_text())['patcher']
+    boxes = {entry['box']['id']: entry['box'] for entry in patch['boxes']}
+    for name in ('manual_toggle', 'manual_display'):
+        assert boxes[name]['varname'] == name
+        assert boxes[name]['presentation'] == 1
+    assert boxes['manual_toggle']['maxclass'] == 'toggle'
+    assert boxes['manual_prefix']['text'] == 'prepend manual'
+    paths = [(line['patchline']['source'], line['patchline']['destination']) for line in patch['lines']]
+    assert (['manual_toggle', 0], ['manual_prefix', 0]) in paths
+    assert (['manual_prefix', 0], ['interface', 0]) in paths

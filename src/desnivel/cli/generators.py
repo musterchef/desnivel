@@ -105,7 +105,7 @@ def build_generator(spec):
     return RegisteredGenerator(Generator(compose, roles, validate, describe,
                                          compose.stage, compose.accept,
                                          getattr(compose, 'prepare_reference', None), rhythmic_roles,
-                                         getattr(compose, 'accept_reference', None)), controls,
+                                         getattr(compose, 'accept_reference', None), initial), controls,
                                initial, presets, getattr(compose, 'reset', None),
                                getattr(compose, 'describe_controls', None),
                                {'groove_follow': 0.} if rhythmic_roles else {'style': 'none', 'transition_beats': 16.} if kind == 'percussion_phrase' else {},

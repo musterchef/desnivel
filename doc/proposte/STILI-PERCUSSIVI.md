@@ -157,6 +157,12 @@ prevale sul calcolo automatico; l'override manuale prevale su entrambi.
 L'origine del valore deve risultare nello stato. Con sezioni manuali si
 usano i valori configurati. Questa mappatura non è attualmente implementata.
 
+La gestione automatica e il rilascio degli interventi utente seguono il
+[contratto della direzione adattiva](DIREZIONE-ADATTIVA.md), implementato
+per il controllo manuale. Il flag `manual` riguarda un singolo parametro;
+gli altri mantengono la propria modalità. Le strategie adattive restano
+da implementare; lo stile rimane una scelta esplicita.
+
 ## 6. Transizioni e influenze multiple
 
 La generazione interpola preferenze compatibili e conserva appoggi comuni.

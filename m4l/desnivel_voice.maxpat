@@ -1408,6 +1408,81 @@
           ],
           "text": "prepend choice"
         }
+      },
+      {
+        "box": {
+          "id": "manual_toggle",
+          "maxclass": "toggle",
+          "varname": "manual_toggle",
+          "patching_rect": [
+            900,
+            1650,
+            20,
+            20
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            650,
+            35,
+            20,
+            20
+          ],
+          "annotation": "Manual del parametro selezionato. Acceso: mantiene il valore. Spento: segue gli assetti automatici delle sezioni."
+        }
+      },
+      {
+        "box": {
+          "id": "manual_label",
+          "maxclass": "comment",
+          "text": "Manual",
+          "patching_rect": [
+            930,
+            1650,
+            48,
+            20
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            674,
+            35,
+            48,
+            20
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "manual_display",
+          "maxclass": "comment",
+          "varname": "manual_display",
+          "text": "\u2014",
+          "patching_rect": [
+            990,
+            1650,
+            64,
+            20
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            725,
+            35,
+            63,
+            20
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "manual_prefix",
+          "maxclass": "newobj",
+          "text": "prepend manual",
+          "patching_rect": [
+            900,
+            1690,
+            110,
+            22
+          ]
+        }
       }
     ],
     "lines": [
@@ -2471,6 +2546,30 @@
         "patchline": {
           "source": [
             "choice_prefix",
+            0
+          ],
+          "destination": [
+            "interface",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "manual_toggle",
+            0
+          ],
+          "destination": [
+            "manual_prefix",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "manual_prefix",
             0
           ],
           "destination": [

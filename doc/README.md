@@ -45,6 +45,7 @@ Guida alla documentazione di **Desnivel**, organizzata per aree tematiche.
 Materiale di progettazione separato dalla documentazione del sistema attuale.
 
 - [Revisione dei controlli](proposte/REVISIONE-CONTROLLI.md): ridondanze verificate negli altri device e interventi proposti.
+- [Direzione adattiva](proposte/DIREZIONE-ADATTIVA.md): regole per l'adattamento delle voci; controllo AUTO/MANUAL per parametro disponibile, strategie adattive da implementare.
 - [Ruoli musicali e organico](proposte/RUOLI-MUSICALI.md): impostazione condivisa, vocabolario proposto e decisioni aperte.
 - [Catalogo e assegnazioni per sezione](proposte/CATALOGO-E-SEZIONI.md): bozza JSON di vocabolario, strumenti e organico manuale.
 - [Plancia globale](proposte/PLANCIA.md): informazioni da mostrare e decisioni aperte sull’interfaccia.

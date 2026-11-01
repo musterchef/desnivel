@@ -45,6 +45,7 @@ La cartella generata contiene il device e i due script JavaScript. Conservare i 
 - **Collega**: legge identificativo e porte e apre il collegamento. Se già collegato, rinnova la richiesta mantenendo identità e piani della stessa istanza.
 - **Role**: menu dei ruoli supportati dal generatore collegato. `Follow section` segue il ruolo assegnato alla sezione; scegliendo un ruolo si passa alla modalità manuale. Il ruolo effettivo è mostrato in alto; per una parte esclusa dall’organico sono mostrati il prossimo ingresso configurato (`enters at ...%`) oppure `not in this section` se non sono previsti altri ingressi. Senza un collegamento ai ruoli della sessione, il menu mostra `No roles available`.
 - **Preset**: preset compositivi dichiarati dal componente Python.
+- **Manual**: switch del parametro selezionato nel menu, con indicatore **AUTO** o **MANUAL** confermato da Python. Modificare un valore attiva soltanto il suo flag. Spegnere lo switch restituisce quel parametro agli assetti delle sezioni, conservando gli altri valori manuali. Un preset rende manuali i valori che applica. Senza sessione collegata l'indicatore mostra `—`.
 - **Parametro**, valore e cursore: modifica di uno dei controlli esposti da Python. Il cursore rispetta intervallo e vincolo intero; il campo numerico permette l’immissione precisa. I limiti sono mostrati accanto al cursore.
 - I controlli binari mostrano uno switch al posto del cursore. Quelli senza effetto nel ruolo o nella modalità corrente riportano **[inattivo]** nel menu; la motivazione è nell'annotazione del controllo. Restano modificabili e conservano il valore.
 - **Salva nuovo**: salva i valori effettivi della voce con il nome scritto nel campo accanto. **Aggiorna** sostituisce un preset utente già presente con quel nome. I preset base della configurazione sono protetti.
@@ -144,14 +145,22 @@ controlli. Le regole sono definite dai generatori e ricalcolate a ogni
 risposta di stato; il device mantiene chiavi e valori indipendenti dalle
 etichette visualizzate.
 
-`EnsembleSession.set_parameters(voice, values)` applica valori manuali alle prossime frasi della voce. Questi prevalgono sui parametri di sezione e persistono tra sezioni; `clear_parameters(voice)` ripristina i valori delle sezioni. La validazione dei valori è eseguita dal componente che espone i controlli.
+`EnsembleSession.set_parameter(voice, name, value)` modifica un solo
+override, conservando gli altri e i parametri guidati dalle sezioni.
+`set_parameters(voice, values)` sostituisce l'insieme degli override,
+come avviene selezionando un preset. La validazione precede ogni modifica.
 
-`EnsembleSession.set_parameter(voice, name, value)` modifica soltanto
-l'override indicato, conservando gli altri. `DeviceVoice.for_session`
-collega a questa funzione il callback `apply_parameter`: una modifica
-singola non rende manuali i controlli ancora guidati dalle sezioni.
-La selezione di un preset continua a passare tutti i valori a
-`set_parameters`, sostituendo l'insieme degli override della voce.
+`manual(voice, name)` legge la modalità del parametro.
+`set_manual(voice, name, True, progress=...)` mantiene il suo valore
+corrente; `False` elimina soltanto quel vincolo manuale.
+`clear_parameters(voice)` elimina tutti gli override della voce.
+
+Il ritorno ai valori di sezione avviene dalla prossima finestra da
+pianificare, senza interpolazione. L'adattamento continuo al dialogo e il
+rilascio graduale sono descritti nel
+[contratto della direzione adattiva](proposte/DIREZIONE-ADATTIVA.md) e
+restano da implementare. Ruolo, presenza, contesto armonico e memoria
+compositiva continuano a funzionare in entrambe le modalità.
 
 `DeviceVoice.for_session(session, voice, progress, **controls)` collega il dispositivo alla sessione: `progress` è una funzione del chiamante che restituisce la progressione corrente della tappa. Il collegamento espone i ruoli dichiarati dal generatore, legge il ruolo della sezione e applica la scelta manuale tramite `EnsembleSession.set_role`.
 
@@ -174,12 +183,16 @@ numerici. I payload JSON variabili non diventano simboli Max a ogni
 aggiornamento del trasporto. Il server limita il JSON in uscita a 12.000
 byte per mantenere il pacchetto OSC sotto il limite UDP.
 
-Le richieste contengono voce, identificativo dell'istanza, seriale, porta di risposta e azione (`hello`, `transport`, `role`, `preset`, `parameter`, `presence`, `save_preset`, `panic`). L’azione `role` contiene l’identificativo del ruolo manuale oppure `null` per seguire la sezione. Lo stato restituisce ruoli supportati, ruolo effettivo, ruolo della sezione, modalità (`section` o `manual`) e stato di attivazione della parte. La lettura del trasporto aggiunge beat, stato di riproduzione e contatore locale delle discontinuità. Le risposte distinguono stato, errore, piano e comando di trasporto.
+Le richieste contengono voce, identificativo dell'istanza, seriale, porta di risposta e azione (`hello`, `transport`, `role`, `preset`, `parameter`, `manual`, `presence`, `save_preset`, `panic`). L’azione `role` contiene l’identificativo del ruolo manuale oppure `null` per seguire la sezione. Lo stato restituisce ruoli supportati, ruolo effettivo, ruolo della sezione, modalità (`section` o `manual`) e stato di attivazione della parte. La lettura del trasporto aggiunge beat, stato di riproduzione e contatore locale delle discontinuità. Le risposte distinguono stato, errore, piano e comando di trasporto.
 `save_preset` contiene nome e flag `overwrite`; il salvataggio acquisisce
 sul server i valori effettivi. Il device dichiara `transport_control` nelle
 richieste; solo l'istanza scelta come sorgente del clock riceve le azioni
 `pause`, `resume` e `restart`, applicate con `live.object` al `live_set`.
 I comandi sono identificati da sessione Python e seriale, per scartare i duplicati.
+
+L'azione `manual` contiene `parameter` e un `value` booleano. Lo stato di
+ogni controllo contiene `manual`, oppure `null` senza sessione collegata.
+Il flag non viene salvato nei preset: appartiene alla sessione Python.
 
 L'azione `presence` contiene `value`, il moltiplicatore manuale da 0 a 10.
 Lo stato della sessione include `presence` con `automatic`, `multiplier`

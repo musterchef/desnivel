@@ -127,9 +127,11 @@ def test_manual_parameters_reflected_in_status_and_applied_to_next_plan():
 
 def test_invalid_controls_do_not_mutate_manual_values():
     runtime, _, _, _, _ = setup()
+    before = runtime.session.parameters_at('voice_01', 0)
     with pytest.raises(ValueError):
         runtime.session.set_parameters('voice_01', {'velocity': 300})
-    assert runtime.session.parameters_at('voice_01', 0) == {}
+    assert runtime.session.parameters_at('voice_01', 0) == before
+    assert not runtime.session.manual('voice_01', 'velocity')
 
 
 def test_control_applicability_tracks_section_role_and_manual_mode():

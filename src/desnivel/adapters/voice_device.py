@@ -74,6 +74,8 @@ class DeviceVoice:
     preset_migrations: dict = field(default_factory=dict)
     apply_parameter: Callable[[str, float | str], None] | None = None
     migrate_preset: Callable | None = None
+    read_manual: Callable[[str], bool] | None = None
+    apply_manual: Callable[[str, bool], None] | None = None
 
     @classmethod
     def for_session(cls, session, voice: str, progress: Callable[[], float], **controls):
@@ -88,6 +90,8 @@ class DeviceVoice:
             role_state=lambda: session.role_state(voice, progress()),
             apply_role=lambda role: session.set_role(voice, role),
             apply_presence=lambda value: session.set_presence_multiplier(voice, value),
+            read_manual=lambda name: session.manual(voice, name),
+            apply_manual=lambda name, value: session.set_manual(voice, name, value, progress=progress()),
             apply_parameter=lambda name, value: session.set_parameter(voice, name, value),
             apply=lambda values: session.set_parameters(voice, values), **controls)
 
@@ -137,7 +141,8 @@ class VoiceDeviceBridge:
                 'can_save_presets': spec.save_preset is not None,
                 'editable_presets': sorted(spec.editable_presets),
                 'preset_migrations': spec.preset_migrations,
-                'controls': {name: {**asdict(control), 'value': values[name], **details.get(name, {})}
+                'controls': {name: {**asdict(control), 'value': values[name], **details.get(name, {}),
+                                    'manual': spec.read_manual(name) if spec.read_manual else None}
                              for name, control in spec.controls.items()}}
 
     def handle(self, message: dict):
@@ -170,7 +175,18 @@ class VoiceDeviceBridge:
         duplicate = serial <= previous['serial']
         if not duplicate:
             spec = self.voices[voice]
-            if action == 'role':
+            if action == 'manual':
+                if spec.apply_manual is None:
+                    raise ValueError('modalità manuale non disponibile senza sessione')
+                if type(message['value']) is not bool:
+                    raise ValueError('manual richiede un booleano')
+                name = message['parameter']
+                if name not in spec.controls:
+                    raise ValueError('parametro sconosciuto')
+                spec.apply_manual(name, message['value'])
+                if not message['value']:
+                    spec.preset = None
+            elif action == 'role':
                 if spec.apply_role is None or spec.role_state is None:
                     raise ValueError('selezione del ruolo non disponibile')
                 role = message['role']

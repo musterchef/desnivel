@@ -181,6 +181,111 @@ def test_unbound_device_cannot_assign_roles():
         bridge.handle(message(2, 'role', role='melody'))
 
 
+def parameter_session(reject=None):
+    from desnivel.cli.ensemble import EnsembleSession, Generator
+    progress = [0.]
+    defaults = dict(velocity=80, activity=.5, seed=7)
+    controls = dict(velocity=Control(1, 127, True), activity=Control(0, 1), seed=Control(0, 100, True))
+    def validate(role, values):
+        for name, value in values.items():
+            controls[name].validate(value)
+        if reject:
+            reject(values)
+    def generate(request):
+        return Phrase(request.length_beats, (Note(0, request.context.root, 1, request.parameters['velocity']),))
+    session = EnsembleSession({
+        'selection_mode': 'manual',
+        'voices': {v: {'generator': 'line', 'destination': v} for v in ('part_a', 'part_b')},
+        'sections': [
+            {'name': 'opening', 'from_progress': 0, 'root': 60, 'scale': 'major',
+             'assignments': {v: {'role': 'melody', 'parameters': {'velocity': 70, 'activity': .3}}
+                             for v in ('part_a', 'part_b')}},
+            {'name': 'middle', 'from_progress': .5, 'root': 62, 'scale': 'minor',
+             'assignments': {v: {'role': 'melody', 'parameters': {'velocity': 100, 'activity': .9, 'seed': 8}}
+                             for v in ('part_a', 'part_b')}}]},
+        {'line': Generator(generate, ('melody',), validate, parameter_defaults=defaults)},
+        {v: lambda *args: None for v in ('part_a', 'part_b')})
+    devices = {v: DeviceVoice.for_session(session, v, lambda: progress[0],
+               controls=controls, values=dict(defaults), presets={'soft': dict(defaults, velocity=50)})
+               for v in ('part_a', 'part_b')}
+    return session, VoiceDeviceBridge(devices, lambda *args: None), progress
+
+
+def test_manual_parameter_leaves_other_controls_automatic_and_releases_independently():
+    session, bridge, progress = parameter_session()
+    state = bridge.handle(message())
+    assert all(c['manual'] is False for c in state['controls'].values())
+    state = bridge.handle(message(2, 'parameter', parameter='velocity', value=60))
+    assert state['controls']['velocity']['manual'] is True
+    assert state['controls']['activity']['manual'] is False
+    progress[0] = .6
+    state = bridge.handle(message(3))
+    assert state['controls']['activity']['value'] == .9
+    assert not session.manual('part_b', 'velocity')
+    assert session.plan(.6, 0, 4)['part_a'].notes[0] == Note(0, 62, 1, 60)
+    bridge.handle(message(4, 'parameter', parameter='seed', value=42))
+    state = bridge.handle(message(5, 'manual', parameter='velocity', value=False))
+    assert state['controls']['velocity']['manual'] is False
+    assert state['controls']['velocity']['value'] == 100
+    assert state['controls']['seed']['manual'] is True
+    assert state['controls']['seed']['value'] == 42
+    assert session.plan(.6, 4, 4)['part_a'].notes[0].velocity == 100
+    bridge.handle(message(2, 'manual', parameter='velocity', value=True))
+    assert not session.manual('part_a', 'velocity')  # Comando superato.
+
+
+def test_explicit_manual_uses_current_section_and_survives_rewind():
+    session, bridge, progress = parameter_session()
+    bridge.handle(message())
+    progress[0] = .6
+    state = bridge.handle(message(2, 'manual', parameter='velocity', value=True))
+    assert state['controls']['velocity']['value'] == 100
+    progress[0] = 0
+    session.coordinator.reset()
+    assert session.manual('part_a', 'velocity')
+    assert session.parameters_at('part_a', 0)['velocity'] == 100
+    assert session.parameters_at('part_a', 0)['activity'] == .3
+    state = bridge.handle(message(3, 'manual', parameter='velocity', value=False))
+    assert state['controls']['velocity']['value'] == 70
+    assert state['controls']['velocity']['manual'] is False
+
+
+def test_invalid_edits_preserve_auto_and_preset_values_can_be_released_individually():
+    session, bridge, _ = parameter_session()
+    bridge.handle(message())
+    for action, extra in [('parameter', dict(parameter='velocity', value=300)),
+                          ('manual', dict(parameter='velocity', value=1)),
+                          ('manual', dict(parameter='missing', value=True))]:
+        with pytest.raises(ValueError):
+            bridge.handle(message(2, action, **extra))
+        assert not session.manual('part_a', 'velocity')
+    state = bridge.handle(message(3, 'preset', preset='soft'))
+    assert all(c['manual'] is True for c in state['controls'].values())
+    state = bridge.handle(message(4, 'manual', parameter='velocity', value=False))
+    assert state['preset'] is None
+    assert state['controls']['velocity']['manual'] is False
+    assert state['controls']['activity']['manual'] is True
+    bridge.handle(message(5))
+    assert session.manual('part_a', 'activity')
+    session.clear_parameters('part_a')
+    assert not session.manual('part_a', 'activity')
+
+
+def test_incompatible_release_keeps_the_previous_manual_values():
+    def reject(values):
+        if values['velocity'] == 70 and values['activity'] == .9:
+            raise ValueError('combinazione incompatibile')
+    session, bridge, _ = parameter_session(reject)
+    bridge.handle(message())
+    bridge.handle(message(2, 'parameter', parameter='velocity', value=60))
+    bridge.handle(message(3, 'parameter', parameter='activity', value=.9))
+    with pytest.raises(ValueError, match='incompatibile'):
+        bridge.handle(message(4, 'manual', parameter='velocity', value=False))
+    assert session.manual('part_a', 'velocity')
+    assert session.parameters_at('part_a', 0)['velocity'] == 60
+    assert session.parameters_at('part_a', 0)['activity'] == .9
+
+
 def test_control_descriptions_follow_values_without_changing_keys_or_presets():
     bridge, _, changes, _ = setup()
     spec = bridge.voices['part_a']

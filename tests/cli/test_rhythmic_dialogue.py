@@ -192,7 +192,7 @@ def test_single_controls_keep_section_changes_and_other_manual_overrides():
     r.bridge.handle(dict(base, serial=1, action='hello'))
     r.bridge.handle(dict(base, serial=2, action='parameter', parameter='velocity', value=46))
     assert r.session.parameters_at('voice_01', .75) == {
-        **families['descent']['assignments']['voice_01']['parameters'], 'velocity': 46}
+        **r.registry['voice_01'].values, **families['descent']['assignments']['voice_01']['parameters'], 'velocity': 46}
     r.bridge.handle(dict(base, serial=3, action='parameter', parameter='articulation', value=.4))
     assert r.session.parameters_at('voice_01', 0)['velocity'] == 46
     r.elapsed = 8
@@ -208,7 +208,7 @@ def test_single_controls_keep_section_changes_and_other_manual_overrides():
         r.bridge.handle(dict(base, serial=4, action='parameter', parameter='velocity', value=200))
     assert r.session.parameters_at('voice_01', .75) == before
     r.session.clear_parameters('voice_01')
-    assert r.session.parameters_at('voice_01', .75) == families['descent']['assignments']['voice_01']['parameters']
+    assert r.session.parameters_at('voice_01', .75) == {**r.registry['voice_01'].values, **families['descent']['assignments']['voice_01']['parameters']}
 
 
 def test_variation_remains_continuous_without_selecting_a_preset():

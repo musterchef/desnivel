@@ -11,9 +11,9 @@ function utf8bytes(text){var binary=unescape(encodeURIComponent(text)), out=[];f
 function utf8text(bytes){var binary='';for(var i=0;i<bytes.length;i++){if(bytes[i]<0||bytes[i]>255||Math.floor(bytes[i])!==bytes[i])throw new Error('byte non valido');binary+=String.fromCharCode(bytes[i]);}return decodeURIComponent(escape(binary));}
 function status(text){outlet(2,String(text));}
 function ui(name){return patch.getnamed(name);}
-function loadbang(){reflectPresence();}
+function loadbang(){reflectPresence();reflectManual();}
 function playerReset(){outlet(1,'panic');}
-function disconnect(){connected=false;state=null;snapshot='';playerReset();ui('role_display').message('set','Unassigned');ui('role_menu').message('clear');reflectPresence();status('Disconnected');}
+function disconnect(){connected=false;state=null;snapshot='';playerReset();ui('role_display').message('set','Unassigned');ui('role_menu').message('clear');reflectPresence();reflectManual();status('Disconnected');}
 function voice(){var name=arrayfromargs(arguments).join(' ');if(name!==voiceId){disconnect();voiceId=name;}}
 function receiveport(value){var n=Number(value);if(n!==replyPort){disconnect();replyPort=n;}}
 function backendport(value){var n=Number(value);if(n!==backendPort){disconnect();backendPort=n;}}
@@ -56,7 +56,7 @@ function receive(){
             }else return;
             lastTransportSerial=m.serial;return;
         }
-        if(m.kind==='error'){reflectRole();reflectPresence();parameter(selectedParameter);status(m.error);return;}
+        if(m.kind==='error'){reflectRole();reflectPresence();reflectManual();parameter(selectedParameter);status(m.error);return;}
         if(m.kind==='plan'){if(new Date().getTime()-lastReply>3000)return;outlet(1,['planbytes'].concat(utf8bytes(JSON.stringify(m.plan))));return;}
         if(m.kind!=='state' || m.serial<acknowledged)return;
         if(typeof m.session==='string' && m.session!==backendSession){backendSession=m.session;lastTransportSerial=-1;}
@@ -66,6 +66,7 @@ function receive(){
             state=m;snapshot=signature;
             reflectRole();
             reflectPresence();
+            reflectManual();
             var previous=parameterNames[selectedParameter];
             presetNames=m.presets;parameterNames=[];
             ui('preset_menu').message('clear');
@@ -83,6 +84,19 @@ function receive(){
         }
         status(m.notice||'Python connected');
     }catch(e){status('Invalid Python message: '+e);}
+}
+function reflectManual(){
+    var control=state && state.controls[parameterNames[selectedParameter]];
+    var available=control && typeof control.manual==='boolean';
+    ui('manual_toggle').message('set',available && control.manual?1:0);
+    ui('manual_display').message('set',available?(control.manual?'MANUAL':'AUTO'):'—');
+}
+function manual(value){
+    var name=parameterNames[selectedParameter], control=state && state.controls[name];
+    if(!control || typeof control.manual!=='boolean'){reflectManual();return;}
+    value=Number(value);
+    if(value!==0 && value!==1){reflectManual();return;}
+    request('manual',{parameter:name,value:value===1});
 }
 function reflectPresence(){
     var p=state && state.presence;
@@ -128,6 +142,7 @@ function save_preset(overwrite){
 }
 function parameter(index){
     selectedParameter=Number(index);
+    reflectManual();
     var name=parameterNames[selectedParameter];
     if(state && name!==undefined){
         var c=state.controls[name], choices=c.choices;

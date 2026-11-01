@@ -5,7 +5,7 @@ from copy import deepcopy
 import json
 import math
 from pathlib import Path
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Callable, Mapping
 
 from desnivel.music.arrangement import Assignment
@@ -26,6 +26,7 @@ class Generator:
     prepare_reference: Callable | None = None
     rhythmic_roles: tuple[str, ...] = ()
     accept_reference: Callable | None = None
+    parameter_defaults: Mapping = field(default_factory=dict)
 
 
 class EnsembleSession:
@@ -85,6 +86,7 @@ class EnsembleSession:
                 if assignment.parameters.get('groove_follow', 0) and self.coordinator.rhythm_source is None:
                     raise ValueError('groove_follow richiede rhythm_voice nella configurazione')
         self._manual_parameters = {}
+        self._parameter_progress = 0.
         self._presence_multipliers = {}
         self._supported_roles = {name: spec.supported_roles for name, spec in voices.items()}
 
@@ -96,14 +98,16 @@ class EnsembleSession:
     def plan(self, progress: float, start: float, length_beats: float):
         """Produce le frasi della sezione senza inviarle alle destinazioni."""
         assignments = {
-            name: Assignment(spec.role, {**spec.parameters, **self._manual_parameters.get(name, {})},
+            name: Assignment(spec.role, self.parameters_at(name, progress),
                              self.presence_state(name, progress)['effective'])
             for name, spec in self.director.assignments_at(progress).items()
         }
-        return self.coordinator.plan(
+        phrases = self.coordinator.plan(
             start, length_beats, self.director.context_at(progress), assignments=assignments,
             rhythm_parameters=self.parameters_at(self.coordinator.rhythm_source, progress)
             if self.coordinator.rhythm_source is not None else None)
+        self._parameter_progress = progress
+        return phrases
 
     def set_role(self, voice: str, role: str | None):
         """Valida la scelta manuale prima di comunicarla al Director."""
@@ -160,7 +164,27 @@ class EnsembleSession:
         if voice not in self._generators:
             raise ValueError('voce non registrata')
         assignment = self.director.assignments_at(progress).get(voice)
-        return {**(assignment.parameters if assignment else {}), **self._manual_parameters.get(voice, {})}
+        return {**self._generators[voice].parameter_defaults,
+                **(assignment.parameters if assignment else {}),
+                **self._manual_parameters.get(voice, {})}
+
+    def manual(self, voice: str, name: str):
+        if voice not in self._generators:
+            raise ValueError('voce non registrata')
+        return name in self._manual_parameters.get(voice, {})
+
+    def set_manual(self, voice: str, name: str, value: bool, *, progress=None):
+        """Mantiene un parametro o lo restituisce agli assetti delle sezioni."""
+        if type(value) is not bool:
+            raise ValueError('manual richiede un booleano')
+        current = self.manual(voice, name)
+        if value and not current:
+            progress = self._parameter_progress if progress is None else progress
+            self.set_parameter(voice, name, self.parameters_at(voice, progress)[name])
+        elif not value:
+            parameters = dict(self._manual_parameters.get(voice, {}))
+            parameters.pop(name, None)
+            self.set_parameters(voice, parameters)
 
     def set_parameter(self, voice: str, name: str, value):
         """Modifica un solo override, conservando gli altri e i parametri di sezione."""

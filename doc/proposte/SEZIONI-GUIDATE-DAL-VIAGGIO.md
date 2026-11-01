@@ -28,9 +28,10 @@ propone comportamenti differenti per le famiglie; tali scelte sono modificabili.
 
 La direzione concordata distingue un assetto musicale della macrosezione
 (voci, ruoli e impostazioni di base) dalle variazioni interne associate alle
-fasce originali. Il primo livello è operativo. Per le variazioni interne sono
-ancora da definire precedenza delle impostazioni, ripristino dei valori e
-tempi delle transizioni. I cambi locali non devono
+fasce originali. Il primo livello è operativo. Le regole approvate di
+[direzione adattiva](DIREZIONE-ADATTIVA.md) definiscono responsabilità,
+controllo manuale e ritorno all'automazione. Restano da definire le
+mappature dei singoli parametri e i tempi delle transizioni. I cambi locali non devono
 implicare automaticamente un cambio di organico o il riavvio della frase.
 
 ## Pause interne e impegno altimetrico
@@ -245,10 +246,11 @@ piccola non deve diventare estrema solo perché è la maggiore della tappa.
 Pendenza, velocità e persistenza restano dimensioni distinguibili; non
 confluiscono obbligatoriamente in un unico indice di energia.
 
-Definire esplicitamente la precedenza fra assetto di macrosezione,
-variazione locale e controlli manuali. Le assegnazioni e i controlli
-manuali già disponibili devono conservare un comportamento comprensibile;
-precedenza e modalità di rilascio sono decisioni aperte.
+Applicare la precedenza fra assetto, adattamento e intervento manuale
+definita nel [contratto della direzione adattiva](DIREZIONE-ADATTIVA.md).
+Il flag `manual` mantiene il singolo parametro; il rilascio lo restituisce
+all'automazione dal contesto corrente. Il flag è disponibile; le strategie
+adattive e le transizioni graduali restano da implementare.
 
 **Consegna:** report delle indicazioni prodotte dalle regole, prima di
 modificare gli algoritmi compositivi. Per ogni cambiamento mostrare dato

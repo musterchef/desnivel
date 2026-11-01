@@ -426,12 +426,13 @@ ruolo assegnato; non cancella i parametri manuali.
 
 Il comando **Preset** applica tutti i controlli iniziali completati con i
 valori del preset, rendendoli manuali nelle sezioni successive.
-Modificare un singolo **Parameter** aggiorna soltanto l'override di quel
-controllo, conservando gli altri override espliciti. I controlli non
-modificati continuano a seguire le sezioni. Per esempio, una velocity
-manuale non blocca i cambi di attività e passo melodico del percorso.
-`EnsembleSession.clear_parameters(voice)` elimina gli override di parametri;
-non esiste ancora un comando equivalente nell'interfaccia del dispositivo.
+Modificare un singolo **Parametro** mantiene manuale soltanto quel
+controllo. Gli altri continuano a seguire gli assetti delle sezioni.
+Nel device **Manual** e l'indicatore AUTO/MANUAL si riferiscono al
+parametro selezionato. Spegnere lo switch lo restituisce alla sezione
+corrente, conservando gli altri override. Il flag `manual` è esposto
+nello stato di ciascun controllo e rimane separato da ruolo e presenza.
+`EnsembleSession.clear_parameters(voice)` elimina tutti gli override.
 Riavviare il processo Python ripristina i valori dei file.
 
 Le modifiche manuali non riscrivono i JSON di configurazione. Il salvataggio esplicito dal device aggiorna soltanto la libreria dei preset utente. Le nuove assegnazioni entrano

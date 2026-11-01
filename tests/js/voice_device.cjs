@@ -18,9 +18,36 @@ c.voice('part_a');c.receiveport(9101);c.connect();
 let hello=control(output.find(a=>a[0]===0));
 assert.equal(hello.voice,'part_a');assert.equal(hello.reply_port,9101);
 const state={version:1,kind:'state',voice:'part_a',instance:c.instance,serial:1,session:'python-1',
- role:'melody',preset:null,presets:['soft'],controls:{velocity:{minimum:1,maximum:127,integer:true,value:80}}};
+ role:'melody',preset:null,presets:['soft'],controls:{velocity:{minimum:1,maximum:127,integer:true,value:80,manual:false}}};
 c.receive(JSON.stringify({...state,instance:'other'}));assert.equal(c.state,null);
 c.receive(JSON.stringify(state));assert.equal(c.state.role,'melody');
+assert.deepStrictEqual(uiMessages.manual_toggle.at(-1),['set',0]);
+assert.deepStrictEqual(uiMessages.manual_display.at(-1),['set','AUTO']);
+let beforeMode=output.filter(a=>a[0]===0).length;
+c.receive(JSON.stringify({...state,controls:{velocity:{...state.controls.velocity,manual:true}}}));
+assert.deepStrictEqual(uiMessages.manual_toggle.at(-1),['set',1]);
+assert.deepStrictEqual(uiMessages.manual_display.at(-1),['set','MANUAL']);
+assert.equal(output.filter(a=>a[0]===0).length,beforeMode); // Un aggiornamento Python non diventa una modifica utente.
+c.manual(0);assert.equal(control(output.at(-1)).action,'manual');
+assert.equal(control(output.at(-1)).parameter,'velocity');
+assert.strictEqual(control(output.at(-1)).value,false);
+c.receive(JSON.stringify({version:1,kind:'error',voice:'part_a',instance:c.instance,error:'rejected'}));
+assert.deepStrictEqual(uiMessages.manual_toggle.at(-1),['set',1]);
+c.manual(1);assert.strictEqual(control(output.at(-1)).value,true);
+beforeMode=output.length;c.manual(2);assert.equal(output.length,beforeMode);
+c.receive(JSON.stringify({...state,controls:{velocity:{...state.controls.velocity,manual:null}}}));
+assert.deepStrictEqual(uiMessages.manual_display.at(-1),['set','—']);
+beforeMode=output.length;c.manual(1);assert.equal(output.length,beforeMode);
+c.receive(JSON.stringify(state));
+c.receive(JSON.stringify({...state,controls:{
+ velocity:{...state.controls.velocity,manual:true},
+ activity:{minimum:0,maximum:1,value:.5,manual:false}}}));
+beforeMode=output.filter(a=>a[0]===0).length;
+c.parameter(1);assert.deepStrictEqual(uiMessages.manual_display.at(-1),['set','AUTO']);
+assert.equal(output.filter(a=>a[0]===0).length,beforeMode);
+c.manual(1);assert.equal(control(output.at(-1)).parameter,'activity');
+c.parameter(0);assert.deepStrictEqual(uiMessages.manual_display.at(-1),['set','MANUAL']);
+c.receive(JSON.stringify(state));
 const beforePresence=output.filter(a=>a[0]===0).length;
 c.receive(JSON.stringify({...state,presence:{automatic:.4,multiplier:2,effective:.8}}));
 assert(uiMessages.presence_display.at(-1)[1].includes('40%'));

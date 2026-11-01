@@ -52,7 +52,9 @@ def render_session(state):
                         f" = {presence['effective']:.0%} effettiva")
         values = ', '.join(f"{key}="+(str(control['value']) if isinstance(control['value'], str)
                                     else f"{control['value']:g}") for key, control in voice['controls'].items())
-        rows.append(f"    preset: {voice['preset'] or 'nessuno/custom'} | {values}")
+        manual = [key for key, control in voice['controls'].items() if control.get('manual')]
+        mode = 'AUTO' if not manual else 'MANUAL: ' + ', '.join(manual)
+        rows.append(f"    {mode} | preset: {voice['preset'] or 'nessuno/custom'} | {values}")
     plan = state['decisions']['coordinator']
     if plan is None:
         rows.append('Coordinator: nessun piano in attesa.')

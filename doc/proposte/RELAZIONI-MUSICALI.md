@@ -287,8 +287,11 @@ da pianificare, non la posizione attualmente mostrata dal player. La
 corrispondenza fra percorso e musica è un requisito separato, descritto
 nel [piano del contesto locale](SEZIONI-GUIDATE-DAL-VIAGGIO.md).
 
-Precedenza proposta: configurazione iniziale, assetto di sezione,
-interpretazione locale, override manuali. Le relazioni risolte non
+Precedenza e rilascio manuale seguono il
+[contratto approvato della direzione adattiva](DIREZIONE-ADATTIVA.md),
+implementato per il controllo manuale: l'assetto fornisce la base, le strategie proposte adattano
+i controlli dichiarati rispettando i vincoli espliciti, il flag `manual`
+mantiene manuale soltanto il parametro interessato. Le relazioni risolte non
 sovrascrivono i parametri di base: aggiungono indicazioni alla composizione.
 I cambi di struttura entrano dal confine successivo del gesto coinvolto;
 gli interventi già accettati mantengono il proprio stato risolto, salvo
