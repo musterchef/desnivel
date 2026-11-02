@@ -22,11 +22,11 @@ const state={version:1,kind:'state',voice:'part_a',instance:c.instance,serial:1,
 c.receive(JSON.stringify({...state,instance:'other'}));assert.equal(c.state,null);
 c.receive(JSON.stringify(state));assert.equal(c.state.role,'melody');
 assert.deepStrictEqual(uiMessages.manual_toggle.at(-1),['set',0]);
-assert.deepStrictEqual(uiMessages.manual_display.at(-1),['set','AUTO']);
+assert.deepStrictEqual(uiMessages.manual_display.at(-1),['set','auto']);
 let beforeMode=output.filter(a=>a[0]===0).length;
 c.receive(JSON.stringify({...state,controls:{velocity:{...state.controls.velocity,manual:true}}}));
 assert.deepStrictEqual(uiMessages.manual_toggle.at(-1),['set',1]);
-assert.deepStrictEqual(uiMessages.manual_display.at(-1),['set','MANUAL']);
+assert.deepStrictEqual(uiMessages.manual_display.at(-1),['set','manual']);
 assert.equal(output.filter(a=>a[0]===0).length,beforeMode); // Un aggiornamento Python non diventa una modifica utente.
 c.manual(0);assert.equal(control(output.at(-1)).action,'manual');
 assert.equal(control(output.at(-1)).parameter,'velocity');
@@ -43,10 +43,10 @@ c.receive(JSON.stringify({...state,controls:{
  velocity:{...state.controls.velocity,manual:true},
  activity:{minimum:0,maximum:1,value:.5,manual:false}}}));
 beforeMode=output.filter(a=>a[0]===0).length;
-c.parameter(1);assert.deepStrictEqual(uiMessages.manual_display.at(-1),['set','AUTO']);
+c.parameter(1);assert.deepStrictEqual(uiMessages.manual_display.at(-1),['set','auto']);
 assert.equal(output.filter(a=>a[0]===0).length,beforeMode);
 c.manual(1);assert.equal(control(output.at(-1)).parameter,'activity');
-c.parameter(0);assert.deepStrictEqual(uiMessages.manual_display.at(-1),['set','MANUAL']);
+c.parameter(0);assert.deepStrictEqual(uiMessages.manual_display.at(-1),['set','manual']);
 c.receive(JSON.stringify(state));
 const beforePresence=output.filter(a=>a[0]===0).length;
 c.receive(JSON.stringify({...state,presence:{automatic:.4,multiplier:2,effective:.8}}));
@@ -89,9 +89,9 @@ c.slidervalue(1000);assert.equal(control(output.at(-1)).value,127);
 // Le etichette descrittive e lo stato inattivo non cambiano le chiavi inviate.
 c.receive(JSON.stringify({...state,serial:4,controls:{velocity:{...state.controls.velocity,
  label:'Intensità MIDI',inactive_reason:'Modalità di prova'}}}));
-assert.deepStrictEqual(uiMessages.parameter_menu.at(-3),['append','[inattivo] Intensità MIDI']);
+assert.deepStrictEqual(uiMessages.parameter_menu.at(-3),['append','[inattivo] intensità midi']);
 assert(uiMessages.range_display.at(-1)[1].includes('inattivo'));
-assert.deepStrictEqual(uiMessages.parameter_slider.at(-1),['annotation','velocity — Intensità MIDI: Modalità di prova']);
+assert.deepStrictEqual(uiMessages.parameter_slider.at(-1),['annotation','velocity — intensità midi: Modalità di prova']);
 c.value(55);assert.equal(control(output.at(-1)).parameter,'velocity');
 assert.equal(control(output.at(-1)).value,55);
 c.receive(JSON.stringify({...state,serial:4}));
@@ -158,4 +158,8 @@ for(let i=0;i<1000;i++)c.clock(i*60,1);
 const controls=output.filter(a=>a[0]===0);
 assert(controls.every(entry=>entry[1][0]==='/desnivel/v1/voice/control'&&Array.from(entry[1]).slice(1).every(Number.isInteger)));
 assert.equal(control(controls.at(-1)).transport.beat,999*60/480);
+c.tempo(131);c.clock(1000*60,1);
+assert.equal(control(output.at(-1)).transport.bpm,131);
+c.tempo(0);c.tempo('invalid');c.clock(1001*60,1);
+assert.equal(control(output.at(-1)).transport.bpm,131);
 console.log('OK: 1000 clock con payload numerico, senza JSON come simboli Max');

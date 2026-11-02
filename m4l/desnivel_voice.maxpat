@@ -357,7 +357,7 @@
             190,
             22
           ],
-          "text": "Parametro",
+          "text": "parametro",
           "presentation": 1,
           "presentation_rect": [
             10,
@@ -422,7 +422,7 @@
             22
           ],
           "varname": "range_display",
-          "text": "No controls",
+          "text": "nessun parametro",
           "presentation": 1,
           "presentation_rect": [
             650,
@@ -1434,7 +1434,7 @@
         "box": {
           "id": "manual_label",
           "maxclass": "comment",
-          "text": "Manual",
+          "text": "manual",
           "patching_rect": [
             930,
             1650,
@@ -1479,6 +1479,32 @@
           "patching_rect": [
             900,
             1690,
+            110,
+            22
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "tempo_observer",
+          "maxclass": "newobj",
+          "text": "live.observer tempo",
+          "patching_rect": [
+            1050,
+            1730,
+            135,
+            22
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "tempo_prefix",
+          "maxclass": "newobj",
+          "text": "prepend tempo",
+          "patching_rect": [
+            1050,
+            1770,
             110,
             22
           ]
@@ -2570,6 +2596,42 @@
         "patchline": {
           "source": [
             "manual_prefix",
+            0
+          ],
+          "destination": [
+            "interface",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "resolve",
+            0
+          ],
+          "destination": [
+            "tempo_observer",
+            1
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "tempo_observer",
+            0
+          ],
+          "destination": [
+            "tempo_prefix",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "tempo_prefix",
             0
           ],
           "destination": [

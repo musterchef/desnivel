@@ -2,6 +2,7 @@
 inlets=1;outlets=4; // UDP, player, diagnostica, API del trasporto Live
 var voiceId='', replyPort=9101, instance='', serial=0, acknowledged=-1;
 var backendPort=9006, beat=0, playing=0, epoch=0, lastTick=-1;
+var bpm=null;
 var connected=false, lastReply=0, state=null, snapshot='', parameterNames=[], presetNames=[];
 var selectedParameter=0, patch=this.patcher;
 var lastTransportSerial=-1, backendSession='';
@@ -26,9 +27,13 @@ function connect(){
 }
 function request(action, extra){
     if(!connected)return;
-    var m={version:1,voice:voiceId,instance:instance,reply_port:replyPort,serial:++serial,action:action,capabilities:['transport_control'],transport:{beat:beat,playing:playing,epoch:epoch}};
+    var m={version:1,voice:voiceId,instance:instance,reply_port:replyPort,serial:++serial,action:action,capabilities:['transport_control'],transport:{beat:beat,playing:playing,epoch:epoch,bpm:bpm}};
     for(var key in extra)m[key]=extra[key];
     outlet(0,['/desnivel/v1/voice/control'].concat(utf8bytes(JSON.stringify(m))));
+}
+function tempo(value){
+    value=Number(value);
+    if(isFinite(value) && value>0)bpm=value;
 }
 function clock(ticks,running){
     ticks=Number(ticks);running=Number(running);
@@ -77,7 +82,7 @@ function receive(){
             ui('parameter_menu').message('clear');
             for(var j=0;j<parameterNames.length;j++){
                 var name=parameterNames[j], control=m.controls[name];
-                ui('parameter_menu').message('append',(control.inactive_reason?'[inattivo] ':'')+(control.label||name));
+                ui('parameter_menu').message('append',(control.inactive_reason?'[inattivo] ':'')+String(control.label||name).toLowerCase());
             }
             selectedParameter=Math.max(0,parameterNames.indexOf(previous));
             ui('parameter_menu').message('set',selectedParameter);parameter(selectedParameter);
@@ -89,7 +94,7 @@ function reflectManual(){
     var control=state && state.controls[parameterNames[selectedParameter]];
     var available=control && typeof control.manual==='boolean';
     ui('manual_toggle').message('set',available && control.manual?1:0);
-    ui('manual_display').message('set',available?(control.manual?'MANUAL':'AUTO'):'—');
+    ui('manual_display').message('set',available?(control.manual?'manual':'auto'):'—');
 }
 function manual(value){
     var name=parameterNames[selectedParameter], control=state && state.controls[name];
@@ -154,24 +159,24 @@ function parameter(index){
             ui('parameter_choice').message('clear');
             var chosen=-1;
             for(var i=0;i<choices.length;i++){
-                ui('parameter_choice').message('append',choices[i][1]);
+                ui('parameter_choice').message('append',choices[i][1].toLowerCase());
                 if(choices[i][0]===c.value)chosen=i;
             }
             ui('parameter_choice').message('set',chosen);
-            ui('range_display').message('set',(chosen>=0?choices[chosen][1]:'Scegli')+(c.inactive_reason?' · inattivo':''));
+            ui('range_display').message('set',(chosen>=0?choices[chosen][1].toLowerCase():'scegli')+(c.inactive_reason?' · inattivo':''));
         }else{
             ui('parameter_value').message('set',c.value);
             ui('parameter_slider').message('set',c.maximum===c.minimum?0:Math.round((c.value-c.minimum)/(c.maximum-c.minimum)*1000));
             ui('parameter_toggle').message('set',c.value);
             ui('range_display').message('set',c.minimum+' .. '+c.maximum+(c.integer?' (integer)':'')+(c.inactive_reason?' · inattivo':''));
         }
-        var help=name+(c.label?' — '+c.label:'')+(c.inactive_reason?': '+c.inactive_reason:'');
+        var help=name+(c.label?' — '+c.label.toLowerCase():'')+(c.inactive_reason?': '+c.inactive_reason:'');
         ui('parameter_menu').setboxattr('annotation',help);
         ui('parameter_value').setboxattr('annotation',help);
         ui('parameter_slider').setboxattr('annotation',help);
         ui('parameter_toggle').setboxattr('annotation',help);
         ui('parameter_choice').setboxattr('annotation',help);
-    }else ui('range_display').message('set','No controls');
+    }else ui('range_display').message('set','nessun parametro');
 }
 function slidervalue(v){
     var name=parameterNames[selectedParameter];

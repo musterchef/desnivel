@@ -84,7 +84,7 @@ prova non richiede un JSON separato per lo strumento.
 | `voice_01` | 9101 | `motif` | `melody` |
 | `voice_02` | 9102 | `responsive_line` | `bass_line`, dipendente dalla frase di `voice_01` |
 | `voice_03` | 9103 | `sustained_texture`, istanza `atmosphere` | `sustained_texture`, con sorgente facoltativa `voice_01` |
-| `voice_04` | 9104 | `percussion_pattern` | `percussion` |
+| `voice_04` | 9104 | `percussion_phrase` | `percussion` |
 
 Le porte sono impostate nelle istanze del dispositivo. Il server Python
 usa 9006; la sorgente del trasporto è `voice_01`. Tutte le parti attive

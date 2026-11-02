@@ -32,14 +32,42 @@ def setup():
             spec['presence'] = 1  # Isola le prove di trasporto dalle scelte dell'assetto di ascolto.
     runtime = EnsembleRuntime(track, config, bridge, speed=2, clock=lambda: now[0])
     serials = {}
-    def receive(voice='voice_01', beat=0., playing=1, epoch=0):
+    def receive(voice='voice_01', beat=0., playing=1, epoch=0, bpm=None):
         serials[voice] = serials.get(voice, 0)+1
         msg = dict(version=1, voice=voice, instance=voice, reply_port=9101 if voice=='voice_01' else 9102,
                    serial=serials[voice], action='transport' if serials[voice]>1 else 'hello',
-                   transport=dict(beat=beat, playing=playing, epoch=epoch))
+                   transport=dict(beat=beat, playing=playing, epoch=epoch, bpm=bpm))
         bridge.handle(msg)
         runtime.on_message(bridge, msg)
     return runtime, bridge, now, sent, receive
+
+
+def test_planned_linear_context_uses_live_tempo_without_changing_parameters():
+    runtime, _, _, _, receive = setup()
+    before = runtime.session.parameters_at('voice_01', 0)
+    receive(bpm=120)
+    runtime.tick()
+    local = runtime.last_decisions['local_trip']
+    assert (local['start_active_s'], local['end_active_s']) == (4, 8)
+    assert (local['parts'][0]['start_distance_m'], local['parts'][0]['end_distance_m']) == (40, 80)
+    assert runtime.progress == 0  # Il contesto riguarda la finestra futura, non il cursore attuale.
+    assert runtime.session.parameters_at('voice_01', 0) == before
+    snapshot = runtime.snapshot()
+    assert snapshot['transport']['bpm'] == 120
+    assert snapshot['decisions']['coordinator']['observation']['available_beats'] == 0
+    json.dumps(snapshot, allow_nan=False)
+
+
+def test_missing_tempo_is_explicit_and_invalid_tempo_does_not_mutate_transport():
+    runtime, bridge, _, _, receive = setup()
+    receive()
+    runtime.tick()
+    assert runtime.last_decisions['local_trip']['reason'] == 'tempo_unavailable'
+    receive(bpm=120)
+    with pytest.raises(ValueError, match='BPM'):
+        receive(bpm=0)
+    assert runtime.bpm == 120
+    assert bridge.status()['voice_01']['connected']
 
 
 def test_waiting_then_continuous_plans_sections_roles_and_status():
@@ -218,6 +246,10 @@ def test_allocated_plays_every_window_and_finishes_only_after_last_end():
         receive(beat)
         runtime.tick()
         sections.append(runtime.last_decisions['section'])
+        local = runtime.last_decisions['local_trip']
+        expected = runtime.window_context.allocated(runtime.timeline.timeline,
+                                                   runtime.section_sources, runtime.next_window-1)
+        assert local == expected
     assert sections == ['opening', 'opening', 'development', 'development', 'closing', 'closing']
     assert runtime.timeline.window_index == 4
     assert runtime.state == 'playing'

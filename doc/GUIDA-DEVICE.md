@@ -10,7 +10,7 @@ Le tabelle propongono valori di partenza: gli altri controlli restano come sono.
 - Cambia un controllo alla volta. Le modifiche agiscono sulle prossime frasi; ascolta almeno quattro battute. Per confrontare dallo stesso punto usa **R**, poi **Play**, mantenendo lo stesso `seed`.
 - **Presenza ×** regola quante frasi partecipano: `0` silenzia la voce; `1` segue la presenza prevista dalla sezione. Non regola il volume e non rende attiva una voce fuori organico.
 - Un controllo **[inattivo]** non interviene nel ruolo o nella modalità corrente.
-- **Manual** e l'indicatore **AUTO/MANUAL** si riferiscono al parametro selezionato. Modificarlo rende manuale soltanto quel valore; gli altri continuano a seguire le sezioni. Spegni **Manual** per restituirlo all'automazione. Un preset rende manuali i valori che applica, rilasciabili singolarmente. Il ritorno agisce sulle prossime frasi, senza interpolazione; ruolo e presenza restano indipendenti.
+- **manual** e l'indicatore **auto/manual** si riferiscono al parametro selezionato. Modificarlo rende manuale soltanto quel valore; gli altri continuano a seguire le sezioni. Spegni **manual** per restituirlo all'automazione. Un preset rende manuali i valori che applica, rilasciabili singolarmente. Il ritorno agisce sulle prossime frasi, senza interpolazione; ruolo e presenza restano indipendenti.
 - `groove_follow = 0` toglie l'adesione diretta alle drums. Le relazioni con frasi precedenti configurate nella sessione restano attive.
 
 ## Melodia — Synth, `voice_01`

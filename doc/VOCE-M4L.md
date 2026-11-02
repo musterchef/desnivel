@@ -45,7 +45,7 @@ La cartella generata contiene il device e i due script JavaScript. Conservare i 
 - **Collega**: legge identificativo e porte e apre il collegamento. Se già collegato, rinnova la richiesta mantenendo identità e piani della stessa istanza.
 - **Role**: menu dei ruoli supportati dal generatore collegato. `Follow section` segue il ruolo assegnato alla sezione; scegliendo un ruolo si passa alla modalità manuale. Il ruolo effettivo è mostrato in alto; per una parte esclusa dall’organico sono mostrati il prossimo ingresso configurato (`enters at ...%`) oppure `not in this section` se non sono previsti altri ingressi. Senza un collegamento ai ruoli della sessione, il menu mostra `No roles available`.
 - **Preset**: preset compositivi dichiarati dal componente Python.
-- **Manual**: switch del parametro selezionato nel menu, con indicatore **AUTO** o **MANUAL** confermato da Python. Modificare un valore attiva soltanto il suo flag. Spegnere lo switch restituisce quel parametro agli assetti delle sezioni, conservando gli altri valori manuali. Un preset rende manuali i valori che applica. Senza sessione collegata l'indicatore mostra `—`.
+- **manual**: switch del parametro selezionato nel menu, con indicatore **auto** o **manual** confermato da Python. Modificare un valore attiva soltanto il suo flag. Spegnere lo switch restituisce quel parametro agli assetti delle sezioni, conservando gli altri valori manuali. Un preset rende manuali i valori che applica. Senza sessione collegata l'indicatore mostra `—`.
 - **Parametro**, valore e cursore: modifica di uno dei controlli esposti da Python. Il cursore rispetta intervallo e vincolo intero; il campo numerico permette l’immissione precisa. I limiti sono mostrati accanto al cursore.
 - I controlli binari mostrano uno switch al posto del cursore. Quelli senza effetto nel ruolo o nella modalità corrente riportano **[inattivo]** nel menu; la motivazione è nell'annotazione del controllo. Restano modificabili e conservano il valore.
 - **Salva nuovo**: salva i valori effettivi della voce con il nome scritto nel campo accanto. **Aggiorna** sostituisce un preset utente già presente con quel nome. I preset base della configurazione sono protetti.
@@ -189,6 +189,11 @@ sul server i valori effettivi. Il device dichiara `transport_control` nelle
 richieste; solo l'istanza scelta come sorgente del clock riceve le azioni
 `pause`, `resume` e `restart`, applicate con `live.object` al `live_set`.
 I comandi sono identificati da sessione Python e seriale, per scartare i duplicati.
+
+Il device osserva il tempo di Live e lo comunica come `transport.bpm`.
+Il runtime usa il BPM della voce di trasporto per proiettare le finestre
+future sul viaggio in modalità lineare. Un BPM assente rende tale
+contesto indisponibile; non viene sostituito con un tempo fisso.
 
 L'azione `manual` contiene `parameter` e un `value` booleano. Lo stato di
 ogni controllo contiene `manual`, oppure `null` senza sessione collegata.

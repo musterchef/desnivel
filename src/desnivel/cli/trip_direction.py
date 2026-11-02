@@ -49,7 +49,7 @@ def _resolve(track, path):
             raise ValueError(f'{family}: assignments deve contenere le assegnazioni delle voci')
     if automatic is None:
         return [{**deepcopy(arrangements[s['kind']]), 'name': s['kind'], 'from_progress': s['from_progress'],
-                 'trip': deepcopy(s)} for s in grouping['sections']], None
+                 'trip': deepcopy(s)} for s in grouping['sections']], None, analysis
     required = {'palettes', 'switch_margin', 'motif'}
     if (not isinstance(automatic, dict) or required-automatic.keys()
             or automatic.keys()-required-{'override', 'stage_overrides'}):
@@ -100,7 +100,7 @@ def _resolve(track, path):
                                   'automatic_scale': state['scale'], 'sources': sources, 'common_pitch_classes': common})
         sections.append(section)
         previous, previous_effective = state, (section['root'], section['scale'])
-    return sections, decision
+    return sections, decision, analysis
 
 
 def load_trip_sections(track, path):
@@ -110,9 +110,10 @@ def load_trip_sections(track, path):
 
 def prepare_trip_config(track, config, path):
     """Risolve sezioni e materiale della tappa senza modificare gli ingressi."""
-    sections, decision = _resolve(track, path)
+    sections, decision, analysis = _resolve(track, path)
     resolved = deepcopy(config)
     resolved['sections'] = sections
+    resolved['trip_analysis'] = analysis
     if decision is not None:
         for name in decision['motif_generators']:
             if name not in resolved['generators'] or resolved['generators'][name]['type'] != 'motif':

@@ -428,7 +428,7 @@ Il comando **Preset** applica tutti i controlli iniziali completati con i
 valori del preset, rendendoli manuali nelle sezioni successive.
 Modificare un singolo **Parametro** mantiene manuale soltanto quel
 controllo. Gli altri continuano a seguire gli assetti delle sezioni.
-Nel device **Manual** e l'indicatore AUTO/MANUAL si riferiscono al
+Nel device **manual** e l'indicatore auto/manual si riferiscono al
 parametro selezionato. Spegnere lo switch lo restituisce alla sezione
 corrente, conservando gli altri override. Il flag `manual` è esposto
 nello stato di ciascun controllo e rimane separato da ruolo e presenza.

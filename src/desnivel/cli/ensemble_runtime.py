@@ -11,6 +11,7 @@ import numpy as np
 from desnivel.adapters.voice_device import DeviceVoice
 from desnivel.cli.ensemble import EnsembleSession
 from desnivel.cli.generators import build_generator
+from desnivel.cli.window_context import WindowContext
 from desnivel.music.phrases import Phrase
 from desnivel.music.timeline import TimelineManager, allocate_timeline
 
@@ -53,6 +54,7 @@ class EnsembleRuntime:
         self.elapsed = 0.
         self.playing = False
         self.beat = 0.
+        self.bpm = None
         self.epoch = None
         self._restart_epoch = None
         self.instance = None
@@ -70,7 +72,8 @@ class EnsembleRuntime:
                                          'dependencies': list(spec.get('dependencies', [])),
                                          'optional_dependencies': list(spec.get('optional_dependencies', []))}
                                    for name, spec in config['voices'].items()}
-        session_config = deepcopy(config)
+        self.window_context = WindowContext(track, config.get('trip_analysis'))
+        session_config = deepcopy({k: v for k, v in config.items() if k != 'trip_analysis'})
         self.trip_music = deepcopy(config.get('trip_music'))
         self.section_directions = tuple(deepcopy(section.get('direction')) for section in config['sections'])
         self.section_sources = tuple(deepcopy(section.get('trip')) for section in config['sections'])
@@ -108,15 +111,14 @@ class EnsembleRuntime:
         if self.timeline:
             if self.timeline.finished:
                 return 1.
-            span = self.timeline.current_span
-            fraction = self.timeline.window_index-span.start_window
+            fraction = 0.
             if self.pending_windows and self.pending_windows[0][0] <= self.beat:
                 fraction += min(1., (self.beat-self.pending_windows[0][0])/self.window)
-            start = self.section_progress[span.source_index]
-            end = (self.section_progress[span.source_index+1]
-                   if span.source_index+1 < len(self.section_progress) else 1.)
+            index, fraction = self.timeline.timeline.position(self.timeline.window_index, fraction)
+            start = self.section_progress[index]
+            end = self.section_progress[index+1] if index+1 < len(self.section_progress) else 1.
             # Il confine appartiene alla sezione successiva solo dopo il consumo.
-            return min(math.nextafter(end, start), start+(end-start)*fraction/span.window_count)
+            return min(math.nextafter(end, start), start+(end-start)*fraction)
         distance = float(np.interp(self.track.t[0]+self.elapsed, self.track.t, self.distances))
         return min(1., max(0., (distance-self.distances[0])/(self.distances[-1]-self.distances[0])))
 
@@ -143,10 +145,13 @@ class EnsembleRuntime:
             return
         transport = message.get('transport', {})
         beat, playing, epoch = transport.get('beat'), transport.get('playing'), transport.get('epoch')
+        bpm = transport.get('bpm')
         if (type(beat) not in (int, float) or not math.isfinite(beat) or beat < 0
                 or type(playing) is not int or playing not in (0, 1)
                 or type(epoch) is not int or epoch < 0):
             raise ValueError('stato del trasporto non valido')
+        if bpm is not None and (type(bpm) not in (int, float) or not math.isfinite(bpm) or bpm <= 0):
+            raise ValueError('BPM del trasporto positivo e finito richiesto')
         # Durante il riavvolgimento possono arrivare notifiche inviate prima
         # del comando. Il device cambia epoch allo Stop o al ritorno al beat zero.
         if self._restart_epoch is not None:
@@ -161,6 +166,7 @@ class EnsembleRuntime:
             self.reset()
         self.instance, self.transport_serial = message['instance'], message['serial']
         self.beat, self.playing, self.epoch = beat, bool(playing), epoch
+        self.bpm = bpm
 
     def control(self, action):
         """Controlli della sessione, eseguiti nello stesso thread della pianificazione."""
@@ -243,6 +249,10 @@ class EnsembleRuntime:
         if start == self.planned_start:
             return
         context = self.session.director.context_at(plan_progress)
+        source_context = (self.window_context.allocated(self.timeline.timeline, self.section_sources, self.next_window)
+                          if self.timeline else self.window_context.linear(
+                              elapsed_s=self.elapsed, live_beat=self.beat, start_beat=start,
+                              length_beats=self.window, bpm=self.bpm, speed=self.speed))
         # I cambi di organico si applicano alla prossima finestra, con frasi vuote
         # per le parti uscenti: la finestra già iniziata può concludersi.
         phrases = self.session.plan(plan_progress, start, self.window)
@@ -259,7 +269,8 @@ class EnsembleRuntime:
         self.last_decisions = {**self.session.coordinator.last_plan, 'section': context.name,
                                'root': context.root, 'scale': context.scale,
                                'direction': self.section_directions[context.section_index],
-                               'trip': self.section_sources[context.section_index]}
+                               'trip': self.section_sources[context.section_index],
+                               'local_trip': source_context}
 
     def fail(self, error):
         self.error = str(error)
@@ -291,7 +302,7 @@ class EnsembleRuntime:
                             'direction': self.section_directions[context.section_index],
                             'trip': self.section_sources[context.section_index]},
                 'transport': {'voice': self.transport_voice, 'playing': self.playing,
-                              'beat': self.beat, 'epoch': self.epoch},
+                              'beat': self.beat, 'epoch': self.epoch, 'bpm': self.bpm},
                 'planning': {'next_start': self.planned_start, 'section': self.last_section,
                              'window_beats': self.window}, 'voices': {name: {**self.voice_descriptions[name], **state}
                            for name, state in self.bridge.status().items()}}

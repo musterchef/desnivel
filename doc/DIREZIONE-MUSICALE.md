@@ -83,6 +83,44 @@ Il materiale è costante per la tappa e viene sviluppato dal
 armonici delle macrosezioni. Il GPX non impone nota per nota il profilo alla
 melodia durante l'esecuzione.
 
+## Contesto locale delle finestre
+
+`prepare_trip_config` conserva l'analisi neutra in `trip_analysis`.
+`cli/window_context.py` associa ogni finestra futura al tratto rappresentato;
+`trip/local_context.py` riassume le finestre di pendenza già analizzate.
+Il risultato è esposto in `decisions.coordinator.local_trip`.
+Non modifica ancora i parametri dei generatori.
+
+- **Allocated:** la distanza di una macrosezione è distribuita uniformemente
+  fra le finestre assegnate. `Timeline.position` fornisce sezione e frazione
+  interna, usate anche dalla progressione del runtime. Il report di analisi
+  con `--timeline-session` usa la stessa funzione di contesto e include
+  `timeline.window_contexts` nel risultato JSON.
+- **Linear:** l'inizio sorgente è `tempo attivo corrente + anticipo in
+  beat × 60 / BPM × speed`. La durata sorgente è `window_beats × 60 / BPM
+  × speed`. È una proiezione con il BPM osservato corrente, mantenuto
+  costante sull'intervallo futuro; i piani accettati non vengono riscritti
+  se il BPM cambia. Senza BPM lo stato dichiara `tempo_unavailable`.
+
+`parts` conserva separatamente ogni tratto registrato attraversato, con
+estremi di distanza, tempo attivo e tempi sorgente se disponibili in
+`TrackSegment`. La corrispondenza non interpola fra tratti interrotti.
+Gli intervalli lineari che superano la fine del viaggio sono segnalati
+da `truncated_at_finish`; quelli completamente esterni sono indisponibili.
+
+| Misura locale | Calcolo |
+|---|---|
+| `slope_ratio` | Media delle pendenze smussate pesata per la distanza coperta |
+| `mean_absolute_slope_ratio` | Stessa media sui valori assoluti |
+| `slope_change_ratio` | Differenza dalla media del tratto immediatamente precedente, di pari lunghezza; disponibile soltanto con copertura completa nello stesso tratto registrato |
+| `zone_persistence_m` | Distanza dall'inizio della zona confermata al punto medio dell'intervallo rappresentato |
+
+Il contesto conserva copertura, zone e tratti attraversati, passo di
+campionamento e finestra spaziale della pendenza. Zero e misura non
+disponibile restano distinti. Senza analisi collegata, `profile` dichiara
+`analysis_not_configured`. Non vengono introdotti descrittori locali di
+velocità, fatica o volume audio.
+
 ## Override
 
 Nel file `presets/direzione-viaggio.json`, dentro `automatic_music`:

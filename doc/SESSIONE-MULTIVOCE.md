@@ -290,6 +290,15 @@ Una parte può essere collegata al server ma esclusa dall'organico della sezione
 
 Lo stato dei piani descrive ciò che Python ha inviato, non una conferma audio dello strumento. La scrittura JSON è separata dal motore.
 
+`decisions.coordinator.local_trip` descrive il tratto rappresentato dalla
+finestra futura e le relative misure di pendenza;
+`decisions.coordinator.observation` riassume gli ultimi 16 beat accettati
+per voce. La vista terminale mostra il tratto pianificato e i beat di
+storia disponibili quando lo spazio lo consente. Definizioni e limiti
+sono in [Direzione musicale](DIREZIONE-MUSICALE.md) e
+[Dialogo ritmico](DIALOGO-MUSICALE.md). Questi ingressi non regolano ancora
+automaticamente i parametri.
+
 ## Mappa del viaggio
 
 Aggiungere `--view-port 8765` al comando della sessione e aprire

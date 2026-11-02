@@ -69,6 +69,15 @@ class Timeline:
     def total_beats(self):
         return self.total_windows * self.window_beats
 
+    def position(self, window_index, fraction=0.):
+        """Sezione e frazione interna di una finestra, inclusa la sua fine."""
+        if type(window_index) is not int or not 0 <= window_index < self.total_windows:
+            raise ValueError('finestra fuori dalla timeline')
+        if type(fraction) not in (int, float) or not math.isfinite(fraction) or not 0 <= fraction <= 1:
+            raise ValueError('frazione della finestra richiesta tra 0 e 1')
+        span = self.spans[bisect_right([s.end_window for s in self.spans], window_index)]
+        return span.source_index, (window_index-span.start_window+fraction)/span.window_count
+
     @property
     def quantized_beats(self):
         return math.ceil(self.requested_beats / self.window_beats) * self.window_beats

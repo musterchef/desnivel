@@ -105,3 +105,14 @@ def test_manual_mode_has_a_visible_switch_and_confirmed_status():
     paths = [(line['patchline']['source'], line['patchline']['destination']) for line in patch['lines']]
     assert (['manual_toggle', 0], ['manual_prefix', 0]) in paths
     assert (['manual_prefix', 0], ['interface', 0]) in paths
+
+
+def test_live_tempo_is_observed_and_forwarded_to_python():
+    patch = json.loads((ROOT / 'm4l/desnivel_voice.maxpat').read_text())['patcher']
+    boxes = {entry['box']['id']: entry['box'] for entry in patch['boxes']}
+    assert boxes['tempo_observer']['text'] == 'live.observer tempo'
+    assert boxes['tempo_prefix']['text'] == 'prepend tempo'
+    paths = [(line['patchline']['source'], line['patchline']['destination']) for line in patch['lines']]
+    assert (['resolve', 0], ['tempo_observer', 1]) in paths
+    assert (['tempo_observer', 0], ['tempo_prefix', 0]) in paths
+    assert (['tempo_prefix', 0], ['interface', 0]) in paths

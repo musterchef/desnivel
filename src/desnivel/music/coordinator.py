@@ -13,6 +13,7 @@ from desnivel.music.phrases import Phrase
 from desnivel.music.presence import participates
 from desnivel.music.rhythm import PreparedRhythm, RhythmReference
 from desnivel.music.interactions import VoicePlan, resolve_relation, record_gestures
+from desnivel.music.observation import EnsembleObservation, MusicalMemory
 
 
 @dataclass(frozen=True)
@@ -29,6 +30,7 @@ class PlanningRequest:
     relations: tuple = ()
     prepared_material: object = None
     participating: bool = True
+    observation: EnsembleObservation | None = None
 
 
 @dataclass(frozen=True)
@@ -90,6 +92,7 @@ class MusicCoordinator:
         self._accepted = None
         self._plan_serial = 0
         self.last_plan = None
+        self._observations = MusicalMemory()
 
     @property
     def history(self):
@@ -143,6 +146,7 @@ class MusicCoordinator:
                 available.add(name)
                 del pending[name]
         logical_start = start-(self._origin if self._origin is not None else start)
+        observation = self._observations.before(start, self._voices)
         prepared = None
         if self.rhythm_source is not None:
             spec = (assignments or {}).get(self.rhythm_source)
@@ -150,7 +154,7 @@ class MusicCoordinator:
                 start, length_beats, context, MappingProxyType({}),
                 spec.role if spec else None,
                 MappingProxyType(dict(spec.parameters) if spec else dict(rhythm_parameters or {})),
-                logical_start, self.epoch))
+                logical_start, self.epoch, observation=observation))
             if not isinstance(prepared, PreparedRhythm) or prepared.reference.length_beats != length_beats:
                 raise ValueError('il riferimento ritmico deve coprire la finestra')
         resolved = {name: [] for name in active}
@@ -178,7 +182,7 @@ class MusicCoordinator:
                 logical_start if self._interactive else None, self.epoch,
                 prepared.reference if prepared else None, tuple(resolved[name]),
                 prepared.material if prepared and name == self.rhythm_source else None,
-                participating and not relation_silence)
+                participating and not relation_silence, observation)
             if voice.stage:
                 result = voice.stage(request)
                 if not isinstance(result, VoicePlan):
@@ -216,12 +220,15 @@ class MusicCoordinator:
                 for r in resolved[name]:
                     if r.gesture is not None:
                         next_used.add((r.spec.id, r.gesture.span.start, r.gesture.span.end))
+        next_observations = self._observations.accepted(
+            start, length_beats, {name: phrases[name] for name in active})
         for name, result in staged.items():
             self._voices[name].accept(result)
         if prepared is not None and self._voices[self.rhythm_source].accept_reference:
             self._voices[self.rhythm_source].accept_reference(prepared)
         self.last_plan = {'start': start, 'length_beats': length_beats,
-                          'order': order, 'voices': decisions}
+                          'order': order, 'voices': decisions, 'observation': observation.to_dict()}
+        self._observations = next_observations
         if self._interactive:
             self._origin = start-logical_start
             self._plan_serial += 1

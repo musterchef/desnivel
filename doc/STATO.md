@@ -1,5 +1,28 @@
 # Stato del progetto
 
+## Sessione principale
+
+La sessione operativa è `desnivel.cli.ensemble`, configurata da
+`presets/organico.json`. Snake, il player del basso e gli altri comandi
+di composizione restano banchi di prova separati.
+
+| Componente | Stato effettivo |
+|---|---|
+| Direzione GPX | Tavolozza, motivo, armonia e assetti per macrosezione disponibili |
+| Parametri dei device | Modalità auto/manual per parametro; in auto seguono i valori configurati della sezione |
+| Dialogo musicale | Guida delle drums, dipendenze fra frasi e influenze ritmiche storiche disponibili |
+| Contesto locale | Tratto rappresentato dalla finestra, pendenza, cambiamento e persistenza disponibili nello stato |
+| Osservazione musicale | Ultimi 16 beat accettati: attacchi, occupazione, registro e copertura per voce |
+| Adattamento continuo dei parametri | Da implementare: risolutore, politiche delle voci e transizioni, compreso il rilascio graduale dal manuale |
+| Drums | Sviluppo di materiale precomposto, quattro figure per stile e transizioni disponibili; compositore a regole da implementare |
+
+Contesto locale e osservazione non modificano ancora i parametri.
+Variazione delle drums può restare fissa mentre cambiano le figure,
+le trasformazioni e le risposte alle altre voci.
+Il lavoro successivo è descritto nella
+[direzione adattiva](proposte/DIREZIONE-ADATTIVA.md); le pulizie individuate
+sono nella [revisione dei controlli](proposte/REVISIONE-CONTROLLI.md).
+
 ## Funzionalità operative
 
 ### 1. Dati del viaggio e telemetria
@@ -39,8 +62,7 @@
 
 [Sessione multivoce](SESSIONE-MULTIVOCE.md) · [Configurazione](CONFIGURAZIONE.md) · [Passaggio di consegne](PASSAGGIO-CONSEGNE.md)
 
-La verifica automatica del 31 ottobre 2026 comprende 511 test Python
-superati e la suite JavaScript superata. Il dialogo ritmico è verificato
+Le verifiche automatiche comprendono suite Python e JavaScript. Il dialogo ritmico è verificato
 anche su 400 finestre consecutive con validazione delle frasi nel bridge;
 la calibrazione all'ascolto in Live resta da eseguire. Sono verificate
 le configurazioni manuale e guidata dalle macrosezioni GPX tramite

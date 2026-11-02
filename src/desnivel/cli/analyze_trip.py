@@ -58,6 +58,10 @@ def analyze_trip(gpx, config, *, grouping=None, pause_context=None, timeline_ses
                                      window_beats=session['window_beats'], **settings)
         result['timeline'] = {**timeline.to_dict(), 'position': TimelineManager(timeline).snapshot(),
                               'linear_reference': _linear_spans(track, sections, timeline.total_beats)}
+        from desnivel.cli.window_context import WindowContext
+        context = WindowContext(track, result)
+        result['timeline']['window_contexts'] = [context.allocated(timeline, sections, i)
+                                                  for i in range(timeline.total_windows)]
     return result
 
 

@@ -11,7 +11,7 @@ proprio materiale, le altezze e le regole di sviluppo.
 3. Il basso legge la melodia e può aderire alla guida ritmica.
 4. La tessitura sostiene la sezione oppure la frase sorgente, secondo `follow_source`.
 5. Le drums completano la propria frase reagendo a melodia e basso.
-6. Il Coordinator accetta il piano e aggiorna la memoria dei gesti effettivi.
+6. Il Coordinator accetta il piano e aggiorna gesti e osservazioni musicali.
 
 La relazione storica drums → melodia chiude lo scambio: il risultato delle
 drums, composto anche in risposta alle altre voci, può influenzare la
@@ -108,6 +108,36 @@ Nessuna scelta di attacchi nel frammento equivale a materiale indisponibile.
 Sono destinatari supportati `motif` nei ruoli `melody` e `bass_line`,
 e `responsive_line` in `bass_line`. Altri aspetti, trasformazioni e campi
 non riconosciuti vengono rifiutati.
+
+## Osservazione musicale condivisa
+
+`music/observation.py` conserva riferimenti alle frasi accettate negli
+ultimi 16 beat. Prima della composizione, guida e generatori ricevono lo
+stesso `PlanningRequest.observation`, riferito esclusivamente a finestre
+accettate che terminano entro l'inizio del nuovo piano.
+
+| Misura per voce | Definizione |
+|---|---|
+| `attacks` | Note con attacco nell'intervallo osservato; note simultanee contano separatamente |
+| `attacks_per_beat` | Attacchi divisi per i beat accettati disponibili |
+| `occupied_ratio` | Durata dell'unione degli intervalli con note, divisa per i beat disponibili; la polifonia non moltiplica la durata |
+| `register` | Minima e massima altezza MIDI delle note che intersecano l'intervallo, oppure `null` |
+| `assigned_beats` | Beat osservati nei quali la voce appartiene all'organico, anche se silenziosa |
+
+`available_beats` e `coverage_ratio` indicano quanta parte dei 16 beat è
+disponibile. Intervalli non pianificati non diventano silenzi osservati.
+Senza storia, frequenza degli attacchi e occupazione sono `null`; una
+frase accettata silenziosa produce zero. Una nota iniziata prima del
+limite contribuisce all'occupazione residua e al registro, senza contare
+come nuovo attacco.
+
+L'osservazione comprende anche le parti accettate dei gesti incompleti;
+le relazioni storiche continuano a richiedere gesti completi. La memoria
+avanza soltanto dopo la validazione dell'intero piano e viene cancellata
+dal reset. Ripetere un piano accettato non registra nuovamente le note.
+
+Lo stato espone il riepilogo in `decisions.coordinator.observation`.
+I generatori attuali non lo usano ancora per adattare i parametri.
 
 ## Gesti, stato e reset
 

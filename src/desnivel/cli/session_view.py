@@ -60,6 +60,19 @@ def render_session(state):
         rows.append('Coordinator: nessun piano in attesa.')
     else:
         rows.append(f"Coordinator: piano inviato [{plan['start']:g}, {plan['start']+plan['length_beats']:g}] beat | sezione {plan['section']}")
+        local = plan.get('local_trip')
+        if local and local['status'] == 'available':
+            parts = local['parts']
+            slope = local.get('profile', {}).get('slope_ratio')
+            measure = f"pendenza {slope:+.1%}" if slope is not None else 'pendenza non disponibile'
+            rows.append(f"  Tratto pianificato: km {parts[0]['start_distance_m']/1000:.2f}–"
+                        f"{parts[-1]['end_distance_m']/1000:.2f} | {measure}")
+        elif local:
+            rows.append(f"  Contesto locale non disponibile: {local['reason']}")
+        observation = plan.get('observation')
+        if observation:
+            rows.append(f"  Osservazione musicale: {observation['available_beats']:g} / "
+                        f"{observation['lookback_beats']:g} beat accettati disponibili")
         if plan.get('trip'):
             rows.append(f"  Assetto della macrosezione {plan['trip']['index']+1}: {plan['trip']['kind']}")
         rows.append('  Ordine generatori: ' + (' -> '.join(plan['order']) or 'nessuna voce attiva'))

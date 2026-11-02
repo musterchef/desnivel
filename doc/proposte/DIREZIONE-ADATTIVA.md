@@ -2,10 +2,12 @@
 
 Stato: regole approvate, implementazione parziale. Sono disponibili gli
 assetti per macrosezione, il flag `manual` per parametro, il riferimento ritmico
-e alcune interazioni fra generatori. La strategia adattiva e il rilascio
+e alcune interazioni fra generatori. Sono disponibili il contesto locale
+delle finestre e l'osservazione degli ultimi 16 beat accettati.
+La strategia adattiva e il rilascio
 graduale descritti qui restano da implementare.
 
-Il [device attuale](../VOCE-M4L.md) mostra AUTO/MANUAL per il parametro
+Il [device attuale](../VOCE-M4L.md) mostra auto/manual per il parametro
 selezionato. Una modifica mantiene manuale soltanto quel valore. Il
 ritorno in AUTO riprende il valore della sezione corrente dalla prossima
 finestra da pianificare, senza interpolazione.
@@ -65,8 +67,8 @@ contratto di configurazione dovrà distinguere le due intenzioni.
 ## Controllo manuale per parametro
 
 Ogni parametro esposto dalla voce ha un flag booleano `manual`,
-inizialmente `false`. Nel device lo switch **Manual** e l'indicatore
-**AUTO/MANUAL** si riferiscono al parametro selezionato nel menu.
+inizialmente `false`. Nel device lo switch **manual** e l'indicatore
+**auto/manual** si riferiscono al parametro selezionato nel menu.
 
 | Evento | Effetto |
 |---|---|
@@ -126,10 +128,17 @@ sorgente richiedono anche il relativo supporto compositivo e di memoria.
 
 ## Piano di implementazione proposto
 
-Stato: proposta da approvare. Le fasi seguenti precisano il lavoro ancora
-necessario; non descrivono funzioni disponibili.
+Stato: piano approvato; fase 1 implementata per pendenza locale e
+osservazione musicale. Risolutore, politiche, adattamento e rilascio
+graduale delle fasi successive restano da implementare. Le prime durate
+di transizione proposte richiedono la taratura prevista dal piano.
 
 ### 1. Contesto locale e osservazione musicale
+
+Implementazione disponibile: [contesto delle finestre](../DIREZIONE-MUSICALE.md#contesto-locale-delle-finestre)
+e [osservazione condivisa](../DIALOGO-MUSICALE.md#osservazione-musicale-condivisa).
+I valori sono ispezionabili nello stato; i parametri conservano il
+comportamento precedente.
 
 - Riutilizzare le finestre di pendenza smussata di `trip/analysis.py`,
   conservandone unità, scala spaziale, copertura e interruzioni.

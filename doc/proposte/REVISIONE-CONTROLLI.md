@@ -54,3 +54,19 @@ segnalati dal generatore; l'inattività contestuale non ne giustifica la rimozio
 I preset melodici `spaced`, `flowing`, `spacious` e quelli del basso
 `sparse`, `rhythmic` combinano responsabilità diverse. Non sono semplici
 alias di un singolo valore; resta da correggere il limite di densità indicato.
+
+## Uso operativo e uso nei banchi di prova
+
+- `interpolate_settings` è usato dal planner del basso; non è codice morto.
+- `percussion_pattern` è un generatore registrato e verificato per frasi
+  esplicite, distinto da `percussion_phrase` usato nell'organico principale.
+- I materiali `spaced_dialogue` e `regular_pulse_offbeats` sono usati nei
+  confronti e nei test multivoce. La loro assenza dall'organico principale
+  non ne giustifica l'eliminazione.
+- `style_events` in `music/percussion/styles.py` è chiamato soltanto dai
+  test degli stili. Si propone di spostarlo nel supporto ai test, conservando
+  la verifica delle figure; non è il compositore usato durante la sessione.
+
+La presentazione in minuscolo di nomi, opzioni e modalità dei parametri è
+applicata dal device comune. Non modifica identificativi, preset o regole
+musicali; non comporta rinomine dei file o dei simboli Python.

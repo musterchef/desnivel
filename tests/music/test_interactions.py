@@ -50,6 +50,7 @@ def test_staging_failure_retry_duplicate_and_reset_are_atomic():
         c.plan(0, 4)
     assert a.accepted == b.accepted == 0
     assert not c.history and c.last_plan is None
+    assert a.requests[-1].observation.available_beats == 0
     b.fail = False
     result = c.plan(0, 4)
     assert a.accepted == b.accepted == 1
@@ -65,6 +66,29 @@ def test_staging_failure_retry_duplicate_and_reset_are_atomic():
     assert c.epoch == epoch+1 and not c.history and c.last_plan is None
     c.plan(0, 4)
     assert b.requests[-1].relations[0].gesture is None
+
+
+def test_observation_includes_accepted_parts_of_incomplete_gestures_and_is_shared():
+    a, b = Part(span=16), Part(span=16)
+    c = MusicCoordinator({'a': a.voice(), 'b': b.voice(dependencies=('a',))}, relations=(relation(),))
+    c.plan(0, 4)
+    assert not c.history  # Il gesto non è ancora completo.
+    b.fail = True
+    with pytest.raises(ValueError):
+        c.plan(4, 4)
+    b.fail = False
+    result = c.plan(4, 4)
+    observation = a.requests[-1].observation
+    assert observation is b.requests[-1].observation
+    assert observation.available_beats == 4
+    assert observation.voices['a'].attacks == 1
+    assert c.plan(4, 4) == result
+    c.plan(8, 4)
+    assert a.requests[-1].observation.available_beats == 8
+    assert a.requests[-1].observation.voices['a'].attacks == 2
+    c.reset()
+    c.plan(0, 4)
+    assert a.requests[-1].observation.available_beats == 0
 
 
 def test_complete_gestures_only_and_no_same_window_history_leak_or_reuse():

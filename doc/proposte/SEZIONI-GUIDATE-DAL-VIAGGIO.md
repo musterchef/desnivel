@@ -123,8 +123,11 @@ sezione sta terminando.
 
 ## Piano per il contesto interno delle macrosezioni
 
-Stato: proposta di sviluppo da revisionare. Nessuno dei nuovi contratti
-descritti qui è implementato. Il piano riguarda tutte le voci e conserva
+Stato: piano esteso da revisionare. Il primo insieme di contesto locale
+e osservazione musicale è disponibile secondo la
+[direzione adattiva](DIREZIONE-ADATTIVA.md); provenienza estesa, descrittori
+del movimento e variazioni dei parametri restano da implementare.
+Il piano riguarda tutte le voci e conserva
 la separazione tra analisi neutra, interpretazione musicale e composizione.
 
 ### 1. Dati disponibili e loro provenienza
