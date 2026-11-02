@@ -12,6 +12,7 @@ from desnivel.music.interactions import VoicePlan, GestureSpan
 from desnivel.music.rhythm import PreparedRhythm, RhythmReference
 from .catalog import STYLE_BY_ID, STYLE_ROLES
 from .styles import StyleMaterial, transition_for, transition_events
+from .adaptation import targets
 
 
 DEFAULTS = {'style': 'none', 'transition_beats': 16., 'variation': .7, 'displacement_beats': .25, 'velocity_ratio': .85,
@@ -20,6 +21,11 @@ OPERATIONS = {'statement', 'subtract', 'displace', 'accent', 'silence'}
 
 
 class PercussionPhraseGenerator:
+    def adapt(self, request):
+        style = request.setting('style')
+        cycle = STYLE_BY_ID[style].cycle_beats if style != 'none' else self.standard[1] if self.standard else self.cycle
+        return targets(request, cycle)
+
     def __init__(self, lanes, material, anchor_beats, development, interaction, settings=None, *,
                  standard_material=None):
         # Riutilizza la validazione dei materiali espliciti e della mappa MIDI.

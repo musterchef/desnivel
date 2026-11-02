@@ -4,6 +4,7 @@ from collections import defaultdict
 from desnivel.music.patterns import SCALES
 from desnivel.music.phrases import Note, Phrase
 from desnivel.music.interactions import VoicePlan, GestureSpan
+from .adaptation import targets
 
 
 ROLES = ('sustained_texture',)
@@ -11,6 +12,8 @@ DEFAULTS = dict(octave=0, velocity=85, follow_source=0)
 
 
 class TextureGenerator:
+    adapt = staticmethod(targets)
+
     def __init__(self, degree=0, settings=None):
         if type(degree) is not int or degree < 0:
             raise ValueError('degree richiede un grado intero non negativo')

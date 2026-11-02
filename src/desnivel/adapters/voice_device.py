@@ -76,14 +76,15 @@ class DeviceVoice:
     migrate_preset: Callable | None = None
     read_manual: Callable[[str], bool] | None = None
     apply_manual: Callable[[str, bool], None] | None = None
+    read_automation: Callable[[], dict] | None = None
 
     @classmethod
-    def for_session(cls, session, voice: str, progress: Callable[[], float], **controls):
+    def for_session(cls, session, voice: str, progress: Callable[[], float], *, beat=None, **controls):
         """Collega ruoli e controlli alla sessione con avanzamento fornito dal chiamante."""
         session.role_state(voice, progress())
         defaults = dict(controls.get('values', {}))
         def read_values():
-            parameters = {**defaults, **session.parameters_at(voice, progress())}
+            parameters = {**defaults, **session.parameters_at(voice, progress(), beat=beat() if beat else None)}
             return {name: parameters[name] for name in defaults}
         return cls(
             read_values=read_values,
@@ -91,7 +92,8 @@ class DeviceVoice:
             apply_role=lambda role: session.set_role(voice, role),
             apply_presence=lambda value: session.set_presence_multiplier(voice, value),
             read_manual=lambda name: session.manual(voice, name),
-            apply_manual=lambda name, value: session.set_manual(voice, name, value, progress=progress()),
+            read_automation=lambda: session.coordinator.parameter_states_at(voice, beat() if beat else None),
+            apply_manual=lambda name, value: session.set_manual(voice, name, value, progress=progress(), beat=beat() if beat else None),
             apply_parameter=lambda name, value: session.set_parameter(voice, name, value),
             apply=lambda values: session.set_parameters(voice, values), **controls)
 
@@ -137,11 +139,13 @@ class VoiceDeviceBridge:
         }
         values = spec.read_values() if spec.read_values else spec.values
         details = spec.describe_controls(roles['role'], values) if spec.describe_controls else {}
+        automation = spec.read_automation() if spec.read_automation else {}
         return {**roles, 'preset': spec.preset, 'presets': list(spec.presets),
                 'can_save_presets': spec.save_preset is not None,
                 'editable_presets': sorted(spec.editable_presets),
                 'preset_migrations': spec.preset_migrations,
                 'controls': {name: {**asdict(control), 'value': values[name], **details.get(name, {}),
+                                    'automation': automation.get(name),
                                     'manual': spec.read_manual(name) if spec.read_manual else None}
                              for name, control in spec.controls.items()}}
 

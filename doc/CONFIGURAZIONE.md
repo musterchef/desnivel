@@ -197,14 +197,13 @@ dall'inizio alla fine della finestra, e rispettano presenza e organico.
 `organico.json` assegna questo generatore ad `atmosphere`, con `degree: 0`,
 `octave: 1`, velocity 52 e modalità indipendente iniziale. `voice_03` legge
 `voice_01` come dipendenza facoltativa. Lo switch viene conservato nei
-preset della tessitura. Selezionare un preset base, completato con le
-impostazioni iniziali, ripristina anche `follow_source: 0`.
+preset utente della tessitura. Non sono forniti preset base per questa voce.
 Algoritmo, registro e prova d'ascolto sono in [Tessitura sostenuta](TESSITURA.md).
 
 ## Parametri del generatore `responsive_line`
 
 Richiede una dipendenza musicale e supporta il ruolo `bass_line`.
-I sette controlli della sessione sono:
+I controlli esposti nella sessione sono:
 
 | Parametro | Intervallo | Effetto |
 |---|---|---|
@@ -215,6 +214,7 @@ I sette controlli della sessione sono:
 | `mobility` | 0…1 | Peso del movimento e delle preferenze di registro |
 | `variation` | 0…1 | Peso delle variazioni riproducibili di attacchi e altezze |
 | `articulation` | 0,05…1 | Frazione di durata disponibile occupata dalle note |
+| `groove_follow` | 0…1 | Adesione degli attacchi composti alla guida ritmica condivisa |
 
 Ulteriori impostazioni non esposte nel menu, accettate in `settings` e
 nei `parameters` delle assegnazioni; `strategy` è ammesso solo in `settings`:
@@ -230,10 +230,19 @@ nei `parameters` delle assegnazioni; `strategy` è ammesso solo in `settings`:
 | `max_hold` | 2 | Durata disponibile massima prima dell'articolazione, in beat, positiva |
 | `grid` | 0,5 | Passo positivo della griglia delle posizioni candidate, in beat |
 
-I valori iniziali dei sette controlli dipendono da `strategy` e dagli
+I valori iniziali dei controlli compositivi dipendono da `strategy` e dagli
 eventuali valori espliciti di `settings`. La tabella dei tre preset e
 l'algoritmo sono in [Generatore del basso](BASSO.md).
-I preset del device contengono soltanto i sette controlli esposti.
+I preset del device contengono gli otto controlli esposti, incluso `groove_follow`.
+
+Nel device `density` è mostrato come **densità richiesta**. Il riepilogo
+accanto al valore indica attacchi selezionati/capacità ritmica dell'ultimo
+piano accettato; `saturo` indica che il target ha raggiunto tale capacità.
+Il limite dipende da sorgente, candidati, spaziatura e ordine di selezione:
+non è un massimo fisso a 1. Il riepilogo non cambia il valore richiesto.
+La descrizione del controllo riporta i beat disponibili; lo stato espone
+il dettaglio in `composition.density`. Con presenza nulla il device mostra
+`voce non partecipante`.
 `strategy` seleziona i valori iniziali, non cambia l'algoritmo a esecuzione avviata.
 
 ## Parametri del generatore `percussion_pattern`
@@ -418,7 +427,8 @@ Per una voce attiva i parametri vengono risolti in questo ordine:
 
 1. Impostazioni iniziali del generatore.
 2. Parametri dell'assegnazione della sezione corrente.
-3. Valori manuali mantenuti nella sessione Python.
+3. Politiche adattive, quando è collegata l'analisi GPX.
+4. Valori manuali mantenuti nella sessione Python.
 
 Le scelte manuali di ruolo hanno precedenza sul ruolo della sezione, ma
 non attivano una voce esclusa dall'organico. `Follow section` ripristina il
@@ -427,15 +437,17 @@ ruolo assegnato; non cancella i parametri manuali.
 Il comando **Preset** applica tutti i controlli iniziali completati con i
 valori del preset, rendendoli manuali nelle sezioni successive.
 Modificare un singolo **Parametro** mantiene manuale soltanto quel
-controllo. Gli altri continuano a seguire gli assetti delle sezioni.
+controllo. Gli altri seguono le proprie politiche o gli assetti delle sezioni.
 Nel device **manual** e l'indicatore auto/manual si riferiscono al
-parametro selezionato. Spegnere lo switch lo restituisce alla sezione
-corrente, conservando gli altri override. Il flag `manual` è esposto
+parametro selezionato. Spegnere lo switch lo restituisce all'automazione,
+con rilascio graduale per i controlli adattivi, conservando gli altri override. Il flag `manual` è esposto
 nello stato di ciascun controllo e rimane separato da ruolo e presenza.
 `EnsembleSession.clear_parameters(voice)` elimina tutti gli override.
 Riavviare il processo Python ripristina i valori dei file.
 
 Le modifiche manuali non riscrivono i JSON di configurazione. Il salvataggio esplicito dal device aggiorna soltanto la libreria dei preset utente. Le nuove assegnazioni entrano
 nelle finestre ancora da pianificare; i piani già inviati rimangono validi.
-Le macrosezioni non interpolano gradualmente i parametri e le loro fasce
-interne non applicano variazioni musicali aggiuntive.
+I controlli adattivi interpolano i valori fra finestre usando contesto
+locale e osservazioni musicali. Quelli non gestiti dalle politiche
+mantengono i cambi di assetto configurati. Formule e tempi sono in
+[Direzione musicale](DIREZIONE-MUSICALE.md#adattamento-dei-parametri).

@@ -18,6 +18,11 @@ La densità è un obiettivo: griglia, attacchi sorgente e spaziatura minima
 limitano il numero realizzabile. Aumentarla oltre quel limite non aggiunge
 note; con `rhythm_follow = 1` i candidati sono soltanto gli attacchi sorgente.
 
+`plan_bass` restituisce la stessa frase insieme al riepilogo della selezione
+ritmica. La sessione lo usa per mostrare attacchi selezionati, capacità e
+saturazione della **densità richiesta**; `generate_bass` restituisce soltanto
+la frase. Il riepilogo riguarda la composizione prima della presenza.
+
 ### 2. Altezze e salienza armonica (`_salience`, `_pitches`)
 - **Salienza**: analizza la frase melodica pesando durata, dinamica e posizione metrica di ogni nota per individuare l'appoggio armonico più solido.
 - **Legame melodico (`melody_follow`)**: bilancia la coerenza con l'appoggio armonico generale (valori bassi) e l'attrazione verso l'altezza melodica più vicina (valori alti).

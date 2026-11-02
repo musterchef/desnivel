@@ -296,8 +296,8 @@ finestra futura e le relative misure di pendenza;
 per voce. La vista terminale mostra il tratto pianificato e i beat di
 storia disponibili quando lo spazio lo consente. Definizioni e limiti
 sono in [Direzione musicale](DIREZIONE-MUSICALE.md) e
-[Dialogo ritmico](DIALOGO-MUSICALE.md). Questi ingressi non regolano ancora
-automaticamente i parametri.
+[Dialogo ritmico](DIALOGO-MUSICALE.md). Questi ingressi alimentano le politiche adattive dei controlli nella
+sessione guidata dal GPX, rispettando il manuale per parametro.
 
 ## Mappa del viaggio
 

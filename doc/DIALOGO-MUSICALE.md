@@ -137,7 +137,9 @@ avanza soltanto dopo la validazione dell'intero piano e viene cancellata
 dal reset. Ripetere un piano accettato non registra nuovamente le note.
 
 Lo stato espone il riepilogo in `decisions.coordinator.observation`.
-I generatori attuali non lo usano ancora per adattare i parametri.
+Le politiche delle voci lo usano per adattare i parametri nella sessione
+guidata dal GPX. Formule, transizioni e precedenze sono descritte in
+[Direzione musicale](DIREZIONE-MUSICALE.md#adattamento-dei-parametri).
 
 ## Gesti, stato e reset
 

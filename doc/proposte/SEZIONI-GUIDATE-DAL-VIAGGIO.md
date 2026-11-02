@@ -125,8 +125,8 @@ sezione sta terminando.
 
 Stato: piano esteso da revisionare. Il primo insieme di contesto locale
 e osservazione musicale è disponibile secondo la
-[direzione adattiva](DIREZIONE-ADATTIVA.md); provenienza estesa, descrittori
-del movimento e variazioni dei parametri restano da implementare.
+[direzione adattiva](DIREZIONE-ADATTIVA.md); le politiche adattive dei primi controlli sono implementate. Provenienza
+estesa e descrittori del movimento restano da realizzare.
 Il piano riguarda tutte le voci e conserva
 la separazione tra analisi neutra, interpretazione musicale e composizione.
 
@@ -252,8 +252,8 @@ confluiscono obbligatoriamente in un unico indice di energia.
 Applicare la precedenza fra assetto, adattamento e intervento manuale
 definita nel [contratto della direzione adattiva](DIREZIONE-ADATTIVA.md).
 Il flag `manual` mantiene il singolo parametro; il rilascio lo restituisce
-all'automazione dal contesto corrente. Il flag è disponibile; le strategie
-adattive e le transizioni graduali restano da implementare.
+all'automazione dal contesto corrente. Il flag, le politiche dei primi controlli e le transizioni graduali sono
+disponibili nella sessione guidata dal GPX.
 
 **Consegna:** report delle indicazioni prodotte dalle regole, prima di
 modificare gli algoritmi compositivi. Per ogni cambiamento mostrare dato

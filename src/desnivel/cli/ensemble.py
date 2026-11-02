@@ -27,6 +27,7 @@ class Generator:
     rhythmic_roles: tuple[str, ...] = ()
     accept_reference: Callable | None = None
     parameter_defaults: Mapping = field(default_factory=dict)
+    adapt: Callable | None = None
 
 
 class EnsembleSession:
@@ -51,7 +52,7 @@ class EnsembleSession:
                                  generator.supported_roles, generator.describe,
                                  tuple(spec.get('optional_dependencies', ())),
                                  generator.stage, generator.accept, generator.prepare_reference,
-                                 generator.rhythmic_roles, generator.accept_reference)
+                                 generator.rhythmic_roles, generator.accept_reference, generator.adapt, generator.validate)
             self._destinations[name] = destinations[spec['destination']]
         self.director = MusicDirector(config['sections'])
         for voice in voices.values():
@@ -95,17 +96,22 @@ class EnsembleSession:
         """Legge una configurazione JSON e collega i componenti registrati."""
         return cls(json.loads(Path(path).read_text()), generators, destinations)
 
-    def plan(self, progress: float, start: float, length_beats: float):
+    def plan(self, progress: float, start: float, length_beats: float, *, adaptive_context=None):
         """Produce le frasi della sezione senza inviarle alle destinazioni."""
         assignments = {
-            name: Assignment(spec.role, self.parameters_at(name, progress),
+            name: Assignment(spec.role, self.base_parameters_at(name, progress) if adaptive_context is not None
+                             else {**self.base_parameters_at(name, progress), **self._manual_parameters.get(name, {})},
                              self.presence_state(name, progress)['effective'])
             for name, spec in self.director.assignments_at(progress).items()
         }
         phrases = self.coordinator.plan(
             start, length_beats, self.director.context_at(progress), assignments=assignments,
-            rhythm_parameters=self.parameters_at(self.coordinator.rhythm_source, progress)
-            if self.coordinator.rhythm_source is not None else None)
+            rhythm_parameters=(self.base_parameters_at(self.coordinator.rhythm_source, progress)
+                               if adaptive_context is not None else
+                               {**self.base_parameters_at(self.coordinator.rhythm_source, progress),
+                                **self._manual_parameters.get(self.coordinator.rhythm_source, {})})
+            if self.coordinator.rhythm_source is not None else None,
+            adaptive_context=adaptive_context, manual_parameters=self._manual_parameters)
         self._parameter_progress = progress
         return phrases
 
@@ -160,12 +166,17 @@ class EnsembleSession:
             raise ValueError('moltiplicatore della presenza richiesto tra 0 e 10')
         self._presence_multipliers[voice] = value
 
-    def parameters_at(self, voice: str, progress: float):
+    def base_parameters_at(self, voice: str, progress: float):
         if voice not in self._generators:
             raise ValueError('voce non registrata')
         assignment = self.director.assignments_at(progress).get(voice)
         return {**self._generators[voice].parameter_defaults,
-                **(assignment.parameters if assignment else {}),
+                **(assignment.parameters if assignment else {})}
+
+    def parameters_at(self, voice: str, progress: float, *, beat=None):
+        details = self.coordinator.parameter_states_at(voice, beat)
+        return {**self.base_parameters_at(voice, progress),
+                **{name: state['effective'] for name, state in details.items()},
                 **self._manual_parameters.get(voice, {})}
 
     def manual(self, voice: str, name: str):
@@ -173,14 +184,14 @@ class EnsembleSession:
             raise ValueError('voce non registrata')
         return name in self._manual_parameters.get(voice, {})
 
-    def set_manual(self, voice: str, name: str, value: bool, *, progress=None):
+    def set_manual(self, voice: str, name: str, value: bool, *, progress=None, beat=None):
         """Mantiene un parametro o lo restituisce agli assetti delle sezioni."""
         if type(value) is not bool:
             raise ValueError('manual richiede un booleano')
         current = self.manual(voice, name)
         if value and not current:
             progress = self._parameter_progress if progress is None else progress
-            self.set_parameter(voice, name, self.parameters_at(voice, progress)[name])
+            self.set_parameter(voice, name, self.parameters_at(voice, progress, beat=beat)[name])
         elif not value:
             parameters = dict(self._manual_parameters.get(voice, {}))
             parameters.pop(name, None)

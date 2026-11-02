@@ -5,9 +5,11 @@ import argparse
 import json
 import math
 from pathlib import Path
+from uuid import uuid4
 
 from desnivel.adapters.voice_device import ADDRESS, CONTROL_ADDRESS, DeviceVoice, VoiceDeviceBridge
 from desnivel.music.phrases import Phrase
+from desnivel.sinks.voice_wire import voice_packets
 
 
 class VoiceDeviceServer:
@@ -20,14 +22,16 @@ class VoiceDeviceServer:
         self.clients = {}
         self.on_message = on_message
         self.on_error = on_error
+        self._wire_stream = uuid4().int & 0x7fffffff
+        self._wire_serial = 0
 
         def send(port, address, message):
-            payload = json.dumps(message, separators=(',', ':'), allow_nan=False).encode('utf-8')
-            if len(payload) > 12000:
-                raise ValueError('messaggio troppo grande per UDP')
+            self._wire_serial = self._wire_serial % 0x7fffffff+1
+            packets = tuple(voice_packets(address, message, self._wire_stream, self._wire_serial))
             if port not in self.clients:
                 self.clients[port] = SimpleUDPClient('127.0.0.1', port)
-            self.clients[port].send_message(address, list(payload))
+            for packet in packets:
+                self.clients[port].send(packet)
 
         self.bridge = VoiceDeviceBridge(voices, send)
         dispatcher = Dispatcher()

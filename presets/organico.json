@@ -36,17 +36,6 @@
           "step_beats": 0.5,
           "articulation": 0.85
         },
-        "low_register": {
-          "octave": -2,
-          "step_beats": 1
-        },
-        "literal": {
-          "development": 0
-        },
-        "developed": {
-          "development": 0.7,
-          "activity": 0.75
-        },
         "spacious": {
           "development": 0.6,
           "activity": 0.35,
@@ -67,10 +56,6 @@
           "density": 0.5,
           "variation": 0.2
         },
-        "responsive": {
-          "density": 0.8,
-          "rhythm_follow": 0.35
-        },
         "rhythmic": {
           "density": 1.8,
           "syncopation": 0.7,
@@ -84,14 +69,6 @@
       "settings": {
         "octave": 1,
         "velocity": 52
-      },
-      "presets": {
-        "soft": {
-          "velocity": 40
-        },
-        "present": {
-          "velocity": 65
-        }
       }
     },
     "percussion": {

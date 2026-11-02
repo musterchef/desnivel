@@ -9,19 +9,25 @@ di composizione restano banchi di prova separati.
 | Componente | Stato effettivo |
 |---|---|
 | Direzione GPX | Tavolozza, motivo, armonia e assetti per macrosezione disponibili |
-| Parametri dei device | Modalità auto/manual per parametro; in auto seguono i valori configurati della sezione |
+| Parametri dei device | Modalità auto/manual per parametro; valore applicato e obiettivo automatico visibili |
 | Dialogo musicale | Guida delle drums, dipendenze fra frasi e influenze ritmiche storiche disponibili |
 | Contesto locale | Tratto rappresentato dalla finestra, pendenza, cambiamento e persistenza disponibili nello stato |
 | Osservazione musicale | Ultimi 16 beat accettati: attacchi, occupazione, registro e copertura per voce |
-| Adattamento continuo dei parametri | Da implementare: risolutore, politiche delle voci e transizioni, compreso il rilascio graduale dal manuale |
+| Adattamento dei parametri | Attivo nella sessione guidata dal GPX per tutte e quattro le voci, con transizioni fra finestre e rilascio graduale dal manuale |
 | Drums | Sviluppo di materiale precomposto, quattro figure per stile e transizioni disponibili; compositore a regole da implementare |
 
-Contesto locale e osservazione non modificano ancora i parametri.
-Variazione delle drums può restare fissa mentre cambiano le figure,
-le trasformazioni e le risposte alle altre voci.
+Contesto locale e osservazione guidano attività e velocity melodiche,
+densità e sincopi del basso, velocity della tessitura, variazione e
+velocity ratio delle drums. Condizioni stabili possono produrre un
+obiettivo stabile: i controlli non oscillano per il solo trascorrere del tempo.
 Il lavoro successivo è descritto nella
 [direzione adattiva](proposte/DIREZIONE-ADATTIVA.md); le pulizie individuate
 sono nella [revisione dei controlli](proposte/REVISIONE-CONTROLLI.md).
+
+La configurazione principale conserva i preset melodici `spaced`,
+`flowing`, `spacious` e quelli del basso `sparse`, `rhythmic`.
+Tessitura e drums espongono i controlli senza preset base.
+La densità del basso mostra anche la saturazione dell'ultimo piano.
 
 ## Funzionalità operative
 

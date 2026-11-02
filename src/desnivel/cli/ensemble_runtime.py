@@ -17,7 +17,9 @@ from desnivel.music.timeline import TimelineManager, allocate_timeline
 
 
 class EnsembleRuntime:
-    def __init__(self, track, config, bridge, speed=1., clock=time.monotonic, *, timing="linear"):
+    def __init__(self, track, config, bridge, speed=1., clock=time.monotonic, *, timing="linear", adaptive=True):
+        if type(adaptive) is not bool:
+            raise ValueError('adaptive richiede un booleano')
         if not math.isfinite(speed) or speed <= 0:
             raise ValueError('speed deve essere positiva e finita')
         self.track, self.bridge, self.speed, self.clock = track, bridge, speed, clock
@@ -73,6 +75,7 @@ class EnsembleRuntime:
                                          'optional_dependencies': list(spec.get('optional_dependencies', []))}
                                    for name, spec in config['voices'].items()}
         self.window_context = WindowContext(track, config.get('trip_analysis'))
+        self.adaptation_enabled = adaptive and self.window_context.profile is not None
         session_config = deepcopy({k: v for k, v in config.items() if k != 'trip_analysis'})
         self.trip_music = deepcopy(config.get('trip_music'))
         self.section_directions = tuple(deepcopy(section.get('direction')) for section in config['sections'])
@@ -100,7 +103,7 @@ class EnsembleRuntime:
                     details['groove_follow'] = {'inactive_reason': 'Richiede rhythm_voice nella configurazione'}
                 return details
             bridge.voices[name] = DeviceVoice.for_session(
-                self.session, name, lambda: self.progress,
+                self.session, name, lambda: self.progress, beat=lambda: self.beat,
                 controls=registered.controls, values=registered.values, presets=registered.presets,
                 describe_controls=describe_controls, preset_defaults=registered.preset_defaults,
                 migrate_preset=registered.migrate_preset)
@@ -255,7 +258,9 @@ class EnsembleRuntime:
                               length_beats=self.window, bpm=self.bpm, speed=self.speed))
         # I cambi di organico si applicano alla prossima finestra, con frasi vuote
         # per le parti uscenti: la finestra già iniziata può concludersi.
-        phrases = self.session.plan(plan_progress, start, self.window)
+        from desnivel.cli.trip_direction import adaptive_context
+        intent = adaptive_context(source_context) if self.adaptation_enabled else None
+        phrases = self.session.plan(plan_progress, start, self.window, adaptive_context=intent)
         for name in self.sounding - phrases.keys():
             if self.bridge.connected(name):
                 self.bridge.destination(name)(start, Phrase(self.window, ()))
@@ -271,6 +276,7 @@ class EnsembleRuntime:
                                'direction': self.section_directions[context.section_index],
                                'trip': self.section_sources[context.section_index],
                                'local_trip': source_context}
+        self.last_decisions['adaptive_context'] = vars(intent) if intent is not None else None
 
     def fail(self, error):
         self.error = str(error)
@@ -290,6 +296,7 @@ class EnsembleRuntime:
                               'adjustments': self.timeline.timeline.to_dict()['adjustments']}
                              if self.timeline else None),
                 'version': 1, 'state': self.state, 'error': self.error,
+                'adaptation_enabled': self.adaptation_enabled,
                 'controls': {'paused': self.paused, 'restart_count': self.restart_count},
                 'decisions': {'director': self.session.director.decision_at(self.progress),
                               'coordinator': self.last_decisions},

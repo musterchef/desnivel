@@ -85,6 +85,29 @@ def test_session_bass_rejects_initial_preset_selector_as_runtime_parameter():
     registered.generator.validate('bass_line', {'lowest': 24, 'density': .5})
 
 
+def test_density_reports_saturation_without_changing_the_composed_phrase():
+    from desnivel.music.bass.generator import plan_bass
+    melody = Phrase(4, tuple(Note(i, 60, .2, 90) for i in range(4)))
+    settings = BassSettings(rhythm_follow=1, min_spacing=1, variation=0, density=1.8)
+    phrase, density = plan_bass(melody, settings)
+    assert phrase == generate_bass(melody, replace(settings, density=1))
+    assert density['selected_attacks'] == density['capacity_attacks'] == 4
+    assert density['saturated'] is True
+    sparse, density = plan_bass(melody, replace(settings, density=.5))
+    assert len(sparse.notes) == density['selected_attacks'] == 2
+    assert density['capacity_attacks'] == 4 and density['saturated'] is False
+
+
+def test_density_above_one_can_still_matter_in_a_short_interval():
+    from desnivel.music.bass.generator import plan_bass
+    melody = Phrase(3.2, tuple(Note(i, 60, .1, 90) for i in range(4)))
+    settings = BassSettings(rhythm_follow=1, min_spacing=1, variation=0, density=1)
+    first, _ = plan_bass(melody, settings)
+    second, density = plan_bass(melody, replace(settings, density=1.2))
+    assert len(first.notes) == 3 and len(second.notes) == 4
+    assert density['capacity_attacks'] == 4 and density['active_beats'] == 3.2
+
+
 def test_density_and_syncopation_control_different_dimensions():
     melody = Phrase(4, (Note(0, 60, 4, 100),))
     settings = BassSettings(density=.75, min_spacing=.5, rhythm_follow=0,

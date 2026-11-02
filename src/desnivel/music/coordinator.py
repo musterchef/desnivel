@@ -14,6 +14,7 @@ from desnivel.music.presence import participates
 from desnivel.music.rhythm import PreparedRhythm, RhythmReference
 from desnivel.music.interactions import VoicePlan, resolve_relation, record_gestures
 from desnivel.music.observation import EnsembleObservation, MusicalMemory
+from desnivel.music.automation import AdaptiveContext, AdaptationRequest, resolve_parameters
 
 
 @dataclass(frozen=True)
@@ -31,6 +32,7 @@ class PlanningRequest:
     prepared_material: object = None
     participating: bool = True
     observation: EnsembleObservation | None = None
+    intent: AdaptiveContext | None = None
 
 
 @dataclass(frozen=True)
@@ -45,6 +47,8 @@ class Voice:
     prepare_reference: Callable | None = None
     rhythmic_roles: tuple[str, ...] = ()
     accept_reference: Callable | None = None
+    adapt: Callable | None = None
+    validate: Callable | None = None
 
 
 class MusicCoordinator:
@@ -93,6 +97,12 @@ class MusicCoordinator:
         self._plan_serial = 0
         self.last_plan = None
         self._observations = MusicalMemory()
+        self._automation = {}
+        self._parameter_frames = []
+
+    def parameter_states_at(self, voice, beat=None):
+        frames = self._parameter_frames if beat is None else [f for f in self._parameter_frames if f[0] <= beat]
+        return deepcopy(frames[-1][2].get(voice, {})) if frames else {}
 
     @property
     def history(self):
@@ -102,7 +112,9 @@ class MusicCoordinator:
              context: MusicalContext | None = None, *,
              sources: Mapping[str, Phrase] | None = None,
              assignments: Mapping[str, Assignment] | None = None,
-             rhythm_parameters: Mapping | None = None) -> dict[str, Phrase]:
+             rhythm_parameters: Mapping | None = None,
+             adaptive_context: AdaptiveContext | None = None,
+             manual_parameters: Mapping | None = None) -> dict[str, Phrase]:
         if not math.isfinite(start) or start < 0:
             raise ValueError('start deve essere finito e non negativo')
         if not math.isfinite(length_beats) or length_beats <= 0:
@@ -120,17 +132,19 @@ class MusicCoordinator:
             raise ValueError('una voce non può essere anche una sorgente fornita')
         if any(p.length_beats != length_beats for p in phrases.values()):
             raise ValueError('le sorgenti devono coprire la finestra musicale')
+        interactive = self._interactive or adaptive_context is not None
         signature = deepcopy((context, {name: (a.role, dict(a.parameters), a.presence)
                                         for name, a in (assignments or {}).items()},
-                              dict(sources or {}), dict(rhythm_parameters or {})))
-        if self._interactive and self._accepted is not None and start <= self._accepted[0]:
+                              dict(sources or {}), dict(rhythm_parameters or {}), adaptive_context,
+                              dict(manual_parameters or {})))
+        if interactive and self._accepted is not None and start <= self._accepted[0]:
             old_start, old_length, old_signature, result = self._accepted
             if (start, length_beats, signature) != (old_start, old_length, old_signature):
                 raise ValueError('intervallo già accettato: reset richiesto prima di ripianificare')
             return dict(result)
-        if self._interactive and self._accepted is not None and start < self._accepted[0]+self._accepted[1]:
+        if interactive and self._accepted is not None and start < self._accepted[0]+self._accepted[1]:
             raise ValueError('finestre di pianificazione sovrapposte')
-        if self._interactive and any(v.stage is None or v.accept is None for v in active.values()):
+        if interactive and any(v.stage is None or v.accept is None for v in active.values()):
             raise ValueError('il dialogo richiede generatori con preparazione e accettazione separate')
         # Verifica tutto il grafo prima di chiamare generatori con eventuale stato.
         available = set(phrases)
@@ -147,6 +161,31 @@ class MusicCoordinator:
                 del pending[name]
         logical_start = start-(self._origin if self._origin is not None else start)
         observation = self._observations.before(start, self._voices)
+        next_automation, automation_decisions = {}, {}
+        if adaptive_context is not None:
+            if context is None or assignments is None:
+                raise ValueError('l’adattamento richiede contesto e assegnazioni esplicite')
+            roles = MappingProxyType({name: a.role for name, a in assignments.items()})
+            adapted = dict(assignments)
+            if self.rhythm_source is not None and self.rhythm_source not in adapted:
+                voice = self._voices[self.rhythm_source]
+                adapted[self.rhythm_source] = Assignment(voice.supported_roles[0], dict(rhythm_parameters or {}))
+            for name, assignment in adapted.items():
+                voice = self._voices[name]
+                request = AdaptationRequest(name, assignment.role, MappingProxyType(dict(assignment.parameters)),
+                                            context, adaptive_context, observation, roles, length_beats,
+                                            MappingProxyType(dict((manual_parameters or {}).get(name, {}))))
+                targets = voice.adapt(request) if voice.adapt else {}
+                values, states, details = resolve_parameters(
+                    assignment.parameters, targets, (manual_parameters or {}).get(name, {}),
+                    self._automation.get(name, {}), start=start, logical_start=logical_start,
+                    scope=(assignment.role, context.section_index))
+                if voice.validate:
+                    voice.validate(assignment.role, values)
+                adapted[name] = Assignment(assignment.role, MappingProxyType(values), assignment.presence)
+                next_automation[name], automation_decisions[name] = states, details
+            rhythm_parameters = adapted[self.rhythm_source].parameters if self.rhythm_source else rhythm_parameters
+            assignments = {name: adapted[name] for name in assignments}
         prepared = None
         if self.rhythm_source is not None:
             spec = (assignments or {}).get(self.rhythm_source)
@@ -154,7 +193,7 @@ class MusicCoordinator:
                 start, length_beats, context, MappingProxyType({}),
                 spec.role if spec else None,
                 MappingProxyType(dict(spec.parameters) if spec else dict(rhythm_parameters or {})),
-                logical_start, self.epoch, observation=observation))
+                logical_start, self.epoch, observation=observation, intent=adaptive_context))
             if not isinstance(prepared, PreparedRhythm) or prepared.reference.length_beats != length_beats:
                 raise ValueError('il riferimento ritmico deve coprire la finestra')
         resolved = {name: [] for name in active}
@@ -179,10 +218,10 @@ class MusicCoordinator:
                 start, length_beats, context, dependencies,
                 assignment.role if assignment else None,
                 MappingProxyType(dict(assignment.parameters)) if assignment else MappingProxyType({}),
-                logical_start if self._interactive else None, self.epoch,
+                logical_start if interactive else None, self.epoch,
                 prepared.reference if prepared else None, tuple(resolved[name]),
                 prepared.material if prepared and name == self.rhythm_source else None,
-                participating and not relation_silence, observation)
+                participating and not relation_silence, observation, adaptive_context)
             if voice.stage:
                 result = voice.stage(request)
                 if not isinstance(result, VoicePlan):
@@ -207,7 +246,7 @@ class MusicCoordinator:
                 'notes': [asdict(note) for note in phrase.notes],
                 'composition': dict(staged[name].decision) if name in staged else dict(voice.describe()) if voice.describe else None,
             }
-            if self._interactive:
+            if interactive:
                 if name in staged:
                     record_gestures(next_pending, next_history, name, staged[name].gestures,
                                     phrase, start, self.history_beats)
@@ -227,9 +266,13 @@ class MusicCoordinator:
         if prepared is not None and self._voices[self.rhythm_source].accept_reference:
             self._voices[self.rhythm_source].accept_reference(prepared)
         self.last_plan = {'start': start, 'length_beats': length_beats,
-                          'order': order, 'voices': decisions, 'observation': observation.to_dict()}
+                          'order': order, 'voices': decisions, 'observation': observation.to_dict(),
+                          'automation': automation_decisions}
         self._observations = next_observations
-        if self._interactive:
+        self._automation = next_automation
+        self._parameter_frames = [f for f in self._parameter_frames if start-self.history_beats < f[1] <= start]
+        self._parameter_frames.append((start, start+length_beats, automation_decisions))
+        if interactive:
             self._origin = start-logical_start
             self._plan_serial += 1
             self._history = [g for g in next_history if g.span.end > start-self.history_beats]

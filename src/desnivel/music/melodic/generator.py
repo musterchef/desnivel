@@ -10,6 +10,7 @@ from desnivel.music.melodic.development import develop
 from desnivel.music.texture.generator import TextureGenerator
 from desnivel.music.interactions import VoicePlan, GestureSpan
 from desnivel.music.rhythm import shape_rhythm, rhythm_influences
+from .adaptation import targets
 
 ROLES = ('melody', 'sustained_texture', 'bass_line')
 DEFAULTS = dict(octave=0, step_beats=1.0, articulation=.8, velocity=85,
@@ -17,6 +18,8 @@ DEFAULTS = dict(octave=0, step_beats=1.0, articulation=.8, velocity=85,
 
 
 class MotifGenerator:
+    adapt = staticmethod(targets)
+
     def __init__(self, degrees, settings=None):
         self.degrees = tuple(degrees)
         if not self.degrees or any(type(d) is not int or d < 0 for d in self.degrees):
@@ -24,7 +27,6 @@ class MotifGenerator:
         self.settings = {**DEFAULTS, **(settings or {})}
         self.validate('melody', {})
         self.last_decision = None
-        self._origin = None
         self._development = self._previous_development = None
         self._last_start = None
         self._texture = TextureGenerator(self.degrees[0])
@@ -60,7 +62,7 @@ class MotifGenerator:
         if request.role == 'sustained_texture':
             texture = self._texture.stage(replace(request, parameters={
                 'octave': values['octave'], 'velocity': values['velocity']}))
-            return VoicePlan(texture.phrase, (None, texture, None, None, request.start), texture.decision, texture.gestures)
+            return VoicePlan(texture.phrase, (texture, None, None, request.start), texture.decision, texture.gestures)
         intervals = SCALES[request.context.scale]
         root = request.context.root + 12 * values['octave']
         degrees = self.degrees
@@ -74,7 +76,7 @@ class MotifGenerator:
             previous = self._previous_development if request.start == self._last_start else self._development
             phrase, decision, state = develop(self.degrees, intervals, root, request, values, previous)
             span = GestureSpan(state.period_start, state.period_start+state.period_beats)
-            return self._plan(request, values, phrase, decision, state.period_start, span, state, previous)
+            return self._plan(request, values, phrase, decision, span, state, previous)
         decision = {'method': 'literal_motif', 'summary': 'motivo letterale'}
         notes = []
         count = math.ceil(request.length_beats / values['step_beats'])
@@ -88,17 +90,17 @@ class MotifGenerator:
             pitch = root + intervals[degree % len(intervals)] + 12 * (degree // len(intervals))
             notes.append(Note(beat, pitch, duration, values['velocity']))
         return self._plan(request, values, Phrase(request.length_beats, tuple(notes)), decision,
-                          None, GestureSpan(request.start, request.start+request.length_beats))
+                          GestureSpan(request.start, request.start+request.length_beats))
 
-    def _plan(self, request, values, phrase, decision, origin, span, state=None, previous=None):
+    def _plan(self, request, values, phrase, decision, span, state=None, previous=None):
         guided = shape_rhythm(phrase, rhythm_influences(request, values['groove_follow']))
         decision['rhythm'] = {'groove_follow': values['groove_follow'],
                               'historical_sources': [r.spec.source for r in request.relations if r.phrase is not None],
                               'moved_attacks': sum(a.beat != b.beat for a, b in zip(phrase.notes, guided.notes))}
-        return VoicePlan(guided, (origin, None, state, previous, request.start), decision, (span,))
+        return VoicePlan(guided, (None, state, previous, request.start), decision, (span,))
 
     def accept(self, plan):
-        self._origin, texture, self._development, self._previous_development, self._last_start = plan.state
+        texture, self._development, self._previous_development, self._last_start = plan.state
         if texture is not None:
             self._texture.accept(texture)
         self.last_decision = plan.decision
@@ -110,7 +112,6 @@ class MotifGenerator:
 
     def reset(self):
         """La prima finestra successiva apre un nuovo periodo melodico."""
-        self._origin = None
         self._development = self._previous_development = None
         self._last_start = None
         self.last_decision = None

@@ -1,16 +1,12 @@
 # Direzione adattiva delle voci
 
-Stato: regole approvate, implementazione parziale. Sono disponibili gli
-assetti per macrosezione, il flag `manual` per parametro, il riferimento ritmico
-e alcune interazioni fra generatori. Sono disponibili il contesto locale
-delle finestre e l'osservazione degli ultimi 16 beat accettati.
-La strategia adattiva e il rilascio
-graduale descritti qui restano da implementare.
+Stato: contesto locale, osservazione, risolutore, politiche delle quattro
+voci e rilascio graduale implementati. Il compositore percussivo a regole
+rimane da implementare; i coefficienti richiedono taratura all'ascolto.
 
-Il [device attuale](../VOCE-M4L.md) mostra auto/manual per il parametro
-selezionato. Una modifica mantiene manuale soltanto quel valore. Il
-ritorno in AUTO riprende il valore della sezione corrente dalla prossima
-finestra da pianificare, senza interpolazione.
+Il [device attuale](../VOCE-M4L.md) mostra auto/manual per parametro,
+valore applicato e obiettivo. Le formule e i tempi effettivi sono in
+[Direzione musicale](../DIREZIONE-MUSICALE.md#adattamento-dei-parametri).
 
 ## Responsabilità
 
@@ -29,12 +25,12 @@ Il device mostra lo stato e raccoglie le scelte manuali.
 |---|---|
 | Drums | Produrre la guida ritmica; adattare sviluppo e complementi al contesto e alle proposte delle altre voci |
 | Basso | Sostenere gli appoggi delle drums; regolare densità, sincopi e movimento rispetto allo spazio melodico |
-| Melodia | Conservare continuità e riconoscibilità; adattare attività, passo ritmico e sviluppo al contesto e allo spazio disponibile |
+| Melodia | Conservare continuità e riconoscibilità; adattare attività e dinamica al contesto e allo spazio disponibile |
 | Tessitura | Fornire sostegno armonico nel registro scelto; adattare la dinamica lasciando spazio alla melodia |
 
-Queste responsabilità fissano la direzione musicale. Formule, intervalli
-di osservazione, limiti e tempi di adattamento dei singoli controlli
-devono essere definiti prima di implementarli.
+Responsabilità e controlli automatici sono applicati dalle politiche dei
+moduli delle voci. Griglia, durata dei periodi e ulteriori automatismi
+rimangono distinti da questo primo insieme.
 
 ## Adattamento automatico
 
@@ -57,12 +53,10 @@ devono essere definiti prima di implementarli.
 - Una preparazione fallita non avanza parametri o memoria. Ripetere una
   richiesta accettata non provoca un nuovo adattamento.
 
-L'assetto di sezione fornisce la base. La strategia la adatta per i soli
-controlli dichiarati adattabili, rispettando gli eventuali valori imposti
-esplicitamente dalla configurazione. Lo stato distingue valori iniziali,
-vincoli espliciti, obiettivi automatici e valori effettivi.
-Un valore iniziale configurato non costituisce da solo un vincolo: il
-contratto di configurazione dovrà distinguere le due intenzioni.
+L'assetto di sezione fornisce la base. Le politiche propongono obiettivi
+per i soli controlli dichiarati; il valore manuale ha precedenza. I numeri
+negli assetti non costituiscono blocchi dell'automazione. Lo stato espone
+base, obiettivo, valore applicato, sorgente e motivo.
 
 ## Controllo manuale per parametro
 
@@ -86,11 +80,10 @@ essere restituito separatamente all'automazione. La sincronizzazione del
 device e il salvataggio di un preset non cambiano le modalità. Un valore
 rifiutato dalla validazione non cambia né valore né flag.
 
-Nel completamento della strategia adattiva, il ritorno in automatico dei
-controlli continui partirà dal valore manuale raggiunto e procederà
-verso il nuovo obiettivo; le scelte discrete adattabili cambieranno al
-confine musicale previsto. Stile, seed e modalità della tessitura non
-ricevono adattamento continuo: in AUTO seguono i valori configurati.
+Per i controlli gestiti dalle politiche, il ritorno in automatico parte
+dal valore manuale accettato e converge verso l'obiettivo corrente.
+Gli altri controlli tornano alla configurazione. Stile, seed e modalità
+della tessitura non ricevono adattamento continuo.
 
 La voce continua a generare, seguire il contesto armonico e usare le
 relazioni musicali anche con parametri manuali. I flag non congelano le
@@ -128,17 +121,15 @@ sorgente richiedono anche il relativo supporto compositivo e di memoria.
 
 ## Piano di implementazione proposto
 
-Stato: piano approvato; fase 1 implementata per pendenza locale e
-osservazione musicale. Risolutore, politiche, adattamento e rilascio
-graduale delle fasi successive restano da implementare. Le prime durate
-di transizione proposte richiedono la taratura prevista dal piano.
+Stato: fasi 1–3 implementate. Il compositore a regole della fase 4 rimane
+da realizzare. La fase 5 comprende verifiche automatiche disponibili e
+confronto d'ascolto ancora da completare.
 
 ### 1. Contesto locale e osservazione musicale
 
 Implementazione disponibile: [contesto delle finestre](../DIREZIONE-MUSICALE.md#contesto-locale-delle-finestre)
 e [osservazione condivisa](../DIALOGO-MUSICALE.md#osservazione-musicale-condivisa).
-I valori sono ispezionabili nello stato; i parametri conservano il
-comportamento precedente.
+I valori sono ispezionabili nello stato e alimentano le politiche adattive.
 
 - Riutilizzare le finestre di pendenza smussata di `trip/analysis.py`,
   conservandone unità, scala spaziale, copertura e interruzioni.
@@ -176,7 +167,7 @@ Ogni politica restituisce obiettivi, motivazioni e stato successivo.
 Una risoluzione comune applica limiti, tempi di transizione e override.
 La preparazione rimane distinta dall'accettazione.
 
-Precedenza proposta per questa fase: impostazioni iniziali e assetto di
+Precedenza implementata: impostazioni iniziali e assetto di
 sezione come base, adattamento automatico, valore manuale del singolo
 parametro. I numeri già presenti negli assetti non diventano blocchi
 dell'automazione. Questa scelta precisa la precedente distinzione aperta
@@ -184,12 +175,12 @@ fra valori iniziali e vincoli: non richiede un secondo sistema di blocchi
 nei JSON. Le regole riutilizzano `direzione-viaggio.json`; le formule
 specifiche rimangono nei moduli delle voci.
 
-Prima taratura proposta: transizioni di 8 beat per la dinamica e 16 beat
+Tempi iniziali implementati: transizioni di 8 beat per la dinamica e 16 beat
 per attività e densità. Il calcolo dipende dai beat trascorsi, non dal
 numero di messaggi OSC. Le decisioni discrete rispettano la frase o il
 ciclo del generatore. Limiti, soglie di persistenza e intervalli automatici
-dei singoli controlli vanno approvati insieme alle rispettive politiche.
-Per evitare inseguimenti reciproci, proporre un nuovo obiettivo di attività
+dei singoli controlli sono dichiarati nelle politiche e da tarare all’ascolto.
+Per limitare gli inseguimenti reciproci, rivalutare l’obiettivo di attività
 melodica al confine del suo periodo; il basso può rivalutare il sostegno
 ogni battuta. La Variazione delle drums rispetta il confine del proprio
 ciclo. Questa differenza di cadenza va verificata insieme ai pesi delle
@@ -203,21 +194,18 @@ l'adattamento dal nuovo stato; i piani già accettati restano immutati.
 
 ### 3. Primo insieme di politiche musicali
 
-| Voce | Controlli iniziali | Regola da concretizzare e verificare |
+| Voce | Controlli iniziali | Regola implementata |
 |---|---|---|
 | Melodia | `activity`, `velocity` | Il terreno orienta la dinamica; un accompagnamento già fitto riduce l'attività rispetto alla base, lasciando intatta la continuità del motivo |
 | Basso | `density`, `syncopation` | Una melodia ricca di attacchi favorisce pochi sostegni; pause persistenti consentono più movimento, conservando il rapporto con la guida |
 | Tessitura | `velocity` | La base dinamica segue il contesto; la presenza melodica nel suo registro richiede alleggerimento, mentre lo spazio persistente permette di tornare alla base |
 | Drums | `velocity_ratio`, `variation` | Il terreno orienta la dinamica; cambiamenti persistenti e spazio nelle altre parti orientano lo sviluppo, rispettando lo stile e gli appoggi |
 
-Le regole della tabella sono scelte compositive proposte. Ogni politica
-deve precisare osservazione usata, formula, intervallo consentito e tempo
-di risposta prima dell'attivazione. Non tutte le voci aumentano insieme
+Le regole della tabella sono scelte compositive implementate nelle politiche. Non tutte le voci aumentano insieme
 la propria attività per una salita più ripida. Il dialogo già presente
 continua a operare nella composizione delle note.
 
-Prima di automatizzare il basso, verificare i limiti effettivi di densità
-imposti da spaziatura e candidati: un valore automatico che cambia senza
+Il basso usa la capacità ritmica recente per limitare l’obiettivo di densità: un valore automatico che cambia senza
 cambiare le possibilità musicali non costituisce una risposta utile.
 Per la tessitura la velocity indica una dinamica MIDI, non una misura
 del volume audio o una garanzia di separazione timbrica.
@@ -237,12 +225,11 @@ essere collegata al motore esistente; l'automazione di Variazione su quel
 motore mantiene il limite delle trasformazioni di materiale precomposto.
 Il completamento richiede figure costruite secondo le regole dello stile.
 
-La proposta di usare direttamente `target_intensity` come Variazione va
-confrontata con la politica locale e relazionale: intensità della sezione,
-quantità di note e libertà di sviluppo hanno significati diversi. La
-formula finale richiede una decisione esplicita. Preparazione della guida,
-complementi e transizioni stilistiche devono condividere gli stessi
-valori risolti, senza modificare retroattivamente gli appoggi comunicati.
+La mappatura operativa distingue intensità locale per la dinamica e
+cambiamenti persistenti e spazio musicale per lo sviluppo. Il compositore
+a regole dovrà riutilizzare gli stessi obiettivi risolti. Preparazione della
+guida, complementi e transizioni stilistiche non modificano retroattivamente
+gli appoggi già comunicati.
 
 ### 5. Stato visibile e verifica musicale
 

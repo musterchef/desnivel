@@ -7,6 +7,7 @@ var connected=false, lastReply=0, state=null, snapshot='', parameterNames=[], pr
 var selectedParameter=0, patch=this.patcher;
 var lastTransportSerial=-1, backendSession='';
 var presetDraft='';
+var wireParts={}, wireOrder=[];
 // I payload variabili restano byte numerici, senza simboli Max per ogni JSON.
 function utf8bytes(text){var binary=unescape(encodeURIComponent(text)), out=[];for(var i=0;i<binary.length;i++)out.push(binary.charCodeAt(i));return out;}
 function utf8text(bytes){var binary='';for(var i=0;i<bytes.length;i++){if(bytes[i]<0||bytes[i]>255||Math.floor(bytes[i])!==bytes[i])throw new Error('byte non valido');binary+=String.fromCharCode(bytes[i]);}return decodeURIComponent(escape(binary));}
@@ -14,7 +15,7 @@ function status(text){outlet(2,String(text));}
 function ui(name){return patch.getnamed(name);}
 function loadbang(){reflectPresence();reflectManual();}
 function playerReset(){outlet(1,'panic');}
-function disconnect(){connected=false;state=null;snapshot='';playerReset();ui('role_display').message('set','Unassigned');ui('role_menu').message('clear');reflectPresence();reflectManual();status('Disconnected');}
+function disconnect(){connected=false;state=null;snapshot='';wireParts={};wireOrder=[];playerReset();ui('role_display').message('set','Unassigned');ui('role_menu').message('clear');reflectPresence();reflectManual();status('Disconnected');}
 function voice(){var name=arrayfromargs(arguments).join(' ');if(name!==voiceId){disconnect();voiceId=name;}}
 function receiveport(value){var n=Number(value);if(n!==replyPort){disconnect();replyPort=n;}}
 function backendport(value){var n=Number(value);if(n!==backendPort){disconnect();backendPort=n;}}
@@ -43,12 +44,51 @@ function clock(ticks,running){
 }
 function heartbeat(){
     if(!connected)return;
+    expireWire();
     if(new Date().getTime()-lastReply>3000){playerReset();status('Python not responding');}
     request('hello',{});
 }
+function expireWire(){
+    var now=new Date().getTime(), keep=[];
+    for(var i=0;i<wireOrder.length;i++){
+        var key=wireOrder[i], part=wireParts[key];
+        if(part && now-part.created<=1500)keep.push(key);
+        else delete wireParts[key];
+    }
+    wireOrder=keep;
+}
+function wireBytes(data){
+    if(data[0]!==-1)return data;
+    expireWire();
+    if(data.length<6)throw new Error('frammento OSC incompleto');
+    var stream=data[1], serial=data[2], offset=data[3], total=data[4], size=data.length-5;
+    for(var n=1;n<5;n++)if(!isFinite(data[n]) || Math.floor(data[n])!==data[n])throw new Error('intestazione OSC non valida');
+    if(stream<0 || serial<0 || offset<0 || offset%1500!==0 || total<=1500 || total>12000 || size!==Math.min(1500,total-offset))throw new Error('limiti del frammento OSC non validi');
+    for(var j=5;j<data.length;j++)if(data[j]<0 || data[j]>255 || Math.floor(data[j])!==data[j])throw new Error('byte del frammento non valido');
+    var key=stream+':'+serial, part=wireParts[key];
+    if(!part){
+        if(wireOrder.length>=8)delete wireParts[wireOrder.shift()];
+        part={created:new Date().getTime(),total:total,received:0,chunks:{}};
+        wireParts[key]=part;wireOrder.push(key);
+    }
+    if(part.total!==total)throw new Error('lunghezza dei frammenti incoerente');
+    if(part.chunks[offset]===undefined){part.chunks[offset]=data.slice(5);part.received+=size;}
+    if(part.received!==total)return null;
+    var result=[];
+    for(var start=0;start<total;start+=1500){
+        if(part.chunks[start]===undefined)return null;
+        result=result.concat(part.chunks[start]);
+    }
+    delete wireParts[key];
+    expireWire();
+    return result;
+}
 function receive(){
     try{
-        var m=JSON.parse(utf8text(arrayfromargs(arguments)));
+        if(!connected)return;
+        var bytes=wireBytes(arrayfromargs(arguments));
+        if(bytes===null)return;
+        var m=JSON.parse(utf8text(bytes));
         if(!connected || m.version!==1 || m.voice!==voiceId || m.instance!==instance)return;
         if(m.kind==='transport'){
             if(!backendSession||m.session!==backendSession)return;
@@ -151,6 +191,7 @@ function parameter(index){
     var name=parameterNames[selectedParameter];
     if(state && name!==undefined){
         var c=state.controls[name], choices=c.choices;
+        var objective=c.automation && !c.manual?' → '+Math.round(c.automation.target*1000)/1000:'';
         ui('parameter_choice').hidden=!choices;
         ui('parameter_value').hidden=!!choices;
         ui('parameter_slider').hidden=!!choices||!!c.toggle;
@@ -168,9 +209,11 @@ function parameter(index){
             ui('parameter_value').message('set',c.value);
             ui('parameter_slider').message('set',c.maximum===c.minimum?0:Math.round((c.value-c.minimum)/(c.maximum-c.minimum)*1000));
             ui('parameter_toggle').message('set',c.value);
-            ui('range_display').message('set',c.minimum+' .. '+c.maximum+(c.integer?' (integer)':'')+(c.inactive_reason?' · inattivo':''));
+            ui('range_display').message('set',c.minimum+' .. '+c.maximum+objective+(c.integer?' (integer)':'')+(c.inactive_reason?' · inattivo':'')+(c.value_hint?'\n'+c.value_hint:''));
         }
         var help=name+(c.label?' — '+c.label.toLowerCase():'')+(c.inactive_reason?': '+c.inactive_reason:'');
+        if(c.description)help+=' · '+c.description;
+        if(c.automation)help+=' · base '+c.automation.base+', obiettivo '+c.automation.target+', effettivo '+c.automation.effective+' · '+c.automation.reason;
         ui('parameter_menu').setboxattr('annotation',help);
         ui('parameter_value').setboxattr('annotation',help);
         ui('parameter_slider').setboxattr('annotation',help);

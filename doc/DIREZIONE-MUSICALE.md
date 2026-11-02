@@ -89,7 +89,7 @@ melodia durante l'esecuzione.
 `cli/window_context.py` associa ogni finestra futura al tratto rappresentato;
 `trip/local_context.py` riassume le finestre di pendenza già analizzate.
 Il risultato è esposto in `decisions.coordinator.local_trip`.
-Non modifica ancora i parametri dei generatori.
+Alimenta le politiche adattive dei generatori nella sessione guidata dal GPX.
 
 - **Allocated:** la distanza di una macrosezione è distribuita uniformemente
   fra le finestre assegnate. `Timeline.position` fornisce sezione e frazione
@@ -120,6 +120,80 @@ campionamento e finestra spaziale della pendenza. Zero e misura non
 disponibile restano distinti. Senza analisi collegata, `profile` dichiara
 `analysis_not_configured`. Non vengono introdotti descrittori locali di
 velocità, fatica o volume audio.
+
+## Adattamento dei parametri
+
+Con l'analisi GPX collegata, `EnsembleRuntime` abilita l'adattamento nella
+pianificazione. Senza analisi collegata, comprese le sezioni manuali, i
+parametri seguono gli assetti e gli override ordinari. Il costruttore
+`EnsembleRuntime(..., adaptive=False)` permette il confronto tecnico con
+stesso percorso, timeline, seed e suoni.
+
+`cli.trip_direction.adaptive_context` interpreta il profilo locale:
+
+- `intensity` (**I**): pendenza assoluta media divisa per 0,08, limitata a 0…1;
+- `change` (**C**): valore assoluto del cambiamento di pendenza diviso per
+  0,04, limitato a 0…1;
+- `persistence` (**P**): persistenza della zona divisa per la finestra
+  spaziale della pendenza, limitata a 0…1.
+
+Queste normalizzazioni sono scelte compositive. Un ingresso indisponibile
+rimane `null`: non applica il relativo contributo locale. Le osservazioni
+musicali disponibili continuano a influenzare le politiche; il motivo
+dell'indisponibilità resta nello stato.
+
+Ogni modulo di voce propone obiettivi leggendo la stessa osservazione dei
+16 beat accettati precedenti. Director e Coordinator non contengono nomi
+di parametri o formule specifiche degli strumenti. `music/automation.py`
+risolve transizioni e precedenza del manuale prima della guida ritmica.
+
+| Voce | Obiettivi automatici |
+|---|---|
+| Melodia | `velocity`: base + `16 × (I − 0,5)`. `activity`: base + `0,18 × (I − 0,5) − 0,16 × pressione`; pressione = `min(1, 0,65 × attacchi/beat del basso + 0,35 × attacchi/beat delle drums / 4)` |
+| Basso | `density`: base + `0,18 − 0,42 × busy`, limitata dalla capacità ritmica recente. `syncopation`: base + `0,16 − 0,24 × busy`; `busy = min(1, attacchi/beat melodici / 1,5)`. Senza storia melodica mantiene le basi, rispettando il limite di capacità |
+| Tessitura | `velocity`: base × `(1 + 0,3 × (I − 0,5)) × (1 − 0,2 × pressione)`. La pressione è la massima occupazione melodica pesata per la quota del registro melodico che interseca l'ottava della tessitura |
+| Drums | `velocity_ratio`: base × `(1 + 0,2 × (I − 0,5))`. `variation`: base + `0,22 × C × P + 0,12 × (0,5 − crowd)`; `crowd = min(1, 0,65 × attacchi/beat melodici / 1,5 + 0,35 × attacchi/beat del basso)` |
+
+Senza storia musicale, i contributi relativi allo spazio restano assenti.
+Gli obiettivi rispettano i limiti dei controlli; le velocity sono intere.
+La capacità del basso deriva dall'ultimo piano, oppure dalla spaziatura
+iniziale se manca un piano utile. Non rappresenta un obbligo di aggiungere
+note. L'attività melodica non è automatizzata con `development = 0`.
+Quando il motivo assume il ruolo di tessitura usa la relativa politica.
+
+La dinamica converge in 8 beat; attività, densità, sincopi e variazione
+in 16. L'attività melodica rivaluta l'obiettivo ogni
+`phrase_windows × window_beats` dalla fase logica della sessione; il basso
+ogni 4 beat; Variazione segue il ciclo della guida percussiva. Un cambio
+di ruolo o assetto permette una nuova valutazione. Una differenza fino a
+1 per la velocity o 0,01 per i controlli continui non riavvia la transizione.
+La prima finestra parte dai valori base. Le traiettorie dipendono dai beat,
+mentre i valori applicati restano costanti nella singola finestra composta.
+
+Un valore manuale prevale soltanto sul suo parametro. Rilasciarlo riparte
+dal valore manuale accettato e converge verso l'obiettivo automatico;
+gli altri override restano attivi. Stile, seed, registri, griglia, durata
+dei periodi e `follow_source` conservano configurazione o scelta manuale.
+Non vengono aggiunti controlli musicali ai device.
+
+Gli stati dei parametri vengono accettati insieme alle frasi: fallimenti,
+richieste ripetute e reset rispettano la stessa gestione della memoria.
+Il riferimento delle drums e la frase finale usano gli stessi valori.
+Gli appoggi comunicati non vengono modificati in risposta alle altre voci
+della stessa finestra.
+
+`decisions.coordinator.automation` espone per parametro `base`, `target`,
+`effective`, `source`, `reason` e `transition_beats`. `adaptive_context`
+conserva le indicazioni musicali usate. Nel device il campo numerico e lo
+slider seguono il piano arrivato al beat del trasporto; la freccia `→`
+mostra l'obiettivo. L'annotazione contiene base, obiettivo, valore applicato
+e motivo. I valori di un piano ancora futuro non sostituiscono quelli
+della finestra in ascolto; le modifiche manuali restano richieste per le
+prossime finestre da comporre.
+
+Le drums sviluppano ancora figure precomposte: l'adattamento modifica
+realmente i loro controlli, senza costituire il compositore a regole
+previsto dal [contratto percussivo](proposte/STILI-PERCUSSIVI.md).
 
 ## Override
 

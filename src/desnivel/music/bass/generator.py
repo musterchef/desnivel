@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from bisect import bisect_left
 from dataclasses import dataclass, replace
 import math
 import random
@@ -116,15 +117,19 @@ def _rhythm(melody, settings, rng):
             score += 4
         ranked.append((score, beat))
     target = round(min(len(ranked), settings.density * (melody.length_beats - start)))
-    if target <= 0:
-        return []
-    selected = []
+    selected, chronological = [], []
     for _, beat in sorted(ranked, key=lambda item: (-item[0], item[1])):
-        if all(abs(beat - other) >= settings.min_spacing - 1e-9 for other in selected):
+        index = bisect_left(chronological, beat)
+        spacing = settings.min_spacing-1e-9
+        if ((index == 0 or beat-chronological[index-1] >= spacing)
+                and (index == len(chronological) or chronological[index]-beat >= spacing)):
             selected.append(beat)
-            if len(selected) >= target:
-                break
-    return sorted(selected)
+            chronological.insert(index, beat)
+    onsets = sorted(selected[:target])
+    return onsets, {'requested': settings.density, 'target_attacks': target,
+                    'capacity_attacks': len(selected), 'selected_attacks': len(onsets),
+                    'active_beats': melody.length_beats-start,
+                    'saturated': bool(selected) and target >= len(selected)}
 
 
 def _pitches(melody, onsets, settings, previous_pitch, rng, resolve):
@@ -187,15 +192,24 @@ def _articulate(melody, onsets, pitches, settings):
 def generate_bass(melody: Phrase, settings: BassSettings = BassSettings(),
                   previous_pitch: int | None = None, *, phrase_index: int = 0) -> Phrase:
     """Stessi input musicali e seed producono lo stesso piano, senza stato RNG globale."""
+    return plan_bass(melody, settings, previous_pitch, phrase_index=phrase_index)[0]
+
+
+def plan_bass(melody: Phrase, settings: BassSettings = BassSettings(),
+              previous_pitch: int | None = None, *, phrase_index: int = 0) -> tuple[Phrase, dict]:
+    """Compone la frase e descrive la capacità ritmica dello stesso piano."""
     if type(phrase_index) is not int or phrase_index < 0:
         raise ValueError('phrase_index deve essere un intero non negativo')
     if previous_pitch is not None and (type(previous_pitch) is not int or not 0 <= previous_pitch <= 127):
         raise ValueError('previous_pitch deve essere una nota MIDI')
     if not melody.notes or settings.density == 0:
-        return Phrase(melody.length_beats, ())
+        return Phrase(melody.length_beats, ()), {
+            'requested': settings.density, 'target_attacks': 0, 'capacity_attacks': None,
+            'selected_attacks': 0, 'active_beats': None, 'saturated': False,
+            'unavailable_reason': 'source_silent' if not melody.notes else 'density_zero'}
     # Nessuna ripetizione forzata di un catalogo di groove ogni quattro frasi.
     rng = random.Random(settings.seed + phrase_index * 104729)
-    onsets = _rhythm(melody, settings, rng)
+    onsets, density = _rhythm(melody, settings, rng)
     resolve = (phrase_index + 1) % settings.variation_period == 0
     pitches = _pitches(melody, onsets, settings, previous_pitch, rng, resolve)
-    return _articulate(melody, onsets, pitches, settings)
+    return _articulate(melody, onsets, pitches, settings), density

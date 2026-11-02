@@ -124,7 +124,8 @@ def test_failure_of_last_voice_leaves_real_generators_ready_for_identical_retry(
     coordinator._voices['voice_04'] = replace(original, stage=reject)
     with pytest.raises(ValueError, match='last voice failed'):
         r.session.plan(0, 0, 4)
-    assert r.registry['voice_01'].generator.generate._origin is None
+    assert r.registry['voice_01'].generator.generate._last_start is None
+    assert r.registry['voice_01'].generator.generate._development is None
     assert r.registry['voice_02'].generator.generate.previous is None
     assert r.registry['voice_03'].generator.generate.previous_pitch is None
     assert r.registry['voice_04'].generator.generate.position == 0
@@ -225,6 +226,22 @@ def test_variation_remains_continuous_without_selecting_a_preset():
     r.session.plan(0, 0, 4)
     composition = r.session.coordinator.last_plan['voices']['voice_04']['composition']
     assert composition['style'] == 'house_classic' and composition['variation'] == .37
+
+
+def test_bass_density_hint_uses_only_accepted_composition_and_clears_on_reset():
+    r = runtime()
+    assert 'value_hint' not in r.bridge.status()['voice_02']['controls']['density']
+    r.session.plan(0, 0, 4)
+    control = r.bridge.status()['voice_02']['controls']['density']
+    density = r.session.coordinator.last_plan['voices']['voice_02']['composition']['density']
+    assert control['label'] == 'densità richiesta'
+    assert f"{density['selected_attacks']}/{density['capacity_attacks']} attacchi" in control['value_hint']
+    assert 'ultimo piano accettato' in control['description']
+    r.session.set_presence_multiplier('voice_02', 0)
+    assert not r.session.plan(0, 4, 4)['voice_02'].notes
+    assert r.bridge.status()['voice_02']['controls']['density']['value_hint'] == 'voce non partecipante'
+    r.reset()
+    assert 'value_hint' not in r.bridge.status()['voice_02']['controls']['density']
 
 
 def test_main_configuration_connects_rhythm_and_historical_dialogue():

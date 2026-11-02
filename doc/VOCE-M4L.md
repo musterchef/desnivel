@@ -145,6 +145,10 @@ controlli. Le regole sono definite dai generatori e ricalcolate a ogni
 risposta di stato; il device mantiene chiavi e valori indipendenti dalle
 etichette visualizzate.
 
+`description` aggiunge informazioni all'annotazione del parametro;
+`value_hint` mostra un riepilogo sotto i limiti numerici. Il basso usa
+questi campi per la capacità ritmica dell'ultimo piano accettato.
+
 `EnsembleSession.set_parameter(voice, name, value)` modifica un solo
 override, conservando gli altri e i parametri guidati dalle sezioni.
 `set_parameters(voice, values)` sostituisce l'insieme degli override,
@@ -155,12 +159,17 @@ come avviene selezionando un preset. La validazione precede ogni modifica.
 corrente; `False` elimina soltanto quel vincolo manuale.
 `clear_parameters(voice)` elimina tutti gli override della voce.
 
-Il ritorno ai valori di sezione avviene dalla prossima finestra da
-pianificare, senza interpolazione. L'adattamento continuo al dialogo e il
-rilascio graduale sono descritti nel
-[contratto della direzione adattiva](proposte/DIREZIONE-ADATTIVA.md) e
-restano da implementare. Ruolo, presenza, contesto armonico e memoria
-compositiva continuano a funzionare in entrambe le modalità.
+Il rilascio di un controllo adattivo riprende gradualmente dal valore
+manuale applicato. Gli altri controlli tornano ai valori configurati
+dalla prossima finestra da pianificare. Regole e tempi sono descritti in
+[Direzione musicale](DIREZIONE-MUSICALE.md#adattamento-dei-parametri).
+Ruolo, presenza, contesto armonico e memoria compositiva continuano a
+funzionare in entrambe le modalità.
+
+Lo stato di ciascun controllo include `automation` quando esiste un piano
+adattivo: base, obiettivo, valore applicato, sorgente e motivo. Il device
+mostra l'obiettivo con `→`; il campo numerico segue il valore del piano
+al beat di trasporto corrente. Il riepilogo del basso resta visibile.
 
 `DeviceVoice.for_session(session, voice, progress, **controls)` collega il dispositivo alla sessione: `progress` è una funzione del chiamante che restituisce la progressione corrente della tappa. Il collegamento espone i ruoli dichiarati dal generatore, legge il ruolo della sezione e applica la scelta manuale tramite `EnsembleSession.set_role`.
 
@@ -181,7 +190,11 @@ messaggi OSC. Gli script convertono gli argomenti numerici in JSON e
 viceversa. Anche il passaggio dei piani dall'interfaccia al player usa byte
 numerici. I payload JSON variabili non diventano simboli Max a ogni
 aggiornamento del trasporto. Il server limita il JSON in uscita a 12.000
-byte per mantenere il pacchetto OSC sotto il limite UDP.
+byte e ciascun datagramma OSC a 8.192 byte. Oltre 1.500 byte JSON,
+suddivide la risposta sullo stesso indirizzo OSC in frammenti con intestazione
+numerica `[-1, stream, seriale, offset, totale]`, seguita da massimo 1.500 byte.
+Il device ricompone i frammenti anche fuori ordine e applica soltanto messaggi
+completi. Mantiene al massimo otto ricomposizioni, con scadenza di 1,5 secondi.
 
 Le richieste contengono voce, identificativo dell'istanza, seriale, porta di risposta e azione (`hello`, `transport`, `role`, `preset`, `parameter`, `manual`, `presence`, `save_preset`, `panic`). L’azione `role` contiene l’identificativo del ruolo manuale oppure `null` per seguire la sezione. Lo stato restituisce ruoli supportati, ruolo effettivo, ruolo della sezione, modalità (`section` o `manual`) e stato di attivazione della parte. La lettura del trasporto aggiunge beat, stato di riproduzione e contatore locale delle discontinuità. Le risposte distinguono stato, errore, piano e comando di trasporto.
 `save_preset` contiene nome e flag `overwrite`; il salvataggio acquisisce

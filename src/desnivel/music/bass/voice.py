@@ -2,13 +2,17 @@
 from dataclasses import replace
 import math
 
-from desnivel.music.bass.generator import BassSettings, generate_bass
+from desnivel.music.bass.generator import BassSettings, plan_bass
 from desnivel.music.phrases import Note, Phrase
 from desnivel.music.interactions import VoicePlan, GestureSpan
 from desnivel.music.rhythm import shape_rhythm, rhythm_influences
+from .adaptation import targets
 
 
 class BassVoice:
+    def adapt(self, request):
+        return targets(request, self.validate(request.role, {**request.parameters, **request.manual}), self.last_decision)
+
     def __init__(self, settings=None):
         values = dict(settings or {})
         self.groove_follow = values.pop('groove_follow', 0.)
@@ -16,6 +20,7 @@ class BassVoice:
         self.validate('bass_line', {})
         self.previous = None
         self.previous_end = None
+        self.last_decision = None
 
     def validate(self, role, parameters):
         if role != 'bass_line':
@@ -45,19 +50,22 @@ class BassVoice:
             center = last if last is not None else (settings.lowest+settings.highest)/2
             pitch = min(candidates, key=lambda p: (abs(p-center), p))
             source = Phrase(request.length_beats, (Note(0, pitch, request.length_beats, 85),))
-        result = generate_bass(source, settings, last,
-                               phrase_index=round(request.start / request.length_beats))
+        result, density = plan_bass(source, settings, last,
+                                    phrase_index=round(request.start / request.length_beats))
         guided = shape_rhythm(result, rhythm_influences(request, amount))
         decision = {'method': 'responsive_line', 'material_source': 'section' if independent else 'dependency',
+                    'participating': request.participating,
                     'groove_follow': amount,
                     'historical_sources': [r.spec.source for r in request.relations if r.phrase is not None],
                     'moved_attacks': sum(a.beat != b.beat for a, b in zip(result.notes, guided.notes)),
+                    'density': density,
                     'summary': 'appoggio di sezione' if independent else 'accompagnamento della sorgente'}
         state = (guided.notes[-1].pitch if guided.notes else None, request.start+request.length_beats)
         return VoicePlan(guided, state, decision, (GestureSpan(request.start, request.start+request.length_beats),))
 
     def accept(self, plan):
         self.previous, self.previous_end = plan.state
+        self.last_decision = plan.decision
 
     def __call__(self, request):
         plan = self.stage(request)
@@ -66,3 +74,17 @@ class BassVoice:
 
     def reset(self):
         self.previous = self.previous_end = None
+        self.last_decision = None
+
+    def describe_controls(self, role, parameters):
+        detail = {'label': 'densità richiesta',
+                  'description': 'attacchi desiderati per beat, limitati da candidati e spaziatura; il riepilogo riguarda l’ultimo piano accettato'}
+        density = self.last_decision.get('density') if self.last_decision else None
+        if self.last_decision and not self.last_decision['participating']:
+            detail['value_hint'] = 'voce non partecipante'
+        elif density and density['capacity_attacks'] is not None:
+            detail['value_hint'] = (f"{density['selected_attacks']}/{density['capacity_attacks']} attacchi"
+                                    + (' · saturo' if density['saturated'] else ''))
+            detail['description'] += (f"; densità richiesta {density['requested']:g}, "
+                                       f"{density['active_beats']:g} beat disponibili")
+        return {'density': detail}

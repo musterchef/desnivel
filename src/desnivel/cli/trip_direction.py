@@ -8,6 +8,20 @@ from desnivel.trip.sections import group_zones
 from desnivel.trip.profile import describe_profile, section_intensity
 from desnivel.music.harmony import validate_palettes, validate_context, select_palette, choose_context, pitch_classes
 from desnivel.music.melodic.route import route_motif, validate_motif
+from desnivel.music.automation import AdaptiveContext, bounded
+
+
+def adaptive_context(local_trip):
+    """Interpreta le misure locali come indicazioni musicali normalizzate."""
+    profile = local_trip.get('profile', {})
+    if local_trip.get('status') != 'available' or profile.get('status') != 'available':
+        return AdaptiveContext(unavailable_reason=local_trip.get('reason') or profile.get('reason') or 'profile_incomplete')
+    change = profile['slope_change_ratio']
+    persistence = profile['zone_persistence_m']
+    return AdaptiveContext(
+        bounded(profile['mean_absolute_slope_ratio']/.08, 0, 1),
+        bounded(abs(change)/.04, 0, 1) if change is not None else None,
+        bounded(persistence/profile['slope_window_m'], 0, 1) if persistence is not None else None)
 
 
 def _validate_override(data, palette_ids):

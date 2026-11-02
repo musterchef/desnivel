@@ -1,25 +1,27 @@
 # Revisione dei controlli delle voci
 
-Stato: analisi completata; gli interventi elencati non sono implementati.
+Stato: rimozione dei preset ridondanti e dello stato melodico inutilizzato
+implementata. Saturazione della densità resa esplicita nel device e nello
+stato del piano. Lo spostamento del supporto ai test indicato in fondo resta proposto.
 Ambito: device Voice della sessione multivoce, configurazioni
 `organico.json`, generatori e relativi preset.
 
-## Ridondanze individuate
+## Consolidamento dei controlli
 
-| Componente | Riscontro nel codice/configurazione | Intervento proposto |
+| Componente | Riscontro dell'analisi | Intervento applicato |
 |---|---|---|
-| Melodia, preset `developed` | L'assetto completo coincide con i valori iniziali del generatore in `organico.json` | Rimuovere il preset |
-| Basso, preset `responsive` del device | L'assetto completo coincide con i valori iniziali del generatore | Rimuovere il preset del device; conservare il preset iniziale del motore `BassSettings` |
-| Melodia, preset `literal` e `low_register` | Rispetto ai valori iniziali cambiano soltanto `development` e `octave`, rispettivamente | Usare i controlli già esposti e rimuovere le due scorciatoie |
-| Tessitura, preset `soft` e `present` | Cambiano soltanto `velocity`; ricaricano anche `follow_source = 0` | Rimuovere le scorciatoie; mantenere i tre controlli della voce |
-| Melodia, stato `_origin` | Il generatore lo inizializza e lo assegna da `VoicePlan.state`, senza usarlo nella composizione; un test ne verifica il reset | Rimuovere lo stato superfluo e aggiornare il relativo test |
+| Melodia, preset `developed` | Assetto identico ai valori iniziali | Preset rimosso |
+| Basso, preset `responsive` del device | Assetto identico ai valori iniziali | Preset del device rimosso; preset iniziale del motore `BassSettings` conservato |
+| Melodia, preset `literal` e `low_register` | Scorciatoie di `development` e `octave` | Preset rimossi; controlli conservati |
+| Tessitura, preset `soft` e `present` | Scorciatoie di `velocity`, con ripristino anche di `follow_source` | Preset rimossi; tre controlli della voce conservati |
+| Melodia, stato `_origin` | Assegnato senza letture nella composizione | Stato eliminato; reset verificato sulla memoria compositiva effettiva |
 
 Gli assetti sono confrontati dopo l'espansione dei preset in
 [`cli/generators.py`](../../src/desnivel/cli/generators.py), non soltanto
 leggendo le chiavi dichiarate nei JSON. Ogni preset carica tutti i valori
 iniziali più le proprie modifiche.
 
-## Intervallo del basso da correggere o rendere esplicito
+## Densità richiesta e capacità del piano
 
 `density` è esposto da 0 a 4, ma la configurazione corrente usa
 `min_spacing = 1` beat. La selezione degli attacchi si satura quindi prima
@@ -28,9 +30,16 @@ melodici su 0, 1, 2, 3 e i valori iniziali del basso, `density = 1`, `1.8`
 e `4` producono la stessa frase. Il risultato è stato verificato anche
 con `syncopation = 0.7` e `1`.
 
-Non è un doppione di un altro controllo: è un intervallo esposto più ampio
-di quello utile in questo assetto. Va allineato ai vincoli di spaziatura
-oppure accompagnato da un'indicazione della saturazione. Il preset
+Il controllo mantiene l'intervallo 0…4: con intervalli più brevi o altre
+spaziature anche valori superiori a 1 possono aggiungere note. Per esempio,
+con quattro attacchi candidati in 3,2 beat, spaziatura di un beat e adesione
+completa agli attacchi, densità 1 seleziona tre note e 1,2 ne seleziona quattro.
+
+`plan_bass` restituisce frase e riepilogo della stessa selezione ritmica.
+Il device mostra **densità richiesta** e gli attacchi selezionati rispetto
+alla capacità dell'ultimo piano accettato. `saturo` indica che il target
+ha raggiunto tale capacità, senza modificare il valore impostato. La
+capacità dipende anche dall'ordine di selezione dei candidati. Il preset
 `rhythmic` conserva effetti distinti su sincopi e articolazione, ma il suo
 `density = 1.8` non garantisce più note di `1`.
 
@@ -53,7 +62,8 @@ segnalati dal generatore; l'inattività contestuale non ne giustifica la rimozio
 
 I preset melodici `spaced`, `flowing`, `spacious` e quelli del basso
 `sparse`, `rhythmic` combinano responsabilità diverse. Non sono semplici
-alias di un singolo valore; resta da correggere il limite di densità indicato.
+alias di un singolo valore. La saturazione della densità è indicata dal
+riepilogo del piano, senza introdurre un secondo controllo.
 
 ## Uso operativo e uso nei banchi di prova
 

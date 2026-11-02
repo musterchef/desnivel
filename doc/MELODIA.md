@@ -113,8 +113,8 @@ Il terminale ne mostra la descrizione sintetica.
 
 `presets/organico.json` usa sviluppo 0,7, attività 0,75, quattro finestre,
 seed 7 e adesione al groove 0,3. I parametri di sezione e gli override
-manuali conservano le rispettive precedenze. Il preset `literal` mantiene
-il confronto con il motivo regolare. L'efficacia musicale richiede ascolto
+manuali conservano le rispettive precedenze. Impostare `development = 0`
+per confrontare il motivo regolare. L'efficacia musicale richiede ascolto
 con lo stesso motivo, suono e tempo.
 
 I test verificano cellule, riconoscibilità, riproducibilità, intervalli fra

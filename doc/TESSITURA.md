@@ -58,8 +58,8 @@ sviluppo melodico restano responsabilità di `music/melodic/`.
    valori di `octave` e `velocity`.
 
 La scelta agisce sulle prossime frasi, persiste fra sezioni ed è inclusa
-nei preset salvati dal device. I preset base `soft` e `present` riportano
-la modalità a 0. Il dettaglio delle decisioni espone modalità, sorgente,
+nei preset salvati dal device. Non sono forniti preset base per questa
+voce. Il dettaglio delle decisioni espone modalità, sorgente,
 registro, altezza scelta ed eventuale motivo del silenzio in
 `decisions.coordinator.voices.voice_03.composition`.
 

@@ -94,6 +94,15 @@ assert(uiMessages.range_display.at(-1)[1].includes('inattivo'));
 assert.deepStrictEqual(uiMessages.parameter_slider.at(-1),['annotation','velocity — intensità midi: Modalità di prova']);
 c.value(55);assert.equal(control(output.at(-1)).parameter,'velocity');
 assert.equal(control(output.at(-1)).value,55);
+c.receive(JSON.stringify({...state,serial:4,controls:{velocity:{...state.controls.velocity,
+ value_hint:'4/4 attacchi · saturo',description:'riepilogo dell’ultimo piano'}}}));
+assert(uiMessages.range_display.at(-1)[1].includes('4/4 attacchi · saturo'));
+assert(uiMessages.parameter_value.at(-1)[1].includes('riepilogo dell’ultimo piano'));
+c.receive(JSON.stringify({...state,serial:4,controls:{velocity:{...state.controls.velocity,
+ automation:{base:80,target:76,effective:80,source:'adaptive',reason:'contesto di prova'}}}}));
+assert(uiMessages.range_display.at(-1)[1].includes('→ 76'));
+assert(uiMessages.parameter_value.at(-1)[1].includes('base 80, obiettivo 76, effettivo 80'));
+c.value(55);assert.equal(control(output.at(-1)).parameter,'velocity');
 c.receive(JSON.stringify({...state,serial:4}));
 assert(!uiMessages.range_display.at(-1)[1].includes('inattivo'));
 assert.deepStrictEqual(uiMessages.parameter_toggle.slice(-2,-1)[0],['set',80]);
@@ -163,3 +172,34 @@ assert.equal(control(output.at(-1)).transport.bpm,131);
 c.tempo(0);c.tempo('invalid');c.clock(1001*60,1);
 assert.equal(control(output.at(-1)).transport.bpm,131);
 console.log('OK: 1000 clock con payload numerico, senza JSON come simboli Max');
+
+// Le risposte grandi si applicano solo dopo la ricomposizione completa.
+function fragments(message,stream,serial){
+ const bytes=packet(message), frames=[];
+ for(let offset=0;offset<bytes.length;offset+=1500)
+  frames.push([-1,stream,serial,offset,bytes.length,...bytes.slice(offset,offset+1500)]);
+ return frames;
+}
+const large={...state,instance:c.instance,serial:c.serial,session:'python-chunks',
+ controls:{velocity:{...state.controls.velocity,automation:{base:80,target:75,effective:80,
+ source:'adaptive',reason:'densità musicale 🚲 '.repeat(160)}}}};
+const frames=fragments(large,7,1), previousState=c.state;
+assert(frames.length>2);
+receiveBytes.apply(c,frames.at(-1));
+receiveBytes.apply(c,frames.at(-1)); // Il duplicato non completa il messaggio.
+assert.strictEqual(c.state,previousState);
+for(const frame of frames.slice(0,-1).reverse())receiveBytes.apply(c,frame);
+assert.equal(c.state.controls.velocity.automation.reason,large.controls.velocity.automation.reason);
+assert.equal(Object.keys(c.wireParts).length,0);
+// Due invii distinti non condividono frammenti.
+receiveBytes.apply(c,fragments(large,8,1)[0]);
+receiveBytes.apply(c,fragments(large,9,1).at(-1));
+assert.equal(Object.keys(c.wireParts).length,2);
+for(let i=10;i<20;i++)receiveBytes.apply(c,fragments(large,i,1)[0]);
+assert.equal(Object.keys(c.wireParts).length,8);
+for(const key of c.wireOrder)c.wireParts[key].created-=2000;
+c.expireWire();assert.equal(Object.keys(c.wireParts).length,0);
+receiveBytes.apply(c,frames[0]);c.disconnect();
+assert.equal(Object.keys(c.wireParts).length,0);
+assert.throws(()=>c.wireBytes([-1,1,1,0,12001,1]));
+console.log('OK: frammenti UTF-8 fuori ordine, duplicati, isolamento, scadenza e limiti');

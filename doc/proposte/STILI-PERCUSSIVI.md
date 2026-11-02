@@ -143,25 +143,22 @@ Nel generatore a regole significherà assenza di vincoli stilistici specifici:
 si applicheranno le regole ritmiche generali dello stesso motore, senza
 un secondo percorso basato su sequenze precomposte.
 
-## 5. Collegamento al GPX proposto
+## 5. Collegamento al GPX
 
-L'intensità musicale normalizzata della sezione esiste già come
-`section.direction.target_intensity`, da 0 a 1. La proposta iniziale è
-usarla come valore automatico di Variazione per la voce percussiva.
-È una scelta compositiva esplicita: maggiore intensità autorizza maggiore
-sviluppo, senza imporre BPM, genere o casualità aggiuntivi.
+La sessione usa l'intensità locale per `velocity_ratio`; cambiamento
+persistente e spazio lasciato da melodia e basso orientano `variation`.
+Queste politiche sono implementate sul motore attuale. Formule,
+normalizzazioni e transizioni sono in
+[Direzione musicale](../DIREZIONE-MUSICALE.md#adattamento-dei-parametri).
 
-La traduzione appartiene al collegamento fra direzione del viaggio e voce,
-non al Coordinator generico. Un valore di sezione esplicitamente assegnato
-prevale sul calcolo automatico; l'override manuale prevale su entrambi.
-L'origine del valore deve risultare nello stato. Con sezioni manuali si
-usano i valori configurati. Questa mappatura non è attualmente implementata.
+Il Coordinator applica le politiche registrate dal modulo percussivo
+prima di preparare la guida. Gli assetti forniscono le basi; un valore
+manuale prevale soltanto sul proprio parametro. Il rilascio graduale e
+lo stato visibile seguono la [direzione adattiva](DIREZIONE-ADATTIVA.md).
+Lo stile resta una scelta esplicita.
 
-La gestione automatica e il rilascio degli interventi utente seguono il
-[contratto della direzione adattiva](DIREZIONE-ADATTIVA.md), implementato
-per il controllo manuale. Il flag `manual` riguarda un singolo parametro;
-gli altri mantengono la propria modalità. Le strategie adattive restano
-da implementare; lo stile rimane una scelta esplicita.
+Il compositore a regole dovrà consumare gli stessi valori risolti,
+conservando il contratto di guida e complementi.
 
 ## 6. Transizioni e influenze multiple
 
