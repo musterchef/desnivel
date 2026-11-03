@@ -48,6 +48,25 @@ Opzioni utili:
 
 ## Operazioni e launcher principali
 
+### Sessione multivoce con scelta della tappa
+
+Aprire `comandi/09 - Sessione multitappa.command` dal Finder e inserire
+una tappa da `01` a `12`, oppure `07bis` per il FIT ricostruito da Komoot.
+Le tappe numerate usano i GPX in `gpx/`; `07bis` richiede il file locale
+`output/ricostruzione-tappa07/tappa07_Roma_Sabaudia.fit`.
+
+Il launcher usa `presets/organico.json`, il timing `allocated` e la mappa
+sulla porta `8765`. Dal terminale, nella radice del progetto:
+
+```sh
+.venv/bin/python -m desnivel.cli.launch_stage --tappa 07bis
+```
+
+Senza `--tappa` la scelta è interattiva. Gli altri argomenti sono inoltrati
+a `desnivel.cli.ensemble`; per esempio `--view-port 8766` cambia la porta
+della mappa. La selezione della traccia è gestita da `cli.launch_stage`;
+il `.command` imposta la directory del progetto e avvia il comando Python.
+
 I launcher a doppio clic per macOS si trovano in `comandi/` e usano automaticamente l'ambiente virtuale `.venv`:
 
 - **`08 - Scegli assetto basso.command`**: avvia il generatore del basso con scelta interattiva tra gli assetti `sobrio`, `dialogo` e `ritmico`.
