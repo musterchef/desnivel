@@ -97,6 +97,24 @@ def parameter(box, name, minimum=None, maximum=None, initial=None):
     if initial is not None: values.update(parameter_initial=[initial], parameter_initial_enable=1)
 
 
+def expose_lane_parameters(patcher):
+    """La Live API legge i nomi brevi: distinguere esplicitamente le tre lane."""
+    sequencer = boxes(patcher)['obj-115']['patcher']
+    required = {f'{lane}_Sequencer_{control}'
+                for lane in ('Notes', 'Gates', 'Velocities')
+                for control in ('Snake_Shape', 'Speed', 'Length', 'Direction', 'Steps_Shift')}
+    found = set()
+    for item in sequencer['boxes']:
+        box = item['box']
+        name = box.get('varname')
+        if name in required:
+            parameter(box, name)
+            patcher['parameters']['obj-115::'+box['id']][:2] = [name, name]
+            found.add(name)
+    if found != required:
+        raise ValueError('parametri delle lane Snake mancanti: '+', '.join(sorted(required-found)))
+
+
 def length_bank(source):
     """Store durations only; Notes supplies the actual selected cell."""
     bank = {'fileversion': 1, 'rect': [0, 0, 750, 900],
@@ -126,6 +144,9 @@ def length_bank(source):
         box.update(id='range-'+key, patching_rect=[440, y+400, 100, 22],
                    presentation_rect=[0, y+18, 94, 18], appearance=0)
         parameter(box, 'Length_'+key+'_ms', 10, 10000, initial)
+        # INT ha soltanto 256 valori in Live: per 10–10000 ms occorre FLOAT.
+        box['saved_attribute_attributes']['valueof'].update(parameter_type=0, parameter_unitstyle=0)
+        box['annotation'] = 'Durata '+('minima' if key == 'Min' else 'massima')+' delle celle, in millisecondi'
         bank['boxes'].append({'box': box})
         add(bank, 'label-'+key, key+' ms', 440, y+370, 'comment',
             presentation=1, presentation_rect=[0, y, 94, 18])
@@ -163,6 +184,7 @@ def build(document):
     if b['obj-67'].get('text')!='Custom' or b['obj-66'].get('text')!='del 64n':
         raise ValueError('Unsupported source: expected unmodified vanilla layout')
     original=b['obj-115']['patcher']
+    expose_lane_parameters(p)
     bank=length_bank(original)
     add(p,'length-bank',None,1000,500,'bpatcher',patcher=bank,
         numinlets=1,numoutlets=1,outlettype=['float'],varname='Length_Bank',

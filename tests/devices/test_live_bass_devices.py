@@ -59,3 +59,33 @@ def test_message_values_are_mirrored_without_banging_pitch():
     wires=[x['patchline'] for x in p['lines']]
     assert any(w['source']==['upstream',0] and w['destination']==['read_shift',0] for w in wires)
     assert not any(w['source']==['read_shift',0] for w in wires)
+
+
+def test_lane_parameters_expose_unique_short_names_used_by_live_api():
+    names=[f'{lane}_Sequencer_{control}' for lane in ('Notes','Gates','Velocities')
+           for control in ('Snake_Shape','Speed','Length','Direction','Steps_Shift')]
+    seq={'boxes':[{'box':{'id':str(i),'varname':name,'parameter_enable':1,
+        'saved_attribute_attributes':{'valueof':{'parameter_longname':name,'parameter_shortname':'Shapes'}}}}
+        for i,name in enumerate(names)]}
+    patch={'boxes':[{'box':{'id':'obj-115','patcher':seq}}],
+           'parameters':{f'obj-115::{i}':[name,'Shapes',0] for i,name in enumerate(names)}}
+    base.expose_lane_parameters(patch)
+    assert [x['box']['saved_attribute_attributes']['valueof']['parameter_shortname'] for x in seq['boxes']]==names
+    assert [patch['parameters'][f'obj-115::{i}'][:2] for i in range(len(names))]==[[name,name] for name in names]
+    # A known long name does not suffice if its short API name is still ambiguous.
+    assert len(set(names))==15
+
+
+def test_length_limits_are_float_parameters_so_live_does_not_truncate_at_265_ms():
+    # Una sorgente con controlli INT riproduce il tipo ereditato dal vanilla.
+    source={'boxes':[{'box':{'id':f'custom-{i}','varname':f'Custom_{i:02d}[2]',
+        'maxclass':'live.dial','saved_attribute_attributes':{'valueof':{'parameter_type':1}}}}
+        for i in range(1,17)]}
+    source['boxes'].append({'box':{'id':'obj-506','maxclass':'live.numbox',
+        'saved_attribute_attributes':{'valueof':{'parameter_type':1,'parameter_mmin':1,'parameter_mmax':16}}}})
+    bank=base.length_bank(source)
+    for key in ('Min','Max'):
+        metadata=base.boxes(bank)['range-'+key]['saved_attribute_attributes']['valueof']
+        assert metadata['parameter_type']==0
+        assert (metadata['parameter_mmin'],metadata['parameter_mmax'])==(10,10000)
+        assert metadata['parameter_unitstyle']==0

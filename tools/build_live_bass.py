@@ -96,9 +96,6 @@ def snake_document(document, state_port):
     seq=root['obj-115']['patcher']
     # Legge le altezze quantizzate effettive, senza assumere offset o scala.
     sb=boxes(seq)
-    # Il nome esposto a Live deve distinguere Gates dalle altre Shape.
-    sb['obj-34']['saved_attribute_attributes']['valueof']['parameter_shortname']='Gate_Shape'
-    p['parameters']['obj-115::obj-34'][1]='Gate_Shape'
     for lane, display in [('notes','obj-37'),('gates','obj-130'),('velocities','obj-133')]:
         mirror_message(seq,display,'desnivel_shift_'+lane)
     for i in range(16):
