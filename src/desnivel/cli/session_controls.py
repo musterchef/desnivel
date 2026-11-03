@@ -46,6 +46,12 @@ class TerminalControls:
                     yield 'connect'
                 elif key == 'm':
                     yield 'weather_toggle'
+                elif key in '123':
+                    yield {'1': 'record_audio', '2': 'record_midi', '3': 'record_both'}[key]
+                elif key == 'g':
+                    yield 'record_start'
+                elif key == 's':
+                    yield 'record_stop'
 
     def __exit__(self, *args):
         if self.saved is not None:

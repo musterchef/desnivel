@@ -28,6 +28,11 @@
     <div class="session-controls" aria-label="Controlli della sessione">
       <button id="pause" type="button" disabled>Pausa</button>
       <button id="restart" type="button" disabled>Riporta a zero</button>
+      <select id="record-mode" aria-label="Modalità registrazione"><option value="audio">audio</option><option value="midi">MIDI</option><option value="both">audio + MIDI</option></select>
+      <button id="record-prepare" type="button" disabled>Prepara REC</button>
+      <button id="record-start" type="button" disabled>● Registra da zero</button>
+      <button id="record-stop" type="button" disabled>Stop REC</button>
+      <span id="record-status" role="status"></span>
       <span id="command-status" role="status"></span>
     </div>
     <section id="finished" class="finished" aria-label="Tappa conclusa" hidden>

@@ -128,6 +128,10 @@ def test_http_controls_are_queued_and_reject_other_origins(tmp_path):
         with send('restart', view.url.rstrip('/')):
             pass
         assert list(view.take_commands()) == ['pause', 'restart']
+        from desnivel.cli.recording import main as record
+        for mode in ('audio', 'midi', 'both', 'start', 'stop'):
+            record([mode, '--view-port', str(view.server.server_port)])
+        assert list(view.take_commands()) == ['record_audio', 'record_midi', 'record_both', 'record_start', 'record_stop']
         with pytest.raises(HTTPError) as error:
             send('arbitrary', view.url.rstrip('/'))
         assert error.value.code == 400

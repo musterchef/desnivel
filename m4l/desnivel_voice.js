@@ -1,4 +1,5 @@
 // Interfaccia della voce. Le scelte compositive restano nel motore Python.
+include('desnivel_recording.js');
 inlets=1;outlets=4; // UDP, player, diagnostica, API del trasporto Live
 var voiceId='', replyPort=9101, instance='', serial=0, acknowledged=-1;
 var backendPort=9006, beat=0, playing=0, epoch=0, lastTick=-1;
@@ -6,6 +7,7 @@ var bpm=null;
 var connected=false, lastReply=0, state=null, snapshot='', parameterNames=[], presetNames=[];
 var selectedParameter=0, patch=this.patcher;
 var lastTransportSerial=-1, backendSession='';
+var lastRecordingSerial=-1;
 var presetDraft='';
 var wireParts={}, wireOrder=[];
 // I payload variabili restano byte numerici, senza simboli Max per ogni JSON.
@@ -15,7 +17,7 @@ function status(text){outlet(2,String(text));}
 function ui(name){return patch.getnamed(name);}
 function loadbang(){reflectPresence();reflectManual();}
 function playerReset(){outlet(1,'panic');}
-function disconnect(){connected=false;state=null;snapshot='';wireParts={};wireOrder=[];playerReset();ui('role_display').message('set','Unassigned');ui('role_menu').message('clear');reflectPresence();reflectManual();reflectWeather();status('Disconnected');}
+function disconnect(){DesnivelRecording.disconnect();connected=false;state=null;snapshot='';wireParts={};wireOrder=[];playerReset();ui('role_display').message('set','Unassigned');ui('role_menu').message('clear');reflectPresence();reflectManual();reflectWeather();status('Disconnected');}
 function voice(){var name=arrayfromargs(arguments).join(' ');if(name!==voiceId){disconnect();voiceId=name;}}
 function receiveport(value){var n=Number(value);if(n!==replyPort){disconnect();replyPort=n;}}
 function backendport(value){var n=Number(value);if(n!==backendPort){disconnect();backendPort=n;}}
@@ -24,11 +26,11 @@ function connect(){
     disconnect();
     if(!/^[A-Za-z0-9_-]+$/.test(voiceId)){status('Enter a voice ID');return;}
     instance='device_'+new Date().getTime()+'_'+Math.floor(Math.random()*1000000000);
-    serial=0;acknowledged=-1;lastTransportSerial=-1;backendSession='';lastReply=new Date().getTime();connected=true;request('hello',{});
+    serial=0;acknowledged=-1;lastTransportSerial=-1;lastRecordingSerial=-1;backendSession='';lastReply=new Date().getTime();connected=true;request('hello',{});
 }
 function request(action, extra){
     if(!connected)return;
-    var m={version:1,voice:voiceId,instance:instance,reply_port:replyPort,serial:++serial,action:action,capabilities:['transport_control'],transport:{beat:beat,playing:playing,epoch:epoch,bpm:bpm}};
+    var m={version:1,voice:voiceId,instance:instance,reply_port:replyPort,serial:++serial,action:action,capabilities:['transport_control','recording_control'],transport:{beat:beat,playing:playing,epoch:epoch,bpm:bpm}};
     for(var key in extra)m[key]=extra[key];
     outlet(0,['/desnivel/v1/voice/control'].concat(utf8bytes(JSON.stringify(m))));
 }
@@ -44,8 +46,9 @@ function clock(ticks,running){
 }
 function heartbeat(){
     if(!connected)return;
+    DesnivelRecording.heartbeat();
     expireWire();
-    if(new Date().getTime()-lastReply>3000){playerReset();ui('weather_display').message('set','meteo: dati non aggiornati');status('Python not responding');}
+    if(new Date().getTime()-lastReply>3000){DesnivelRecording.disconnect();playerReset();ui('weather_display').message('set','meteo: dati non aggiornati');status('Python not responding');}
     request('hello',{});
 }
 function expireWire(){
@@ -90,12 +93,20 @@ function receive(){
         if(bytes===null)return;
         var m=JSON.parse(utf8text(bytes));
         if(!connected || m.version!==1 || m.voice!==voiceId || m.instance!==instance)return;
+        if(m.kind==='recording'){
+            if(!backendSession || m.session!==backendSession || typeof m.serial!=='number'
+                || !isFinite(m.serial) || Math.floor(m.serial)!==m.serial || m.serial<=lastRecordingSerial)return;
+            lastRecordingSerial=m.serial;
+            DesnivelRecording.handle(m,function(report){request('recording_status',{report:report});});
+            return;
+        }
         if(m.kind==='transport'){
             if(!backendSession||m.session!==backendSession)return;
             if(typeof m.serial!=='number'||!isFinite(m.serial)||Math.floor(m.serial)!==m.serial||m.serial<0||m.serial<=lastTransportSerial)return;
             if(m.action==='pause'){playerReset();outlet(3,'call','stop_playing');}
             else if(m.action==='resume')outlet(3,'call','continue_playing');
             else if(m.action==='restart'){
+                epoch++;
                 playerReset();outlet(3,'call','stop_playing');
                 outlet(3,'set','current_song_time',0);
             }else return;
@@ -104,7 +115,10 @@ function receive(){
         if(m.kind==='error'){reflectRole();reflectPresence();reflectManual();parameter(selectedParameter);status(m.error);return;}
         if(m.kind==='plan'){if(new Date().getTime()-lastReply>3000)return;outlet(1,['planbytes'].concat(utf8bytes(JSON.stringify(m.plan))));return;}
         if(m.kind!=='state' || m.serial<acknowledged)return;
-        if(typeof m.session==='string' && m.session!==backendSession){backendSession=m.session;lastTransportSerial=-1;}
+        if(typeof m.session==='string' && m.session!==backendSession){
+            if(backendSession)DesnivelRecording.disconnect();
+            backendSession=m.session;lastTransportSerial=-1;lastRecordingSerial=-1;
+        }
         acknowledged=m.serial;lastReply=new Date().getTime();
         var signature=JSON.stringify([m.role,m.role_mode,m.supported_roles,m.active,m.next_entry_progress,m.section_role,m.preset,m.presets,m.controls,m.can_save_presets,m.editable_presets,m.presence,m.weather]);
         if(signature!==snapshot){

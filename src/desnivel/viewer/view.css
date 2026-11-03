@@ -111,6 +111,8 @@ button:disabled {
   padding:6px 9px;
   cursor:pointer
 }
+.session-controls select {font:inherit;font-size:12px;background:var(--panel);color:var(--ink);border:1px solid var(--control-border);border-radius:6px;padding:9px}
+#record-start {border-color:var(--accent);color:var(--accent)}
 #status {
   font-size:12px;
   border:1px solid var(--rule);

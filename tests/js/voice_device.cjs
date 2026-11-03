@@ -4,7 +4,8 @@ const patch={getnamed:name=>(uiObjects[name]??={
  message:(...a)=>(uiMessages[name]??=[]).push(a),
  setboxattr:(nameAttr,value)=>(uiMessages[name]??=[]).push([nameAttr,value])})};
 const c={patcher:patch,outlet:(...a)=>output.push(a),arrayfromargs:a=>Array.from(a)};
-vm.createContext(c);vm.runInContext(fs.readFileSync('m4l/desnivel_voice.js','utf8'),c);
+vm.createContext(c);c.include=name=>vm.runInContext(fs.readFileSync('m4l/'+name,'utf8'),c);
+vm.runInContext(fs.readFileSync('m4l/desnivel_voice.js','utf8'),c);
 function packet(message){return [...Buffer.from(JSON.stringify(message),'utf8')];}
 function control(entry){
  assert.equal(entry[1][0],'/desnivel/v1/voice/control');
@@ -151,7 +152,9 @@ let plan={version:1,kind:'plan',voice:'part_a',instance:c.instance,plan:{version
 c.receive(JSON.stringify({...plan,voice:'part_b'}));assert.notEqual(output.at(-1)[1][0],'planbytes');
 c.receive(JSON.stringify(plan));assert.equal(output.at(-1)[1][0],'planbytes');
 const liveCommand={version:1,kind:'transport',voice:'part_a',instance:c.instance,session:'python-1',serial:100,action:'restart'};
+const rewindEpoch=c.epoch;
 c.receive(JSON.stringify(liveCommand));
+assert.equal(c.epoch,rewindEpoch+1); // Conferma anche un reset quando Live è già fermo a zero.
 assert.deepStrictEqual(output.filter(a=>a[0]===3),[
  [3,'call','stop_playing'],[3,'set','current_song_time',0]]);
 const liveCount=output.filter(a=>a[0]===3).length;

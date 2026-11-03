@@ -38,6 +38,22 @@ def test_controls_validate_apply_acknowledge_and_ignore_reordered_requests():
     assert bridge.voices['part_a'].values == {'density': 1.5}
 
 
+def test_recording_commands_require_capability_and_do_not_modify_voice_controls():
+    bridge, sent, changes, _ = setup()
+    bridge.handle(message())
+    with pytest.raises(ValueError, match='aggiornare'):
+        bridge.control_recording('part_a', 'prepare', 1, 'both')
+    bridge.handle(message(2, capabilities=['recording_control']))
+    bridge.control_recording('part_a', 'prepare', 1, 'both')
+    assert sent[-1][0] == 9101
+    assert sent[-1][2]['kind'] == 'recording'
+    assert sent[-1][2]['mode'] == 'both'
+    assert sent[-1][2]['request'] == 1
+    bridge.handle(message(3, 'recording_status', report={'request': 1, 'status': 'ready'}))
+    assert changes == []
+    assert bridge.voices['part_a'].values == {'density': 1}
+
+
 def test_failed_application_does_not_confirm_or_mutate_state():
     bridge, sent, _, _ = setup()
     bridge.handle(message())

@@ -27,6 +27,9 @@ async function start() {
   }
   el('pause').onclick = () => command(paused ? 'resume' : 'pause');
   el('restart').onclick = el('restart-finished').onclick = () => command('restart');
+  el('record-prepare').onclick = () => command('record_'+el('record-mode').value);
+  el('record-start').onclick = () => command('record_start');
+  el('record-stop').onclick = () => command('record_stop');
   el('skin').addEventListener('change', event => {
     document.documentElement.dataset.skin = event.target.value;
   });
@@ -61,6 +64,15 @@ async function start() {
       const trip = state.trip;
       if (trip.stage !== route.stage) throw new Error('La sorgente dello stato è cambiata: riavvia la vista con la sessione.');
       const stale = age > 3;
+      const capture = state.recording;
+      const busy = capture && ['preparing','rewinding','starting','stopping','recording'].includes(capture.status);
+      el('record-prepare').disabled = stale || !capture || busy || state.state === 'closed';
+      el('record-mode').disabled = stale || !capture || busy;
+      el('record-start').disabled = stale || capture?.status !== 'ready' || !capture?.tracks?.length || state.state === 'closed';
+      el('record-stop').disabled = stale || !capture || ['unprepared','ready'].includes(capture.status);
+      const captureLabels = {unprepared:'REC da preparare',preparing:'Preparazione REC…',ready:'REC pronta',
+        rewinding:'Ritorno a zero…',starting:'Avvio REC…',recording:'Registrazione in corso',stopping:'Arresto REC…',error:'Errore REC'};
+      el('record-status').textContent = capture ? capture.error || `${captureLabels[capture.status]} · ${capture.mode || '—'} · ${capture.tracks.length} tracce` : '';
       DesnivelMusic.render(state, stale);
       paused = state.controls?.paused || false;
       el('pause').textContent = paused ? 'Riprendi' : 'Pausa';
@@ -92,6 +104,7 @@ async function start() {
         }
       }
     } catch (error) {
+      el('record-prepare').disabled = el('record-start').disabled = el('record-stop').disabled = true;
       DesnivelMusic.markStale();
       el('pause').disabled = el('restart').disabled = el('restart-finished').disabled = true;
       el('status').textContent = 'Collegamento interrotto';

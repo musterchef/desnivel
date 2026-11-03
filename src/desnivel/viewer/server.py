@@ -10,6 +10,7 @@ import time
 from urllib.parse import urlsplit
 
 from desnivel.viewer.route import route_payload
+from desnivel.adapters.live_recording import RECORDING_ACTIONS
 
 
 class JourneyViewServer:
@@ -42,7 +43,7 @@ class JourneyViewServer:
                     payload = json.loads(self.rfile.read(size))
                     if (not isinstance(payload, dict) or set(payload) != {'action'}
                             or not isinstance(payload['action'], str)
-                            or payload['action'] not in {'pause', 'resume', 'restart'}):
+                            or payload['action'] not in {'pause', 'resume', 'restart'} | RECORDING_ACTIONS):
                         raise ValueError('comando non valido')
                     commands.put_nowait(payload['action'])
                 except (ValueError, Full) as error:

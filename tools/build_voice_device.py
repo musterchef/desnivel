@@ -9,7 +9,7 @@ import struct
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_TEMPLATE = Path('/Applications/Ableton Live 12 Suite.app/Contents/App-Resources/Misc/Max Devices/Max MIDI Effect.amxd')
-SCRIPTS = ('desnivel_voice.js', 'desnivel_transport_player.js')
+SCRIPTS = ('desnivel_voice.js', 'desnivel_transport_player.js', 'desnivel_recording.js')
 
 
 def build(template: bytes, document: dict) -> bytes:
@@ -30,7 +30,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--template', type=Path, default=DEFAULT_TEMPLATE)
     parser.add_argument('--output', type=Path, required=True, help='Cartella per device e dipendenze JS.')
-    parser.add_argument('--update', action='store_true', help='Aggiorna i tre file del dispositivo in una cartella esistente.')
+    parser.add_argument('--update', action='store_true', help='Aggiorna il dispositivo e gli script in una cartella esistente.')
     args = parser.parse_args(argv)
     if args.output.exists() and not args.update:
         parser.error('la cartella di output deve essere nuova oppure usare --update')

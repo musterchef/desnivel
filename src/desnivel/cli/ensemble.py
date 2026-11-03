@@ -356,7 +356,13 @@ def main(argv=None):
     if args.dry_run:
         print('Configurazione e generazione delle sezioni verificate; nessun messaggio inviato.')
         return 0
-    server.on_message = runtime.on_message
+    from desnivel.adapters.live_recording import LiveRecording, RECORDING_ACTIONS
+    recording = LiveRecording(server.bridge, runtime.transport_voice,
+                              lambda: apply_control(runtime, 'restart'), lambda: runtime.epoch)
+    def on_message(bridge, message):
+        runtime.on_message(bridge, message)
+        recording.on_message(message)
+    server.on_message = on_message
     server.server.timeout = .1
     last_write = 0.
     view = TerminalSessionView()
@@ -381,6 +387,8 @@ def main(argv=None):
                     try:
                         if action == 'connect':
                             connect_all(args.connect_port)
+                        elif action in RECORDING_ACTIONS:
+                            recording.control(action)
                         else:
                             apply_control(runtime, action)
                         command_error = None
@@ -391,6 +399,8 @@ def main(argv=None):
                 except (ValueError, KeyError, TypeError, OSError) as error:
                     runtime.fail(error)
                 state = runtime.snapshot()
+                recording.tick(finished=runtime.state == 'finished')
+                state['recording'] = recording.snapshot()
                 state['control_error'] = command_error
                 view.update(state)
                 if time.monotonic()-last_write >= .25:
@@ -402,6 +412,11 @@ def main(argv=None):
             runtime.state = 'closed'
             store.write(runtime.snapshot())
         finally:
+            if recording.status in ('recording', 'preparing', 'starting', 'rewinding'):
+                try:
+                    recording.control('record_stop')
+                except (ValueError, OSError) as error:
+                    print(f'Registrazione: {error}', flush=True)
             if viewer:
                 viewer.close()
             server.close()

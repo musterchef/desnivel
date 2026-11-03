@@ -235,6 +235,9 @@ class VoiceDeviceBridge:
                 spec.values, spec.preset = values, None
             elif action == 'panic':
                 self.reset(voice)
+            elif action == 'recording_status':
+                if not isinstance(message.get('report'), dict):
+                    raise ValueError('report di registrazione non valido')
             elif action not in ('hello', 'transport'):
                 raise ValueError('azione non supportata')
             previous['serial'] = serial
@@ -314,3 +317,19 @@ class VoiceDeviceBridge:
         self.send(connection['port'], ADDRESS, {'version': 1, 'kind': 'transport',
                   'voice': voice, 'instance': connection['instance'],
                   'session': self.session, 'serial': self.serial, 'action': action})
+
+    def require_recording(self, voice):
+        if not self.connected(voice):
+            raise ValueError('collegare prima la voce del trasporto con C')
+        if 'recording_control' not in self.connections[voice].get('capabilities', []):
+            raise ValueError('aggiornare e ricaricare Desnivel_Voice per preparare la registrazione')
+
+    def control_recording(self, voice, action, request, mode):
+        self.require_recording(voice)
+        if action not in ('prepare', 'start', 'stop') or mode not in ('audio', 'midi', 'both', None):
+            raise ValueError('comando di registrazione non valido')
+        self.serial += 1
+        connection = self.connections[voice]
+        self.send(connection['port'], ADDRESS, dict(
+            version=1, kind='recording', voice=voice, instance=connection['instance'],
+            session=self.session, serial=self.serial, request=request, action=action, mode=mode))

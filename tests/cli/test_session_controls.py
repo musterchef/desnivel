@@ -36,9 +36,10 @@ def test_terminal_reads_adjacent_keys_and_restores_settings_on_exit():
         original = termios.tcgetattr(stream.fileno())
         try:
             with TerminalControls(stream) as keyboard:
-                os.write(master, b' rCcmM')
+                os.write(master, b' rCc123gSmM')
                 assert list(keyboard.poll()) == ['toggle', 'restart', 'connect', 'connect',
-                                                 'weather_toggle', 'weather_toggle']
+                                                 'record_audio', 'record_midi', 'record_both',
+                                                 'record_start', 'record_stop', 'weather_toggle', 'weather_toggle']
             restored = termios.tcgetattr(stream.fileno())
             # macOS può attivare PENDIN al ritorno in modalità canonica:
             # è il flag transitorio di rielaborazione dell'input, non un'impostazione cambiata.

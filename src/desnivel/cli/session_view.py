@@ -133,6 +133,15 @@ def render_session(state):
         rows.append('COMANDO: ' + state['control_error'])
     if state['state'] == 'finished':
         rows.append('Tappa conclusa. Premi R per tornare a zero, poi Play per ripartire.')
+    recording = state.get('recording')
+    if recording:
+        labels = {'unprepared': 'da preparare', 'preparing': 'preparazione', 'ready': 'pronta',
+                  'rewinding': 'ritorno a zero', 'starting': 'avvio', 'recording': 'REGISTRAZIONE',
+                  'stopping': 'arresto', 'error': 'errore'}
+        rows.append(f"REC: {labels[recording['status']]} | {recording['mode'] or 'nessuna modalità'} | {len(recording['tracks'])} tracce")
+        if recording.get('error'):
+            rows.append('ERRORE: REC · '+recording['error'])
+        rows.append('REC · 1: prepara audio | 2: prepara MIDI | 3: entrambi | G: registra da zero | S: stop REC')
     rows.append('C: collega tutte le Voice | Spazio: pausa/riprendi | R: torna a zero | M: meteo | Ctrl+C: chiudi.')
     return '\n'.join(rows)
 
@@ -147,7 +156,7 @@ def fit_terminal(frame, width, height):
         return '\n'.join(wrapped)
     # Riduce prima i dettagli; stato, collegamenti, errori e comandi restano visibili.
     required = {i for i, row in enumerate(rows) if i < 3 or row.startswith((
-        'IN ESECUZIONE', 'Coordinator:', 'ERRORE:', 'COMANDO:', 'Tappa conclusa.', 'C:'))
+        'IN ESECUZIONE', 'Coordinator:', 'REC:', 'REC ·', 'ERRORE:', 'COMANDO:', 'Tappa conclusa.', 'C:'))
         or ' | in organico | ' in row or ' | fuori organico' in row}
     selected = {i: [textwrap.shorten(rows[i], width=width, placeholder='…')] for i in required}
     available = height-len(selected)-1
