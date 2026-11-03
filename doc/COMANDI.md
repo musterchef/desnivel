@@ -55,6 +55,15 @@ una tappa da `01` a `12`, oppure `07bis` per il FIT ricostruito da Komoot.
 Le tappe numerate usano i GPX in `gpx/`; `07bis` richiede il file locale
 `output/ricostruzione-tappa07/tappa07_Roma_Sabaudia.fit`.
 
+La variante integra 1.052 punti con posizione, quota e orario dal GPX Komoot
+nel tratto Roma–Ciampino. Conserva i record, gli eventi timer e i riepiloghi
+del FIT originale; questi ultimi non sono ricalcolati. Restano lacune nei
+campioni disponibili, che possono produrre salti nella mappa e nel replay.
+La provenienza dei punti aggiunti è in
+`output/ricostruzione-tappa07/provenienza.json`. La cartella `output/` è
+esclusa da Git: per usare `07bis` su un'altra copia del progetto occorre
+trasferire anche questi file.
+
 Il launcher usa `presets/organico.json`, il timing `allocated` e la mappa
 sulla porta `8765`. Dal terminale, nella radice del progetto:
 
@@ -66,6 +75,8 @@ Senza `--tappa` la scelta è interattiva. Gli altri argomenti sono inoltrati
 a `desnivel.cli.ensemble`; per esempio `--view-port 8766` cambia la porta
 della mappa. La selezione della traccia è gestita da `cli.launch_stage`;
 il `.command` imposta la directory del progetto e avvia il comando Python.
+Collegamento dei device, controlli e comportamento del replay sono descritti
+in [Sessione multivoce Python](SESSIONE-MULTIVOCE.md).
 
 I launcher a doppio clic per macOS si trovano in `comandi/` e usano automaticamente l'ambiente virtuale `.venv`:
 
