@@ -127,6 +127,14 @@ def render_session(state):
             + rows[voice_start:voice_end]
             + ['', 'PARAMETRI · configurazione completa'] + parameter_rows
             + (['', 'DETTAGLI DEL PIANO'] + rows[plan_summary_end:] if plan else []))
+    setup = state.get('setup', {})
+    if setup.get('notice'):
+        rows.append('PREPARAZIONE: '+setup['notice'])
+        rows.extend('PREPARAZIONE: '+line for line in setup.get('instructions', []))
+        if setup.get('next_check_s') is not None:
+            rows.append(f"PREPARAZIONE: prossimo controllo tra {setup['next_check_s']:.0f} s · Invio verifica ora · Esc annulla")
+    for name, component in state.get('components', {}).items():
+        rows.append(f"COMPONENTE {name}: {'collegato' if component['connected'] else 'SCOLLEGATO'} | {component['status']}")
     if state['error']:
         rows.append('ERRORE: ' + state['error'])
     if state.get('control_error'):
@@ -142,7 +150,7 @@ def render_session(state):
         if recording.get('error'):
             rows.append('ERRORE: REC · '+recording['error'])
         rows.append('REC · 1: prepara audio | 2: prepara MIDI | 3: entrambi | G: registra da zero | S: stop REC')
-    rows.append('C: collega tutte le Voice | Spazio: pausa/riprendi | R: torna a zero | M: meteo | Ctrl+C: chiudi.')
+    rows.append('C: collega tutte le Voice | Spazio: pausa/riprendi | R: torna a zero | M: meteo | N: prepara Snake | Ctrl+C: chiudi.')
     return '\n'.join(rows)
 
 
@@ -156,7 +164,7 @@ def fit_terminal(frame, width, height):
         return '\n'.join(wrapped)
     # Riduce prima i dettagli; stato, collegamenti, errori e comandi restano visibili.
     required = {i for i, row in enumerate(rows) if i < 3 or row.startswith((
-        'IN ESECUZIONE', 'Coordinator:', 'REC:', 'REC ·', 'ERRORE:', 'COMANDO:', 'Tappa conclusa.', 'C:'))
+        'IN ESECUZIONE', 'Coordinator:', 'PREPARAZIONE:', 'REC:', 'REC ·', 'ERRORE:', 'COMANDO:', 'Tappa conclusa.', 'C:'))
         or ' | in organico | ' in row or ' | fuori organico' in row}
     selected = {i: [textwrap.shorten(rows[i], width=width, placeholder='…')] for i in required}
     available = height-len(selected)-1

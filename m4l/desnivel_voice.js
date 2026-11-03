@@ -8,6 +8,7 @@ var connected=false, lastReply=0, state=null, snapshot='', parameterNames=[], pr
 var selectedParameter=0, patch=this.patcher;
 var lastTransportSerial=-1, backendSession='';
 var lastRecordingSerial=-1;
+var deviceAdapter=null;
 var presetDraft='';
 var wireParts={}, wireOrder=[];
 // I payload variabili restano byte numerici, senza simboli Max per ogni JSON.
@@ -16,7 +17,7 @@ function utf8text(bytes){var binary='';for(var i=0;i<bytes.length;i++){if(bytes[
 function status(text){outlet(2,String(text));}
 function ui(name){return patch.getnamed(name);}
 function loadbang(){reflectPresence();reflectManual();}
-function playerReset(){outlet(1,'panic');}
+function playerReset(){if(deviceAdapter)deviceAdapter.panic();outlet(1,'panic');}
 function disconnect(){DesnivelRecording.disconnect();connected=false;state=null;snapshot='';wireParts={};wireOrder=[];playerReset();ui('role_display').message('set','Unassigned');ui('role_menu').message('clear');reflectPresence();reflectManual();reflectWeather();status('Disconnected');}
 function voice(){var name=arrayfromargs(arguments).join(' ');if(name!==voiceId){disconnect();voiceId=name;}}
 function receiveport(value){var n=Number(value);if(n!==replyPort){disconnect();replyPort=n;}}
@@ -31,6 +32,7 @@ function connect(){
 function request(action, extra){
     if(!connected)return;
     var m={version:1,voice:voiceId,instance:instance,reply_port:replyPort,serial:++serial,action:action,capabilities:['transport_control','recording_control'],transport:{beat:beat,playing:playing,epoch:epoch,bpm:bpm}};
+    if(deviceAdapter){m.capabilities=deviceAdapter.capabilities;m.device_state=deviceAdapter.snapshot();}
     for(var key in extra)m[key]=extra[key];
     outlet(0,['/desnivel/v1/voice/control'].concat(utf8bytes(JSON.stringify(m))));
 }
@@ -93,6 +95,7 @@ function receive(){
         if(bytes===null)return;
         var m=JSON.parse(utf8text(bytes));
         if(!connected || m.version!==1 || m.voice!==voiceId || m.instance!==instance)return;
+        if(deviceAdapter && deviceAdapter.receive(m))return;
         if(m.kind==='recording'){
             if(!backendSession || m.session!==backendSession || typeof m.serial!=='number'
                 || !isFinite(m.serial) || Math.floor(m.serial)!==m.serial || m.serial<=lastRecordingSerial)return;
@@ -179,7 +182,7 @@ function presence_slider(value){presence(Number(value)/100);}
 function reflectRole(){
     if(!state)return;
     var roles=state.supported_roles||[], menu=ui('role_menu');
-    menu.message('clear');menu.message('append',roles.length?'Follow section':'No roles available');
+    menu.message('clear');menu.message('append',roles.length?(state.role_follow_label||'Follow section'):'No roles available');
     for(var i=0;i<roles.length;i++)menu.message('append',roles[i]);
     menu.message('set',state.role_mode==='manual'?roles.indexOf(state.role)+1:0);
     var activity='';

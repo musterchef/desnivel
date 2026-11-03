@@ -44,6 +44,12 @@ class TerminalControls:
                     yield 'restart'
                 elif key == 'c':
                     yield 'connect'
+                elif key == 'n':
+                    yield 'snake_setup'
+                elif key in ('\n', '\r'):
+                    yield 'setup_check'
+                elif key == '\x1b':
+                    yield 'setup_cancel'
                 elif key == 'm':
                     yield 'weather_toggle'
                 elif key in '123':

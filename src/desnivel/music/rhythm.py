@@ -5,6 +5,8 @@ import math
 
 from desnivel.music.phrases import Note, Phrase
 
+SUBDIVISIONS = {'32n': .125, '16n': .25, '8n': .5, '4n': 1., '2n': 2.}
+
 
 @dataclass(frozen=True)
 class RhythmReference:

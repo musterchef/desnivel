@@ -8,6 +8,7 @@ from fractions import Fraction
 import math
 
 from desnivel.music.phrases import Note, Phrase
+from desnivel.music.rhythm import SUBDIVISIONS
 
 
 # Celle per righe 0..15; ID Shape dell'interfaccia 1..14, Live 0..13.
@@ -27,8 +28,7 @@ SHAPES = (
     (12,13,14,15,11,7,3,2,1,0,4,8,9,10,6,5),
     (15,14,13,12,8,4,0,1,2,3,7,11,10,9,5,6),
 )
-SPEEDS = {'32n': Fraction(1,8), '16n': Fraction(1,4),
-          '8n': Fraction(1,2), '4n': Fraction(1), '2n': Fraction(2)}
+SPEEDS = {name: Fraction(str(beats)) for name, beats in SUBDIVISIONS.items()}
 
 
 @dataclass(frozen=True)

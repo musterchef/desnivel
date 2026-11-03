@@ -1,0 +1,10 @@
+{
+  "port": 9007,
+  "components": {
+    "snake_01": {
+      "role": "melody",
+      "mode": "autonomous",
+      "source": "voice_01"
+    }
+  }
+}

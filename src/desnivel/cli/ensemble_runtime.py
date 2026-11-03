@@ -314,6 +314,7 @@ class EnsembleRuntime:
             self.next_window += 1
         self.planned_start, self.last_section = start, context.name
         self.last_decisions = {**self.session.coordinator.last_plan, 'section': context.name,
+                               'section_index': context.section_index,
                                'root': context.root, 'scale': context.scale,
                                'direction': self.section_directions[context.section_index],
                                'trip': self.section_sources[context.section_index],

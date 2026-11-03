@@ -148,3 +148,17 @@ def test_voice_summary_distinguishes_effective_target_and_manual_without_changin
     assert 'manual: syncopation' in summary
     assert 'syncopation=0.2 →' not in frame
     assert state == before
+
+
+def test_setup_instructions_and_immediate_check_stay_visible_in_compact_view():
+    from desnivel.cli.session_view import fit_terminal
+    state=snapshot()
+    state['setup']=dict(status='waiting',notice='controllo Snake non collegato',
+        instructions=['Crea traccia MIDI: Snake → controllo → strumento.',
+                      'Voce snake_01; Receive 9201; Python 9007.'],next_check_s=5)
+    frame=fit_terminal(render_session(state),100,24)
+    assert 'controllo Snake non collegato' in frame
+    assert 'Snake → controllo → strumento' in frame
+    assert 'snake_01' in frame and '9201' in frame
+    assert 'Invio verifica ora' in frame and 'Esc annulla' in frame
+    assert 'N: prepara Snake' in frame

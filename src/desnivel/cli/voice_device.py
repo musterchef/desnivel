@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import select
 from pathlib import Path
 from uuid import uuid4
 
@@ -56,6 +57,13 @@ class VoiceDeviceServer:
                 self.on_error(str(error))
             else:
                 print(f'Voice device: {error}', flush=True)
+
+    def poll(self, limit=64):
+        """Consuma richieste già disponibili senza bloccare il ciclo chiamante."""
+        for _ in range(limit):
+            if not select.select([self.server], [], [], 0)[0]:
+                break
+            self.server.handle_request()
 
     def close(self):
         for voice in list(self.bridge.connections):

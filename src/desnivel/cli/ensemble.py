@@ -356,6 +356,8 @@ def main(argv=None):
     if args.dry_run:
         print('Configurazione e generazione delle sezioni verificate; nessun messaggio inviato.')
         return 0
+    from desnivel.cli.snake_setup import SnakeSetup
+    snake = SnakeSetup(args.config.parent/'snake.json', runtime.voice_descriptions, args.port)
     from desnivel.adapters.live_recording import LiveRecording, RECORDING_ACTIONS
     recording = LiveRecording(server.bridge, runtime.transport_voice,
                               lambda: apply_control(runtime, 'restart'), lambda: runtime.epoch)
@@ -367,6 +369,7 @@ def main(argv=None):
     last_write = 0.
     view = TerminalSessionView()
     command_error = None
+    setup_paused = False
     def report_device_error(message):
         nonlocal command_error
         command_error = message
@@ -385,7 +388,21 @@ def main(argv=None):
                     actions.extend(viewer.take_commands())
                 for action in actions:
                     try:
-                        if action == 'connect':
+                        if (snake.waiting or setup_paused) and (action in ('resume', 'record_start')
+                                              or action == 'toggle' and (runtime.paused or not runtime.playing)):
+                            raise ValueError('completa la preparazione Snake oppure premi Esc prima di riprendere')
+                        if action == 'snake_setup':
+                            was_waiting = snake.waiting
+                            snake.begin(playing=runtime.playing, recording_busy=recording.status in (
+                                'preparing', 'rewinding', 'starting', 'stopping', 'recording'))
+                            if snake.waiting and not was_waiting:
+                                runtime.control('pause')
+                                setup_paused = True
+                        elif action == 'setup_check':
+                            snake.confirm()
+                        elif action == 'setup_cancel':
+                            snake.cancel()
+                        elif action == 'connect':
                             connect_all(args.connect_port)
                         elif action in RECORDING_ACTIONS:
                             recording.control(action)
@@ -395,12 +412,23 @@ def main(argv=None):
                     except (ValueError, OSError) as error:
                         command_error = str(error)
                 try:
-                    runtime.tick()
+                    if snake.waiting or setup_paused:
+                        if runtime.playing:
+                            server.bridge.control_transport(runtime.transport_voice, 'pause')
+                            runtime.control('pause')
+                        elif not snake.waiting:
+                            runtime.control('resume')
+                            setup_paused = False
+                            runtime.tick()
+                    else:
+                        runtime.tick()
                 except (ValueError, KeyError, TypeError, OSError) as error:
                     runtime.fail(error)
                 state = runtime.snapshot()
                 recording.tick(finished=runtime.state == 'finished')
                 state['recording'] = recording.snapshot()
+                state['components'] = snake.tick(state)
+                state['setup'] = snake.snapshot()
                 state['control_error'] = command_error
                 view.update(state)
                 if time.monotonic()-last_write >= .25:
@@ -412,6 +440,7 @@ def main(argv=None):
             runtime.state = 'closed'
             store.write(runtime.snapshot())
         finally:
+            snake.close()
             if recording.status in ('recording', 'preparing', 'starting', 'rewinding'):
                 try:
                     recording.control('record_stop')
