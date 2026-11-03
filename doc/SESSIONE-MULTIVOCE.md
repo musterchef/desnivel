@@ -24,6 +24,12 @@ Il launcher usa `organico.json`, timeline allocata e mappa sulla porta 8765.
 Accetta `01`–`12` e `07bis`; sorgenti e requisiti della variante sono in
 [Comandi](COMANDI.md#sessione-multivoce-con-scelta-della-tappa).
 
+**N** nel terminale apre la preparazione guidata di Snake, prima del Play.
+La guida controlla periodicamente il componente; **Invio** verifica subito
+e **Esc** annulla. L’avvio base conserva le quattro voci e apre il servizio
+Snake soltanto su richiesta. Ruoli, modalità autonoma/coordinata e
+istruzioni in [Snake](SNAKE.md#componente-multiruolo).
+
 Per scegliere direttamente sorgente e modalità:
 
 ```sh

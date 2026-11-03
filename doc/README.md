@@ -32,7 +32,7 @@ Guida alla documentazione di **Desnivel**, organizzata per aree tematiche.
 | [Dati del viaggio](DATI-VIAGGIO.md) | Lettura FIT/GPX, calcolo delle metriche nei tratti osservati e formato OSC. |
 | [Contesto ambientale](CONTESTO-AMBIENTALE.md) | Sorgenti generiche, meteo storico, acquisizione del fondo stradale e confronto musicale A/B. |
 | [Analisi del percorso](ANALISI-PERCORSO.md) | Zone del profilo altimetrico, macrosezioni configurabili, report visuale e misure di verifica. |
-| [Sequencer Snake](SNAKE.md) | Banco di prova per la linea melodica: integrazione del sequencer Snake, bridge M4L e telemetria. |
+| [Sequencer Snake](SNAKE.md) | Controllo multiruolo autonomo/coordinato, banco Length, bridge e telemetria. |
 | [Generazione melodica](MELODIA.md) | Motivo, sviluppo delle frasi, controlli e riproducibilità. |
 | [Tessitura sostenuta](TESSITURA.md) | Sostegno monofonico indipendente o coordinato con una frase sorgente, switch e integrazione nella sessione. |
 | [Generatore del basso](BASSO.md) | Banco di prova per l'accompagnamento: logica di contrappunto e dialogo con la melodia, controlli live e player. |
@@ -55,6 +55,7 @@ Materiale di progettazione separato dalla documentazione del sistema attuale.
 - [Coordinamento ritmico](proposte/COORDINAMENTO-RITMICO.md): direzione architetturale e confini del primo blocco implementato.
 - [Contratti per le relazioni musicali](proposte/RELAZIONI-MUSICALI.md): specifica generale, stato dell'implementazione e relazioni ancora da realizzare.
 - [Evoluzione melodica](proposte/EVOLUZIONE-MELODICA.md): fraseggio e collegamento al percorso implementati; ulteriori sviluppi armonici aperti.
+- [Voce Snake](proposte/VOCE-SNAKE.md): controllo multiruolo disponibile; previsione come sorgente del Coordinator e aggiornamenti quantizzati ancora proposti.
 
 ---
 

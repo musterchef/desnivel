@@ -41,6 +41,7 @@ Opzioni utili:
 | **9002** | Invio di frasi predefinite per il player ciclico. | [Player M4L](BASSO.md) |
 | **9003** | Telemetria dello stato di Snake (`/desnivel/v1/snake/state`) e controlli live del basso (`/desnivel/v1/bass/control`). | [Snake](SNAKE.md), [Basso](BASSO.md) |
 | **9004** | Piani di esecuzione per il basso sincronizzato al trasporto di Live. | [Basso in Live](BASSO.md) |
+| **9007** | Controllo dei componenti Snake, con Receive iniziale 9201 per il primo componente. | [Snake multiruolo](SNAKE.md#componente-multiruolo) |
 | **9006** | Server della sessione multivoce e ricevitore diagnostico Voice, da usare separatamente. | [Sessione multivoce](SESSIONE-MULTIVOCE.md) |
 | **9101–9104** | Ricezione delle quattro istanze Voice nella prova multivoce. | [Device Voice](VOCE-M4L.md) |
 
@@ -82,6 +83,11 @@ della mappa. La selezione della traccia è gestita da `cli.launch_stage`;
 il `.command` imposta la directory del progetto e avvia il comando Python.
 Collegamento dei device, controlli e comportamento del replay sono descritti
 in [Sessione multivoce Python](SESSIONE-MULTIVOCE.md).
+
+Prima del Play, **N** nel terminale avvia la preparazione guidata di Snake:
+controllo automatico ogni dieci secondi, **Invio** per verificare subito,
+**Esc** per annullare. Il launcher resta unico e l’avvio base mantiene le
+quattro voci. Istruzioni in [Snake](SNAKE.md#componente-multiruolo).
 
 ### Banchi di prova separati
 

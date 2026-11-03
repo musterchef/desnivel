@@ -37,6 +37,14 @@ La mappa del Drum Rack è in `src/desnivel/adapters/percussion.py`.
 Per coordinare la tessitura con la melodia usare **Segui sorgente** nel
 device; per gli spostamenti percussivi usare `displacement_beats`.
 
+## Componenti Snake opzionali
+
+`snake.json` configura il server e i componenti Snake aggiuntivi:
+`port` è la porta Python, `components` associa ciascun ID a `role`, `mode`
+e `source`. Il file, accanto al JSON della sessione, viene caricato quando
+si preme **N** per la preparazione guidata. Ruoli, sorgenti e installazione
+in [Snake](../doc/SNAKE.md#componente-multiruolo).
+
 ## Altre configurazioni operative
 
 | File o cartella | Funzione | Riferimento |
