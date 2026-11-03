@@ -11,10 +11,19 @@ def targets(request, cycle):
     space = .12*(.5-crowd) if request.observation.available_beats else 0.
     change = (intent.change*intent.persistence
               if intent.change is not None and intent.persistence is not None else 0.)
-    return {
-        'velocity_ratio': ParameterTarget(bounded(base['velocity_ratio']*(1+.2*terrain), .05, 1),
+    result = {
+        'velocity_ratio': ParameterTarget(bounded(base['velocity_ratio']*(1+.2*terrain+.15*(intent.dynamic_pressure or 0.)), .05, 1),
+            'dinamica percussiva dal contesto e dalla pressione ambientale' if intent.dynamic_pressure is not None else
             'dinamica percussiva dal contesto locale' if intent.intensity is not None else
             'dinamica di sezione: contesto locale indisponibile', 8.),
-        'variation': ParameterTarget(bounded(base['variation']+.22*change+space, 0, 1),
-            'sviluppo dai cambiamenti persistenti e dallo spazio di melodia e basso', 16., cycle),
+        'variation': ParameterTarget(bounded(base['variation']+.22*change+space+.2*(intent.material_change or 0.), 0, 1),
+            'sviluppo dai cambiamenti persistenti e dallo spazio di melodia e basso'+
+            (' e dai cambiamenti ambientali' if intent.material_change is not None else ''), 16., cycle),
     }
+    if intent.dynamic_pressure is not None:
+        result['velocity_ratio'] = result['velocity_ratio'].with_contribution('dynamic_pressure',
+            bounded(base['velocity_ratio']*(1+.2*terrain), .05, 1))
+    if intent.material_change is not None:
+        result['variation'] = result['variation'].with_contribution('material_change',
+            bounded(base['variation']+.22*change+space, 0, 1))
+    return result

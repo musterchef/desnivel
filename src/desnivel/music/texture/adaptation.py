@@ -13,6 +13,10 @@ def targets(request):
         a, b = peer.register
         overlap = max(0, min(low+11, b)-max(low, a)+1)/(b-a+1)
         pressure = max(pressure, overlap*peer.occupied_ratio)
-    return {'velocity': ParameterTarget(bounded(base['velocity']*(1+.3*terrain)*(1-.2*pressure), 1, 127),
-            'sostegno dinamico con alleggerimento nel registro occupato dalla melodia',
-            8., integer=True, deadband=1.)}
+    target = ParameterTarget(bounded(base['velocity']*(1+.3*terrain+.15*(intent.dynamic_pressure or 0.))*(1-.2*pressure), 1, 127),
+            'sostegno dinamico con alleggerimento nel registro occupato dalla melodia'+
+            (' e pressione ambientale' if intent.dynamic_pressure is not None else ''),
+            8., integer=True, deadband=1.)
+    if intent.dynamic_pressure is not None:
+        target = target.with_contribution('dynamic_pressure', bounded(base['velocity']*(1+.3*terrain)*(1-.2*pressure), 1, 127))
+    return {'velocity': target}

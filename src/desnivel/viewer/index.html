@@ -10,6 +10,7 @@
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script defer src="/position.js"></script>
+  <script defer src="/music.js"></script>
   <script defer src="/view.js"></script>
 </head>
 <body>
@@ -47,6 +48,13 @@
         <dl><div><dt>Da attraversare</dt><dd id="remaining">—</dd></div><div><dt>Tempo del viaggio</dt><dd id="elapsed">—</dd></div><div><dt>Sezione attuale</dt><dd id="section">—</dd></div><div><dt id="timing-label">Replay</dt><dd id="timing">—</dd></div></dl>
         <div class="location"><p class="eyebrow">SEI QUI</p><a id="coordinates" target="_blank" rel="noopener">—</a><p class="muted">Coordinate della posizione sul percorso</p></div>
       </aside>
+    </section>
+    <section class="music" aria-labelledby="music-title">
+      <div class="music-heading"><div><p class="eyebrow">INSIEME MUSICALE</p><h2 id="music-title">Cosa sta suonando</h2></div><span id="music-clock" class="muted">In attesa del trasporto</span></div>
+      <div id="music-plans" class="music-plans"></div>
+      <p id="music-notice" class="muted"></p>
+      <p id="weather-summary" class="weather-summary" role="status">meteo: in attesa dello stato</p>
+      <div id="music-voices" class="music-voices"></div>
     </section>
     <p id="notice" role="status">In attesa dello stato della sessione.</p>
     <footer><span><i></i> Viaggio osservato · Desnivel</span><span>Mappa interattiva · trascina per esplorare</span></footer>

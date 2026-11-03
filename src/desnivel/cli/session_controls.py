@@ -6,6 +6,9 @@ import sys
 
 def apply_control(runtime, action):
     """Controlla Live tramite l'adattatore, poi aggiorna il viaggio nello stesso thread."""
+    if action == 'weather_toggle':
+        runtime.toggle_context('weather')
+        return
     if action == 'toggle':
         action = 'resume' if runtime.paused or not runtime.playing else 'pause'
     if action == 'pause' and runtime.paused:
@@ -41,6 +44,8 @@ class TerminalControls:
                     yield 'restart'
                 elif key == 'c':
                     yield 'connect'
+                elif key == 'm':
+                    yield 'weather_toggle'
 
     def __exit__(self, *args):
         if self.saved is not None:

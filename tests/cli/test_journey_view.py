@@ -58,7 +58,7 @@ def test_server_reads_replaced_snapshots_reports_age_and_serves_only_view_assets
         assert payload['age_s'] >= 10
         assert json.loads(get('api/route')) == route_payload(track())
         assert b'lang="it"' in get('')
-        for path in ('view.js', 'position.js', 'view.css'):
+        for path in ('view.js', 'music.js', 'position.js', 'view.css'):
             assert get(path)
         with pytest.raises(HTTPError) as error:
             get('../state.json')
@@ -77,6 +77,7 @@ def test_ensemble_starts_view_with_initial_state_and_closes_it_on_interrupt(tmp_
     source = track()
     source.samples['cum_dist_m'] = np.array([0., 10., 10., 20.])
     monkeypatch.setattr(loader, 'load_track', lambda *args, **kwargs: source)
+    monkeypatch.setattr('desnivel.cli.weather_context.prepare_weather_context', lambda *args, **kwargs: None)
     views = []
 
     def create_view(track, path, port):

@@ -15,7 +15,7 @@ function status(text){outlet(2,String(text));}
 function ui(name){return patch.getnamed(name);}
 function loadbang(){reflectPresence();reflectManual();}
 function playerReset(){outlet(1,'panic');}
-function disconnect(){connected=false;state=null;snapshot='';wireParts={};wireOrder=[];playerReset();ui('role_display').message('set','Unassigned');ui('role_menu').message('clear');reflectPresence();reflectManual();status('Disconnected');}
+function disconnect(){connected=false;state=null;snapshot='';wireParts={};wireOrder=[];playerReset();ui('role_display').message('set','Unassigned');ui('role_menu').message('clear');reflectPresence();reflectManual();reflectWeather();status('Disconnected');}
 function voice(){var name=arrayfromargs(arguments).join(' ');if(name!==voiceId){disconnect();voiceId=name;}}
 function receiveport(value){var n=Number(value);if(n!==replyPort){disconnect();replyPort=n;}}
 function backendport(value){var n=Number(value);if(n!==backendPort){disconnect();backendPort=n;}}
@@ -45,7 +45,7 @@ function clock(ticks,running){
 function heartbeat(){
     if(!connected)return;
     expireWire();
-    if(new Date().getTime()-lastReply>3000){playerReset();status('Python not responding');}
+    if(new Date().getTime()-lastReply>3000){playerReset();ui('weather_display').message('set','meteo: dati non aggiornati');status('Python not responding');}
     request('hello',{});
 }
 function expireWire(){
@@ -106,7 +106,7 @@ function receive(){
         if(m.kind!=='state' || m.serial<acknowledged)return;
         if(typeof m.session==='string' && m.session!==backendSession){backendSession=m.session;lastTransportSerial=-1;}
         acknowledged=m.serial;lastReply=new Date().getTime();
-        var signature=JSON.stringify([m.role,m.role_mode,m.supported_roles,m.active,m.next_entry_progress,m.section_role,m.preset,m.presets,m.controls,m.can_save_presets,m.editable_presets,m.presence]);
+        var signature=JSON.stringify([m.role,m.role_mode,m.supported_roles,m.active,m.next_entry_progress,m.section_role,m.preset,m.presets,m.controls,m.can_save_presets,m.editable_presets,m.presence,m.weather]);
         if(signature!==snapshot){
             state=m;snapshot=signature;
             reflectRole();
@@ -127,8 +127,15 @@ function receive(){
             selectedParameter=Math.max(0,parameterNames.indexOf(previous));
             ui('parameter_menu').message('set',selectedParameter);parameter(selectedParameter);
         }
-        status(m.notice||'Python connected');
+        reflectWeather();status(m.notice||'Python connected');
     }catch(e){status('Invalid Python message: '+e);}
+}
+function reflectWeather(){
+    var weather=state && state.weather;
+    var text='meteo: '+(weather?weather.label:'stato non disponibile');
+    ui('weather_display').message('set',text);
+    ui('weather_display').message('annotation',text+(weather && weather.blocked_parameters.length
+        ?' · manual: '+weather.blocked_parameters.join(', '):''));
 }
 function reflectManual(){
     var control=state && state.controls[parameterNames[selectedParameter]];

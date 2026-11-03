@@ -24,6 +24,9 @@ def test_device_has_valid_connections_and_native_midi_output():
     assert all('bass' not in box.get('text', '').lower() for box in boxes.values())
     ui = [b['presentation_rect'] for b in boxes.values() if b.get('presentation')]
     assert all(x >= 0 and y >= 0 and x+w <= patch['devicewidth'] and y+h <= 169 for x,y,w,h in ui)
+    weather = boxes['weather_display']
+    assert weather['varname'] == 'weather_display' and weather['presentation'] == 1
+    assert boxes['role_display']['presentation_rect'][0]+boxes['role_display']['presentation_rect'][2] <= weather['presentation_rect'][0]
 
 
 def test_build_preserves_midi_type_and_packages_source():

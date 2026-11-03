@@ -121,3 +121,30 @@ def test_device_errors_can_enter_the_panel_without_printing_over_it(capsys):
     server.on_error = None
     server._receive('/invalid', -1)
     assert 'Voice device:' in capsys.readouterr().out
+
+
+def test_plan_time_is_explicit_and_summary_precedes_parameter_details():
+    state = snapshot()
+    state['decisions']['coordinator'] = {
+        'start': 224, 'length_beats': 4, 'section': 'level', 'order': [], 'voices': {}}
+    for beat, label in [(220, 'preparato in anticipo'), (224, 'intervallo corrente'),
+                        (228, 'intervallo concluso')]:
+        state['transport']['beat'] = beat
+        frame = render_session(state)
+        assert label in frame
+        assert frame.index('ADESSO') < frame.index('Coordinator:') < frame.index('VOCI ·')
+        assert frame.index('VOCI ·') < frame.index('PARAMETRI ·')
+
+
+def test_voice_summary_distinguishes_effective_target_and_manual_without_changing_state():
+    state = snapshot()
+    state['voices']['voice_02']['controls'] = {
+        'density': {'value': .568343, 'manual': False, 'automation': {'target': .71}},
+        'syncopation': {'value': .2, 'manual': True, 'automation': {'target': .5}}}
+    before = deepcopy(state)
+    frame = render_session(state)
+    summary = frame.split('PARAMETRI ·')[0]
+    assert 'density=0.568 → 0.71' in summary
+    assert 'manual: syncopation' in summary
+    assert 'syncopation=0.2 →' not in frame
+    assert state == before

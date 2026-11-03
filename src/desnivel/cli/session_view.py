@@ -10,12 +10,19 @@ def _time(seconds):
     return f'{seconds//3600:02d}:{seconds//60%60:02d}:{seconds%60:02d}'
 
 
+def _value(value):
+    return value if isinstance(value, str) else f'{value:.3g}'
+
+
 def render_session(state):
     trip, transport = state['trip'], state['transport']
     decision = state['decisions']['director']
     rows = [f"DESNIVEL | {state['state']} | Live {'PLAY' if transport['playing'] else 'STOP'} | beat {transport['beat']:.2f}",
             f"Viaggio {trip['progress']:.2%} | {_time(trip['elapsed_s'])} / {_time(trip['duration_s'])} | {trip['distance_m']/1000:.2f} km | replay {trip['speed']:g}x",
-            f"Director: {decision['section']} [{decision['from_progress']:.0%}, {decision['until_progress']:.0%}] | root MIDI {decision['root']} | {decision['scale']}"]
+            f"ADESSO · director: {decision['section']} | root MIDI {decision['root']} | {decision['scale']}"]
+    weather = state.get('controls', {}).get('contexts', {}).get('weather')
+    weather_label = 'non caricato' if weather is None else 'attivo' if weather['enabled'] else 'disattivato'
+    rows.append(f'METEO: {weather_label} | M: attiva/disattiva dalle prossime finestre da pianificare')
     if state.get('timeline'):
         timeline = state['timeline']
         rows[1] = (f"Viaggio {trip['progress']:.2%} | {trip['distance_m']/1000:.2f} km | "
@@ -23,6 +30,11 @@ def render_session(state):
         if timeline.get('beats_per_km') is not None:
             rows[1] += f" | {timeline['beats_per_km']:g} beat/km"
     section_source = state.get('section', {}).get('trip')
+    if 'current' in state.get('planning', {}):
+        current = state['planning']['current']
+        rows.append((f"IN ESECUZIONE · {current['section']} | beat {current['start']:g}–"
+                     f"{current['start']+current['length_beats']:g} | root MIDI {current['root']} | {current['scale']}")
+                    if current else 'IN ESECUZIONE · nessun piano corrente')
     if state.get('trip_music'):
         music = state['trip_music']
         rows.append(f"  Identità GPX: {music['palette']} ({music['palette_source']}) | "
@@ -36,6 +48,9 @@ def render_session(state):
         rows.append(f"  Macrosezione {section_source['index']+1}: {section_source['kind']} | "
                     f"km {section_source['start_distance_m']/1000:.2f}–{section_source['end_distance_m']/1000:.2f} | "
                     f"{len(section_source['zone_indices'])} zone interne")
+    # I blocchi vengono ordinati alla fine: contesto, piano inviato, voci, dettagli.
+    voice_start = len(rows)
+    parameter_rows = []
     for name, voice in state['voices'].items():
         connection = 'collegato' if voice['connected'] else 'SCOLLEGATO'
         if voice['active']:
@@ -46,20 +61,37 @@ def render_session(state):
             activity = 'fuori organico di questa sezione'
         origin = 'manuale' if voice['role_mode'] == 'manual' else 'da sezione'
         rows.append(f"  {name} ({voice['name']}): {connection} | {activity} | {voice['role'] or 'nessun ruolo'} ({origin})")
-        if voice.get('presence') is not None:
-            presence = voice['presence']
-            rows.append(f"    presenza: auto {presence['automatic']:.0%} × {presence['multiplier']:g}"
-                        f" = {presence['effective']:.0%} effettiva")
-        values = ', '.join(f"{key}="+(str(control['value']) if isinstance(control['value'], str)
-                                    else f"{control['value']:g}") for key, control in voice['controls'].items())
+        values = ' · '.join(f"{key}={_value(control['value'])}"
+                           + (f" → {_value(control['automation']['target'])}"
+                              if not control.get('manual') and control.get('automation')
+                              and control['automation']['target'] != control['value'] else '')
+                           for key, control in voice['controls'].items())
         manual = [key for key, control in voice['controls'].items() if control.get('manual')]
-        mode = 'AUTO' if not manual else 'MANUAL: ' + ', '.join(manual)
-        rows.append(f"    {mode} | preset: {voice['preset'] or 'nessuno/custom'} | {values}")
+        mode = 'auto' if not manual else 'manual: ' + ', '.join(manual)
+        presence = voice.get('presence')
+        summary = f"    {mode}"
+        if presence is not None:
+            summary += (f" | presenza {presence['effective']:.0%}"
+                        f" (auto {presence['automatic']:.0%} × {presence['multiplier']:g})")
+        changing = [f"{key}={_value(control['value'])}"
+                    + (f" → {_value(control['automation']['target'])}"
+                       if control.get('automation') and not control.get('manual')
+                       and control['automation']['target'] != control['value'] else '')
+                    for key, control in voice['controls'].items()
+                    if control.get('automation') or control.get('manual')]
+        if changing:
+            summary += ' | ' + ' · '.join(changing)
+        rows.append(summary)
+        parameter_rows.append(f"  {name} | preset: {voice['preset'] or 'nessuno/custom'} | {values}")
+    voice_end = len(rows)
     plan = state['decisions']['coordinator']
     if plan is None:
         rows.append('Coordinator: nessun piano in attesa.')
     else:
-        rows.append(f"Coordinator: piano inviato [{plan['start']:g}, {plan['start']+plan['length_beats']:g}] beat | sezione {plan['section']}")
+        end = plan['start']+plan['length_beats']
+        phase = ('preparato in anticipo' if transport['beat'] < plan['start'] else
+                 'intervallo corrente' if transport['beat'] < end else 'intervallo concluso')
+        rows.append(f"Coordinator: piano inviato [{plan['start']:g}, {end:g}] beat | sezione {plan['section']} | {phase}")
         local = plan.get('local_trip')
         if local and local['status'] == 'available':
             parts = local['parts']
@@ -76,6 +108,7 @@ def render_session(state):
         if plan.get('trip'):
             rows.append(f"  Assetto della macrosezione {plan['trip']['index']+1}: {plan['trip']['kind']}")
         rows.append('  Ordine generatori: ' + (' -> '.join(plan['order']) or 'nessuna voce attiva'))
+        plan_summary_end = len(rows)
         for name in plan['order']:
             voice = plan['voices'][name]
             notes = voice['notes']
@@ -87,13 +120,20 @@ def render_session(state):
                 preview += ', ...'
             rows.append(f"  {name}: {voice['role']} | riferimenti: {', '.join(voice['dependencies']) or 'nessuno'} | {len(notes)} note MIDI@beat: {preview or 'silenzio'}")
         rows.append('  Piano inviato; non è una conferma audio dello strumento.')
+    if plan is None:
+        plan_summary_end = len(rows)
+    rows = (rows[:voice_start] + ['', 'PIANO · coordinator']
+            + rows[voice_end:plan_summary_end] + ['', 'VOCI · valori effettivi · → obiettivo auto']
+            + rows[voice_start:voice_end]
+            + ['', 'PARAMETRI · configurazione completa'] + parameter_rows
+            + (['', 'DETTAGLI DEL PIANO'] + rows[plan_summary_end:] if plan else []))
     if state['error']:
         rows.append('ERRORE: ' + state['error'])
     if state.get('control_error'):
         rows.append('COMANDO: ' + state['control_error'])
     if state['state'] == 'finished':
         rows.append('Tappa conclusa. Premi R per tornare a zero, poi Play per ripartire.')
-    rows.append('C: collega tutte le Voice | Spazio: pausa/riprendi | R: torna a zero | Ctrl+C: chiudi.')
+    rows.append('C: collega tutte le Voice | Spazio: pausa/riprendi | R: torna a zero | M: meteo | Ctrl+C: chiudi.')
     return '\n'.join(rows)
 
 
@@ -107,7 +147,7 @@ def fit_terminal(frame, width, height):
         return '\n'.join(wrapped)
     # Riduce prima i dettagli; stato, collegamenti, errori e comandi restano visibili.
     required = {i for i, row in enumerate(rows) if i < 3 or row.startswith((
-        'Coordinator:', 'ERRORE:', 'COMANDO:', 'Tappa conclusa.', 'C:'))
+        'IN ESECUZIONE', 'Coordinator:', 'ERRORE:', 'COMANDO:', 'Tappa conclusa.', 'C:'))
         or ' | in organico | ' in row or ' | fuori organico' in row}
     selected = {i: [textwrap.shorten(rows[i], width=width, placeholder='…')] for i in required}
     available = height-len(selected)-1

@@ -300,7 +300,7 @@
           "presentation_rect": [
             200,
             4,
-            588,
+            225,
             22
           ]
         }
@@ -1508,6 +1508,29 @@
             110,
             22
           ]
+        }
+      },
+      {
+        "box": {
+          "id": "weather_display",
+          "maxclass": "comment",
+          "varname": "weather_display",
+          "patching_rect": [
+            20,
+            980,
+            350,
+            22
+          ],
+          "text": "meteo: stato non disponibile",
+          "fontsize": 11,
+          "presentation": 1,
+          "presentation_rect": [
+            435,
+            4,
+            353,
+            22
+          ],
+          "annotation": "Stato del meteo e parametri interessati nel piano corrente della voce."
         }
       }
     ],

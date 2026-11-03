@@ -1,7 +1,7 @@
 """Obiettivi numerici e transizioni dei parametri, senza regole di strumenti."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field, replace
 import math
 from typing import Mapping
 
@@ -15,9 +15,11 @@ class AdaptiveContext:
     change: float | None = None
     persistence: float | None = None
     unavailable_reason: str | None = None
+    dynamic_pressure: float | None = None
+    material_change: float | None = None
 
     def __post_init__(self):
-        for value in (self.intensity, self.change, self.persistence):
+        for value in (self.intensity, self.change, self.persistence, self.dynamic_pressure, self.material_change):
             if value is not None and (type(value) not in (int, float)
                                       or not math.isfinite(value) or not 0 <= value <= 1):
                 raise ValueError('indicazioni musicali adattive richieste tra 0 e 1')
@@ -51,6 +53,13 @@ class ParameterTarget:
     cadence_beats: float = 4.
     integer: bool = False
     deadband: float = .01
+    contributions: Mapping[str, float] = field(default_factory=dict)
+
+    def with_contribution(self, name, baseline):
+        """Annota il contributo all'obiettivo dopo limiti e arrotondamento."""
+        value = round(self.value) if self.integer else self.value
+        baseline = round(baseline) if self.integer else baseline
+        return replace(self, contributions={**self.contributions, name: value-baseline})
 
     def __post_init__(self):
         if (not all(math.isfinite(x) for x in (self.value, self.transition_beats, self.cadence_beats, self.deadband))
@@ -69,6 +78,7 @@ class ParameterState:
     base: float
     reason: str
     manual: bool = False
+    contributions: Mapping[str, float] = field(default_factory=dict)
 
     def at(self, beat):
         if self.manual:
@@ -89,18 +99,19 @@ def resolve_parameters(base, targets, manual, previous, *, start, logical_start,
         due = old is None or old.manual or old.scope != scope or old.base != base[name] or old.slot != slot
         wanted = (round(target.value) if target.integer else target.value) if due else old.target
         reason = target.reason if due else old.reason
+        contributions = dict(target.contributions if due else old.contributions)
         if old is not None and not old.manual and abs(wanted-old.target) <= target.deadband:
             wanted = old.target
         if name in manual:
             state = ParameterState(float(manual[name]), wanted, start, target.transition_beats,
-                                   slot, scope, base[name], reason, True)
+                                   slot, scope, base[name], reason, True, contributions)
             effective = manual[name]
         else:
             changed = old is None or old.manual or wanted != old.target
             state = (ParameterState(current, wanted, start, target.transition_beats,
-                                    slot, scope, base[name], reason) if changed else
+                                    slot, scope, base[name], reason, contributions=contributions) if changed else
                      ParameterState(old.origin, old.target, old.start, old.duration,
-                                    slot, scope, base[name], reason))
+                                    slot, scope, base[name], reason, contributions=contributions))
             effective = round(current) if target.integer else current
         if not math.isfinite(effective):
             raise ValueError('valore adattivo non finito')
@@ -108,6 +119,8 @@ def resolve_parameters(base, targets, manual, previous, *, start, logical_start,
         decisions[name] = dict(base=base[name], target=wanted, effective=effective,
                                source='manual' if name in manual else 'adaptive', reason=reason,
                                transition_beats=target.transition_beats)
+        if contributions:
+            decisions[name]['contributions'] = contributions
     return values, states, decisions
 
 

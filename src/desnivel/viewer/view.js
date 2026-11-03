@@ -61,6 +61,7 @@ async function start() {
       const trip = state.trip;
       if (trip.stage !== route.stage) throw new Error('La sorgente dello stato è cambiata: riavvia la vista con la sessione.');
       const stale = age > 3;
+      DesnivelMusic.render(state, stale);
       paused = state.controls?.paused || false;
       el('pause').textContent = paused ? 'Riprendi' : 'Pausa';
       el('pause').disabled = stale || ['finished', 'closed', 'error'].includes(state.state);
@@ -91,6 +92,7 @@ async function start() {
         }
       }
     } catch (error) {
+      DesnivelMusic.markStale();
       el('pause').disabled = el('restart').disabled = el('restart-finished').disabled = true;
       el('status').textContent = 'Collegamento interrotto';
       el('notice').textContent = `${error.message}. L’ultima posizione ricevuta resta visibile.`;

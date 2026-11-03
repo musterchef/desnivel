@@ -70,6 +70,30 @@ def test_missing_tempo_is_explicit_and_invalid_tempo_does_not_mutate_transport()
     assert bridge.status()['voice_01']['connected']
 
 
+def test_display_tracks_sent_current_and_future_plans_without_recomposing():
+    runtime, _, _, sent, receive = setup()
+    receive(bpm=120)
+    runtime.tick()
+    first = runtime.last_decisions
+    before = len(sent)
+    status = runtime.snapshot()['planning']
+    assert status['current'] is None
+    assert status['upcoming'] == [first]
+    assert len(sent) == before
+    receive(beat=first['start'])
+    runtime.tick()
+    status = runtime.snapshot()['planning']
+    assert status['current'] == first
+    assert status['upcoming'][0]['start'] > first['start']
+    assert status['current']['section'] == first['section']
+    receive(beat=first['start']+first['length_beats'])
+    runtime.tick()
+    assert runtime.snapshot()['planning']['current'] != first
+    runtime.control('restart')
+    status = runtime.snapshot()['planning']
+    assert status['current'] is None and status['upcoming'] == []
+
+
 def test_waiting_then_continuous_plans_sections_roles_and_status():
     runtime, bridge, now, sent, receive = setup()
     runtime.tick()

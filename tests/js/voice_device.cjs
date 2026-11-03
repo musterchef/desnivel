@@ -21,6 +21,12 @@ const state={version:1,kind:'state',voice:'part_a',instance:c.instance,serial:1,
  role:'melody',preset:null,presets:['soft'],controls:{velocity:{minimum:1,maximum:127,integer:true,value:80,manual:false}}};
 c.receive(JSON.stringify({...state,instance:'other'}));assert.equal(c.state,null);
 c.receive(JSON.stringify(state));assert.equal(c.state.role,'melody');
+assert.deepStrictEqual(uiMessages.weather_display.at(-2),['set','meteo: stato non disponibile']);
+c.receive(JSON.stringify({...state,weather:{configured:true,enabled:true,status:'active',label:'in uso · velocity',parameters:['velocity'],blocked_parameters:[]}}));
+assert.deepStrictEqual(uiMessages.weather_display.at(-2),['set','meteo: in uso · velocity']);
+c.receive(JSON.stringify({...state,weather:{configured:true,enabled:false,status:'disabled',label:'disattivato',parameters:[],blocked_parameters:[]}}));
+assert.deepStrictEqual(uiMessages.weather_display.at(-2),['set','meteo: disattivato']);
+c.receive(JSON.stringify(state));
 assert.deepStrictEqual(uiMessages.manual_toggle.at(-1),['set',0]);
 assert.deepStrictEqual(uiMessages.manual_display.at(-1),['set','auto']);
 let beforeMode=output.filter(a=>a[0]===0).length;

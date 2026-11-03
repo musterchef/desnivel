@@ -36,8 +36,9 @@ def test_terminal_reads_adjacent_keys_and_restores_settings_on_exit():
         original = termios.tcgetattr(stream.fileno())
         try:
             with TerminalControls(stream) as keyboard:
-                os.write(master, b' rCc')
-                assert list(keyboard.poll()) == ['toggle', 'restart', 'connect', 'connect']
+                os.write(master, b' rCcmM')
+                assert list(keyboard.poll()) == ['toggle', 'restart', 'connect', 'connect',
+                                                 'weather_toggle', 'weather_toggle']
             restored = termios.tcgetattr(stream.fileno())
             # macOS può attivare PENDIN al ritorno in modalità canonica:
             # è il flag transitorio di rielaborazione dell'input, non un'impostazione cambiata.
@@ -46,3 +47,10 @@ def test_terminal_reads_adjacent_keys_and_restores_settings_on_exit():
             assert restored == original
         finally:
             os.close(master)
+
+
+def test_weather_key_changes_context_without_sending_live_transport_commands():
+    calls = []
+    runtime = SimpleNamespace(toggle_context=lambda name: calls.append(name))
+    apply_control(runtime, 'weather_toggle')
+    assert calls == ['weather']

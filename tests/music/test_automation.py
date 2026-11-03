@@ -50,6 +50,18 @@ def test_stable_objective_reaches_a_stable_value():
             assert values == {'x': .8, 'y': 15}
 
 
+def test_contributions_follow_target_cadence_and_account_for_integer_limits():
+    target = ParameterTarget(126.6, 'source', 8, 16, integer=True).with_contribution('pressure', 126.4)
+    assert target.contributions == {'pressure': 1}
+    _, previous, decisions = resolve_parameters({'x': 100}, {'x': target}, {}, {}, start=0, logical_start=0, scope=())
+    assert decisions['x']['contributions'] == {'pressure': 1}
+    replacement = ParameterTarget(100, 'changed', 8, 16, integer=True).with_contribution('pressure', 100)
+    _, _, decisions = resolve_parameters({'x': 100}, {'x': replacement}, {}, previous, start=4, logical_start=4, scope=())
+    assert decisions['x']['target'] == 127 and decisions['x']['contributions'] == {'pressure': 1}
+    _, _, decisions = resolve_parameters({'x': 100}, {'x': replacement}, {}, previous, start=16, logical_start=16, scope=())
+    assert decisions['x']['contributions'] == {'pressure': 0}
+
+
 def test_failed_plan_duplicate_and_reset_do_not_advance_automation():
     calls, accepted, fail = [], [], [False]
     def adapt(request):

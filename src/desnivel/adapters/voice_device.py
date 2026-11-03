@@ -77,6 +77,7 @@ class DeviceVoice:
     read_manual: Callable[[str], bool] | None = None
     apply_manual: Callable[[str, bool], None] | None = None
     read_automation: Callable[[], dict] | None = None
+    read_weather: Callable[[], dict] | None = None
 
     @classmethod
     def for_session(cls, session, voice: str, progress: Callable[[], float], *, beat=None, **controls):
@@ -141,6 +142,7 @@ class VoiceDeviceBridge:
         details = spec.describe_controls(roles['role'], values) if spec.describe_controls else {}
         automation = spec.read_automation() if spec.read_automation else {}
         return {**roles, 'preset': spec.preset, 'presets': list(spec.presets),
+                'weather': spec.read_weather() if spec.read_weather else None,
                 'can_save_presets': spec.save_preset is not None,
                 'editable_presets': sorted(spec.editable_presets),
                 'preset_migrations': spec.preset_migrations,

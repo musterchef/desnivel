@@ -17,7 +17,8 @@ from desnivel.music.timeline import TimelineManager, allocate_timeline
 
 
 class EnsembleRuntime:
-    def __init__(self, track, config, bridge, speed=1., clock=time.monotonic, *, timing="linear", adaptive=True):
+    def __init__(self, track, config, bridge, speed=1., clock=time.monotonic, *, timing="linear", adaptive=True,
+                 context_sources=()):
         if type(adaptive) is not bool:
             raise ValueError('adaptive richiede un booleano')
         if not math.isfinite(speed) or speed <= 0:
@@ -68,6 +69,7 @@ class EnsembleRuntime:
         self.planned_start = None
         self.last_section = None
         self.last_decisions = None
+        self._sent_plans = []
         self.sounding = set()
         self.registry = {}
         self.voice_descriptions = {name: {'name': spec.get('name', name), 'generator': spec['generator'],
@@ -75,7 +77,18 @@ class EnsembleRuntime:
                                          'optional_dependencies': list(spec.get('optional_dependencies', []))}
                                    for name, spec in config['voices'].items()}
         self.window_context = WindowContext(track, config.get('trip_analysis'))
-        self.adaptation_enabled = adaptive and self.window_context.profile is not None
+        self.context_sources = tuple(context_sources)
+        names = set()
+        for source, interpret, enabled in self.context_sources:
+            source.check_track(track)
+            name = source.data['source']
+            if name in names or type(enabled) is not bool or interpret is not None and not callable(interpret):
+                raise ValueError('sorgenti di contesto distinte con interprete e attivazione validi richieste')
+            names.add(name)
+        # Anche il confronto con una sorgente disattivata conserva le altre
+        # politiche adattive, indipendentemente dalla presenza del profilo.
+        self.adaptation_enabled = adaptive and (self.window_context.profile is not None
+                                                or any(fn is not None for _, fn, _ in self.context_sources))
         session_config = deepcopy({k: v for k, v in config.items() if k != 'trip_analysis'})
         self.trip_music = deepcopy(config.get('trip_music'))
         self.section_directions = tuple(deepcopy(section.get('direction')) for section in config['sections'])
@@ -107,7 +120,27 @@ class EnsembleRuntime:
                 controls=registered.controls, values=registered.values, presets=registered.presets,
                 describe_controls=describe_controls, preset_defaults=registered.preset_defaults,
                 migrate_preset=registered.migrate_preset)
+            bridge.voices[name].read_weather = lambda name=name: self.weather_status(name)
         self.state = 'waiting_for_transport'
+
+    def toggle_context(self, name):
+        """Cambia il contributo alle finestre future, conservando i piani già inviati."""
+        if not any(source.data['source'] == name for source, _, _ in self.context_sources):
+            raise ValueError(f'contesto {name} non caricato: caricalo all’avvio della sessione')
+        if not self.adaptation_enabled:
+            raise ValueError('adattamento automatico non attivo')
+        self.context_sources = tuple((source, interpret, not enabled if source.data['source'] == name else enabled)
+                                     for source, interpret, enabled in self.context_sources)
+
+    def weather_status(self, voice):
+        from desnivel.adapters.weather_status import describe_weather
+        source = next((item for item in self.context_sources if item[0].data['source'] == 'weather'), None)
+        current = next((plan for plan in self._sent_plans
+                        if plan['start'] <= self.beat < plan['start']+plan['length_beats']), None)
+        if not self.playing or self.state != 'playing':
+            current = None
+        return describe_weather(source is not None, bool(source and source[2] and self.adaptation_enabled),
+                                current, voice, lambda name: self.session.manual(voice, name))
 
     @property
     def progress(self):
@@ -136,6 +169,7 @@ class EnsembleRuntime:
             self.next_window = self.timeline.window_index
         self.last_section = None
         self.last_decisions = None
+        self._sent_plans.clear()
         self.session.coordinator.reset()
         for registered in self.registry.values():
             if registered.reset:
@@ -260,6 +294,14 @@ class EnsembleRuntime:
         # per le parti uscenti: la finestra già iniziata può concludersi.
         from desnivel.cli.trip_direction import adaptive_context
         intent = adaptive_context(source_context) if self.adaptation_enabled else None
+        if self.context_sources:
+            source_context['environment'] = {}
+            for source, interpret, enabled in self.context_sources:
+                description = source.describe(source_context.get('parts', []))
+                description['interpretation_enabled'] = bool(enabled and interpret is not None and self.adaptation_enabled)
+                source_context['environment'][source.data['source']] = description
+                if description['interpretation_enabled']:
+                    intent = interpret(intent, description)
         phrases = self.session.plan(plan_progress, start, self.window, adaptive_context=intent)
         for name in self.sounding - phrases.keys():
             if self.bridge.connected(name):
@@ -277,6 +319,9 @@ class EnsembleRuntime:
                                'trip': self.section_sources[context.section_index],
                                'local_trip': source_context}
         self.last_decisions['adaptive_context'] = vars(intent) if intent is not None else None
+        self._sent_plans = [plan for plan in self._sent_plans
+                            if plan['start']+plan['length_beats'] > self.beat]
+        self._sent_plans.append(deepcopy(self.last_decisions))
 
     def fail(self, error):
         self.error = str(error)
@@ -288,6 +333,9 @@ class EnsembleRuntime:
         distance = self.distances[0]+self.progress*(self.distances[-1]-self.distances[0])
         elapsed = (float(np.interp(distance, self.distances, self.track.t))-self.track.t[0]
                    if self.timeline else self.elapsed)
+        current_plan = next((plan for plan in self._sent_plans
+                             if plan['start'] <= self.beat < plan['start']+plan['length_beats']), None)
+        upcoming = [plan for plan in self._sent_plans if plan['start'] > self.beat]
         return {'timing': self.timing,
                 'trip_music': self.trip_music,
                 'timeline': ({**self.timeline.snapshot(), 'total_beats': self.timeline.timeline.total_beats,
@@ -297,7 +345,9 @@ class EnsembleRuntime:
                              if self.timeline else None),
                 'version': 1, 'state': self.state, 'error': self.error,
                 'adaptation_enabled': self.adaptation_enabled,
-                'controls': {'paused': self.paused, 'restart_count': self.restart_count},
+                'controls': {'paused': self.paused, 'restart_count': self.restart_count,
+                             'contexts': {source.data['source']: {'enabled': enabled}
+                                          for source, _, enabled in self.context_sources}},
                 'decisions': {'director': self.session.director.decision_at(self.progress),
                               'coordinator': self.last_decisions},
                 'trip': {'stage': self.track.stage_id, 'elapsed_s': elapsed,
@@ -311,5 +361,7 @@ class EnsembleRuntime:
                 'transport': {'voice': self.transport_voice, 'playing': self.playing,
                               'beat': self.beat, 'epoch': self.epoch, 'bpm': self.bpm},
                 'planning': {'next_start': self.planned_start, 'section': self.last_section,
-                             'window_beats': self.window}, 'voices': {name: {**self.voice_descriptions[name], **state}
+                             'window_beats': self.window,
+                             'current': current_plan if self.playing and self.state == 'playing' else None,
+                             'upcoming': upcoming}, 'voices': {name: {**self.voice_descriptions[name], **state}
                            for name, state in self.bridge.status().items()}}

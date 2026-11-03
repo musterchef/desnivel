@@ -266,6 +266,9 @@ def main(argv=None):
     parser.add_argument('--voice-presets', type=Path,
                         help='Libreria dei preset utente (default: <config>.voice-presets.json).')
     parser.add_argument('--dry-run', action='store_true')
+    parser.add_argument('--weather-context', type=Path, help='File meteo esplicito; altrimenti riusa la cache o acquisisce automaticamente i dati.')
+    parser.add_argument('--without-weather', action='store_true', help='Esclude soltanto il contributo musicale del meteo per il confronto A/B.')
+    parser.add_argument('--surface-context', type=Path, help='Fondo stradale acquisito: esposizione del contesto, senza mappatura musicale.')
     args = parser.parse_args(argv)
     server = None
     viewer = None
@@ -290,12 +293,28 @@ def main(argv=None):
         if direction is not None:
             from desnivel.cli.trip_direction import prepare_trip_config
             config = prepare_trip_config(track, config, direction)
+        from desnivel.cli.weather_context import prepare_weather_context
+        weather_source = prepare_weather_context(track, args.weather_context, download=not args.dry_run)
         if args.dry_run:
             bridge = VoiceDeviceBridge({}, lambda *args: None)
         else:
             server = VoiceDeviceServer({}, args.port)
             bridge = server.bridge
-        runtime = EnsembleRuntime(track, config, bridge, speed, timing=args.timing)
+        from desnivel.trip.context import ContextSource
+        from desnivel.music.environment import weather_intent
+        context_sources = []
+        surface_source = ContextSource.load(args.surface_context, track) if args.surface_context is not None else None
+        for name, source, interpret, enabled in (
+                ('weather', weather_source, weather_intent, not args.without_weather),
+                ('surface', surface_source, None, False)):
+            if source is not None:
+                if source.data['source'] != name:
+                    raise ValueError(f'file di contesto {name} richiesto')
+                if name == 'weather' and (source.data['axis'] != 'time' or source.data['units'] != {
+                        'wind_speed_kmh': 'km/h', 'precipitation_mm': 'mm', 'precipitation_change_mm': 'mm'}):
+                    raise ValueError('canali e unità del contesto meteo non validi')
+                context_sources.append((source, interpret, enabled))
+        runtime = EnsembleRuntime(track, config, bridge, speed, timing=args.timing, context_sources=context_sources)
         from desnivel.sinks.voice_presets import VoicePresetLibrary
         from desnivel.cli.voice_presets import connect_preset_library
         library = VoicePresetLibrary(args.voice_presets or args.config.with_suffix('.voice-presets.json'))

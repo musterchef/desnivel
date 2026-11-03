@@ -23,6 +23,7 @@ class JourneyViewServer:
         resources = {'/': ('index.html', 'text/html; charset=utf-8'),
                      '/view.css': ('view.css', 'text/css; charset=utf-8'),
                      '/view.js': ('view.js', 'text/javascript; charset=utf-8'),
+                     '/music.js': ('music.js', 'text/javascript; charset=utf-8'),
                      '/position.js': ('position.js', 'text/javascript; charset=utf-8')}
 
         class Handler(BaseHTTPRequestHandler):
@@ -40,7 +41,8 @@ class JourneyViewServer:
                         raise ValueError('dimensione del comando non valida')
                     payload = json.loads(self.rfile.read(size))
                     if (not isinstance(payload, dict) or set(payload) != {'action'}
-                            or payload['action'] not in ('pause', 'resume', 'restart')):
+                            or not isinstance(payload['action'], str)
+                            or payload['action'] not in {'pause', 'resume', 'restart'}):
                         raise ValueError('comando non valido')
                     commands.put_nowait(payload['action'])
                 except (ValueError, Full) as error:
