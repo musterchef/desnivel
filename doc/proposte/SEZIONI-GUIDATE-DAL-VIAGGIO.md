@@ -2,7 +2,8 @@
 
 Stato: separazione delle responsabilità approvata; analisi del profilo e
 raggruppamento delle zone in macrosezioni e assegnazione degli assetti musicali
-implementati. Variazioni musicali interne alle macrosezioni da definire.
+implementati. Il contesto locale alimenta le politiche adattive delle voci.
+Nuovi eventi geografici e gestione degli intervalli incerti restano proposti.
 
 L'obiettivo è rendere percepibile l'evoluzione del viaggio nella composizione,
 mantenendo disponibile la modalità con sezioni manuali.
@@ -30,9 +31,9 @@ La direzione concordata distingue un assetto musicale della macrosezione
 (voci, ruoli e impostazioni di base) dalle variazioni interne associate alle
 fasce originali. Il primo livello è operativo. Le regole approvate di
 [direzione adattiva](DIREZIONE-ADATTIVA.md) definiscono responsabilità,
-controllo manuale e ritorno all'automazione. Restano da definire le
-mappature dei singoli parametri e i tempi delle transizioni. I cambi locali non devono
-implicare automaticamente un cambio di organico o il riavvio della frase.
+controllo manuale e ritorno all'automazione. Le mappature e le transizioni
+implementate sono descritte in [Direzione musicale](../DIREZIONE-MUSICALE.md#adattamento-dei-parametri).
+Le ulteriori regole delle sezioni seguenti rimangono proposte.
 
 ## Pause interne e impegno altimetrico
 

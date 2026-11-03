@@ -1,6 +1,6 @@
 # Passaggio di consegne — Desnivel
 
-Stato della sessione del 19 ottobre 2026.
+Documento storico della sessione del 19 ottobre 2026. Non descrive lo stato corrente; consultare [STATO.md](../STATO.md) e [SESSIONE-MULTIVOCE.md](../SESSIONE-MULTIVOCE.md).
 
 ## Obiettivo e valore della prova
 
@@ -17,7 +17,7 @@ Il preset della prova non costituisce un modello musicale definitivo.
 
 ## Regole da leggere prima di intervenire
 
-Il riferimento vincolante è [AGENTS.md](../AGENTS.md). In particolare:
+Il riferimento vincolante è [AGENTS.md](../../AGENTS.md). In particolare:
 
 - Director e Coordinator dipendono da interfacce musicali generiche.
   Nomi, controlli e regole di strumenti o dispositivi specifici appartengono
@@ -72,8 +72,8 @@ confrontato manualmente le fasce e le ha ritenute plausibili per procedere;
 la taratura rimane revisionabile. Le percentuali nei risultati descrivono
 posizioni ricavate dalla distanza, non confini musicali prestabiliti.
 
-L'[indice dei preset](../presets/README.md) elenca anche i file usati dagli
-altri comandi. Il [riferimento di configurazione](CONFIGURAZIONE.md) descrive
+L'[indice dei preset](../../presets/README.md) elenca anche i file usati dagli
+altri comandi. Il [riferimento di configurazione](../CONFIGURAZIONE.md) descrive
 campi, unità, limiti dei controlli e precedenze. Aggiungere una voce alla
 prova non richiede un JSON separato per lo strumento.
 
@@ -94,7 +94,7 @@ La direzione GPX mantiene attive le quattro voci. Le parti intonate usano
 root MIDI 57 e scala `minor`. L'atmosfera è una nota monofonica sostenuta
 per finestra, riarticolata nella successiva; con `octave: 1` e `degree: 0`
 produce MIDI 69 in modalità indipendente. Lo switch **Segui sorgente**
-attiva il sostegno dalla frase melodica: vedi [Tessitura sostenuta](TESSITURA.md).
+attiva il sostegno dalla frase melodica: vedi [Tessitura sostenuta](../TESSITURA.md).
 Il timbro viene scelto nello strumento Live.
 
 Il generatore percussivo legge pattern espliciti dal JSON; non genera ancora
@@ -131,7 +131,7 @@ In Live, usare `Desnivel_Voice` prima di ciascuno strumento, impostare Part,
 Receive e Python, scegliere `Follow section` e premere Connect. Il dispositivo
 è lo stesso per tutte le voci; non carica strumenti o preset timbrici.
 Il sorgente è in `m4l/`; costruzione e aggiornamento della cartella installata
-sono descritti in [VOCE-M4L.md](VOCE-M4L.md).
+sono descritti in [VOCE-M4L.md](../VOCE-M4L.md).
 
 Play permette il replay, Stop lo mette in pausa e spegne le note. Un salto
 o loop nel trasporto ripianifica le note senza riportare il viaggio al punto
@@ -184,8 +184,8 @@ Il lavoro successivo resta da concordare sul risultato d'ascolto:
   di ulteriori eventi del percorso, senza alterare il dettaglio originale.
 
 Le proposte conservate sono in
-[Sezioni guidate dal viaggio](proposte/SEZIONI-GUIDATE-DAL-VIAGGIO.md),
-[Plancia](proposte/PLANCIA.md) e
-[Ruoli musicali](proposte/RUOLI-MUSICALI.md).
+[Sezioni guidate dal viaggio](../proposte/SEZIONI-GUIDATE-DAL-VIAGGIO.md),
+[Plancia](../proposte/PLANCIA.md) e
+[Ruoli musicali](../proposte/RUOLI-MUSICALI.md).
 La plancia operativa attuale è testuale; il report del percorso è un HTML
 statico interattivo, non una dashboard musicale in tempo reale.

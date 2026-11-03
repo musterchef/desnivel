@@ -8,9 +8,9 @@ Guida alla documentazione di **Desnivel**, organizzata per aree tematiche.
 
 | Documento | Argomento |
 |---|---|
-| [Presentazione](../README.md) | Origine del progetto, viaggio da Torino a Castel del Monte e i tre livelli di lettura. |
+| [Presentazione](../README.md) | Scopo, flusso del sistema e accesso alle guide. |
 | [Architettura](ARCHITETTURA.md) | Pipeline modulare, flusso dei dati, modelli musicali e organizzazione del codice. |
-| [Sessione multivoce Python](SESSIONE-MULTIVOCE.md) | Comando unico, replay, generatori, dispositivi e stato globale. |
+| [Sessione multivoce Python](SESSIONE-MULTIVOCE.md) | Avvio, replay, dispositivi, dashboard e registrazione in Live. |
 | [Guida pratica ai device](GUIDA-DEVICE.md) | Valori di partenza per ottenere risultati su melodia, basso, tessitura e drums. |
 | [Configurazione](CONFIGURAZIONE.md) | Campi JSON, unità, limiti dei controlli, ruoli e precedenze. |
 | [Direzione musicale dal percorso](DIREZIONE-MUSICALE.md) | Profilo della tappa, tavolozze armoniche, motivo automatico e override. |
@@ -19,7 +19,6 @@ Guida alla documentazione di **Desnivel**, organizzata per aree tematiche.
 | [Timeline musicale](TIMELINE.md) | Allocazione in beat, manager della posizione, report e ascolto nelle modalità lineare e allocata. |
 | [Voci e contesto musicale](RUOLI-MUSICALI.md) | Strutture esistenti per voci, dipendenze, richieste di pianificazione e contesto di sezione. |
 | [Stato del progetto](STATO.md) | Funzionalità operative verificate e sviluppi aperti. |
-| [Passaggio di consegne](PASSAGGIO-CONSEGNE.md) | Stato della prova a quattro voci, architettura, configurazioni, comandi e lavoro aperto per riprendere il progetto. |
 | [Comandi e setup](COMANDI.md) | Ambiente virtuale, porte di rete, streaming delle metriche, launcher e test suite. |
 | [TODO](../TODO.md) | Roadmap delle attività di ricerca e sviluppo. |
 
@@ -31,6 +30,7 @@ Guida alla documentazione di **Desnivel**, organizzata per aree tematiche.
 |---|---|
 | [Dispositivo MIDI di voce](VOCE-M4L.md) | Device comune, collegamento Python, controlli e prova di esecuzione. |
 | [Dati del viaggio](DATI-VIAGGIO.md) | Lettura FIT/GPX, calcolo delle metriche nei tratti osservati e formato OSC. |
+| [Contesto ambientale](CONTESTO-AMBIENTALE.md) | Sorgenti generiche, meteo storico, acquisizione del fondo stradale e confronto musicale A/B. |
 | [Analisi del percorso](ANALISI-PERCORSO.md) | Zone del profilo altimetrico, macrosezioni configurabili, report visuale e misure di verifica. |
 | [Sequencer Snake](SNAKE.md) | Banco di prova per la linea melodica: integrazione del sequencer Snake, bridge M4L e telemetria. |
 | [Generazione melodica](MELODIA.md) | Motivo, sviluppo delle frasi, controlli e riproducibilità. |
@@ -44,17 +44,17 @@ Guida alla documentazione di **Desnivel**, organizzata per aree tematiche.
 
 Materiale di progettazione separato dalla documentazione del sistema attuale.
 
-- [Revisione dei controlli](proposte/REVISIONE-CONTROLLI.md): ridondanze verificate negli altri device e interventi proposti.
-- [Direzione adattiva](proposte/DIREZIONE-ADATTIVA.md): regole per l'adattamento delle voci; controllo AUTO/MANUAL per parametro disponibile, strategie adattive da implementare.
+- [Revisione dei controlli](proposte/REVISIONE-CONTROLLI.md): consolidamenti applicati a preset e controlli; ulteriori interventi proposti.
+- [Direzione adattiva](proposte/DIREZIONE-ADATTIVA.md): politiche e transizioni implementate; compositore percussivo a regole ancora proposto.
 - [Ruoli musicali e organico](proposte/RUOLI-MUSICALI.md): impostazione condivisa, vocabolario proposto e decisioni aperte.
 - [Catalogo e assegnazioni per sezione](proposte/CATALOGO-E-SEZIONI.md): bozza JSON di vocabolario, strumenti e organico manuale.
-- [Plancia globale](proposte/PLANCIA.md): informazioni da mostrare e decisioni aperte sull’interfaccia.
-- [Sezioni guidate dal viaggio](proposte/SEZIONI-GUIDATE-DAL-VIAGGIO.md): assetti delle macrosezioni operativi e variazioni interne ancora da definire.
+- [Plancia globale](proposte/PLANCIA.md): requisiti, dashboard disponibile e decisioni ancora aperte.
+- [Sezioni guidate dal viaggio](proposte/SEZIONI-GUIDATE-DAL-VIAGGIO.md): analisi e assetti implementati; ulteriori eventi e gestione degli intervalli incerti proposti.
 - [Mappatura temporale](proposte/MAPPATURA-TEMPORALE.md): stato dell'integrazione della timeline e proposta di preavvisi per le transizioni musicali.
 - [Contratto delle percussioni](proposte/STILI-PERCUSSIVI.md): centralizzazione del materiale, generazione a regole, dialogo e influenze stilistiche.
 - [Coordinamento ritmico](proposte/COORDINAMENTO-RITMICO.md): direzione architetturale e confini del primo blocco implementato.
 - [Contratti per le relazioni musicali](proposte/RELAZIONI-MUSICALI.md): specifica generale, stato dell'implementazione e relazioni ancora da realizzare.
-- [Evoluzione melodica](proposte/EVOLUZIONE-MELODICA.md): regole adottate per il fraseggio e decisioni ancora aperte sul collegamento al GPX.
+- [Evoluzione melodica](proposte/EVOLUZIONE-MELODICA.md): fraseggio e collegamento al percorso implementati; ulteriori sviluppi armonici aperti.
 
 ---
 

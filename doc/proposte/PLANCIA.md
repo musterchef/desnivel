@@ -1,8 +1,12 @@
 # Proposta: plancia globale
 
-La plancia è il punto di osservazione globale richiesto per la composizione. L'interfaccia grafica non è implementata.
+Stato: realizzazione parziale. La [dashboard della sessione](../SESSIONE-MULTIVOCE.md#mappa-del-viaggio)
+mostra mappa, piani correnti e futuri, voci, parametri e meteo; offre controlli
+di trasporto e registrazione. Le sezioni seguenti conservano i requisiti
+della proposta e le decisioni ancora aperte.
 
-La sessione Python espone già uno snapshot con `EnsembleRuntime.snapshot()` e lo salva in JSON. La plancia dovrà leggere lo stato del processo esistente, senza avviare copie di Director, Coordinator o generatori.
+La dashboard legge lo snapshot JSON prodotto da `EnsembleRuntime.snapshot()`.
+Il server HTTP accoda i comandi al ciclo della sessione.
 
 ## Informazioni da mostrare
 
@@ -17,6 +21,5 @@ La prima versione della sessione mantiene il viaggio indipendente dalla numerazi
 
 ## Decisioni aperte
 
-- Tecnologia dell'interfaccia e modalità di accesso allo stato del processo.
-- Controlli globali da offrire nella plancia oltre all'osservazione.
+- Eventuali ulteriori controlli globali oltre a trasporto e registrazione.
 - Gestione della selezione di tappa e configurazione prima dell'avvio.

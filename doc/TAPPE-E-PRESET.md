@@ -1,6 +1,12 @@
 # Tappe, percorsi modali e preset musicali
 
-In Desnivel, ogni tappa del viaggio viene interpretata musicalmente attraverso una combinazione di:
+Questa guida riguarda il banco Snake, avviato con `desnivel.cli.trip_music`,
+e il basso che ne legge la melodia. La sessione principale a quattro voci
+usa invece la [direzione automatica del percorso](DIREZIONE-MUSICALE.md)
+e si avvia dal [launcher multitappa](COMANDI.md#sessione-multivoce-con-scelta-della-tappa).
+
+Nel banco Snake, i preset combinano:
+
 1. **Dinamica fisica**: velocità e sforzo estratti dalla traccia GPX che determinano densità ritmica e numero di gate attivi.
 2. **Evoluzione armonica del territorio**: sezioni geografiche che attraversano scale e modi diversi (dorico, frigio, lidio, pentatonico).
 

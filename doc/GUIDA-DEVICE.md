@@ -11,7 +11,7 @@ Le tabelle propongono valori di partenza: gli altri controlli restano come sono.
 - **Presenza ×** regola quante frasi partecipano: `0` silenzia la voce; `1` segue la presenza prevista dalla sezione. Non regola il volume e non rende attiva una voce fuori organico.
 - Un controllo **[inattivo]** non interviene nel ruolo o nella modalità corrente.
 - **manual** e l'indicatore **auto/manual** si riferiscono al parametro selezionato. Modificarlo rende manuale soltanto quel valore. Spegni **manual** per restituirlo all'automazione: i controlli adattivi riprendono gradualmente, gli altri seguono la configurazione. Un preset rende manuali i valori che applica, rilasciabili singolarmente. Ruolo e presenza restano indipendenti.
-- Con direzione GPX, in **auto** cambiano attività e velocity della melodia, densità e sincopi del basso, velocity della tessitura, variazione e velocity ratio delle drums. Il campo e lo slider mostrano il valore applicato alla finestra in ascolto; `→` indica l'obiettivo. L'annotazione del parametro ne spiega il motivo. Senza direzione GPX restano attivi gli assetti configurati.
+- In **auto**, le politiche adattive regolano attività e velocity della melodia, densità e sincopi del basso, velocity della tessitura, variazione e velocity ratio delle drums. Il meteo può contribuire anche allo sviluppo melodico e nelle sezioni manuali. Il campo e lo slider mostrano il valore della finestra in ascolto; `→` indica l'obiettivo e l'annotazione ne spiega il motivo. [Ingressi e formule](DIREZIONE-MUSICALE.md#adattamento-dei-parametri).
 - `groove_follow = 0` toglie l'adesione diretta alle drums. Le relazioni con frasi precedenti configurate nella sessione restano attive.
 
 ## Melodia — Synth, `voice_01`

@@ -29,5 +29,6 @@ Configurazione e algoritmo effettivi in
 [Direzione musicale dal percorso](../DIREZIONE-MUSICALE.md).
 
 Le metriche geografiche restano fuori dal generatore melodico e dal
-Coordinator generico. Variazioni musicali interne alle macrosezioni,
-progressioni di accordi e cadenze armoniche complete restano da definire.
+Coordinator generico. Le variazioni dei controlli dal contesto locale sono
+descritte nella [direzione adattiva](../DIREZIONE-MUSICALE.md#adattamento-dei-parametri).
+Progressioni di accordi e cadenze armoniche complete restano da definire.

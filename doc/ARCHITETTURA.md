@@ -21,19 +21,25 @@ Traccia FIT/GPX ──► [trip] Metriche neutre ──► [music] Generazione m
 | **Adattatori** | Converte strutture musicali astratte (`Pattern`, `Phrase`) nei parametri specifici dei dispositivi o protocolli di destinazione. | `src/desnivel/adapters/` |
 | **Trasporto** | Gestisce la trasmissione dei messaggi via rete (es. OSC) e il salvataggio dei log di acquisizione. | `src/desnivel/sinks/` |
 | **Interfaccia CLI** | Entry point eseguibili da riga di comando o tramite launcher per orchestrare replay, analisi e sessioni. | `src/desnivel/cli/` |
-| **Integrazioni attive** | Device Max for Live e bridge di controllo per testare all'ascolto la melodia (Snake) e l'accompagnamento (basso generativo). | `m4l/` |
+| **Vista della sessione** | Serve mappa e dashboard; legge lo snapshot e accoda i comandi al ciclo della sessione. | `src/desnivel/viewer/` |
+| **Integrazioni attive** | Device MIDI comune per la prova multivoce, registrazione Live e bridge dei banchi Snake e basso. | `m4l/` |
 
 ---
 
 ## Principi architetturali fondamentali
 
 ### 1. Separazione tra tempo del viaggio e tempo musicale
-La velocità di scorrimento del viaggio (replay) e il tempo musicale (BPM) sono completamente indipendenti:
-- Il replay della traccia può essere accelerato (es. a 30× o 50×) per condensare ore di pedalata in pochi minuti di ascolto.
-- Ableton Live controlla BPM e griglia ritmica. Il player del basso segue il suo trasporto. I cambi dei parametri di Snake non sono quantizzati a battuta.
+Ableton Live fornisce beat, BPM e stato Play/Stop. Nel replay lineare il
+viaggio avanza in secondi con un fattore di velocità; nella modalità allocata
+le macrosezioni ricevono finestre in beat. Cambiare BPM modifica la durata
+reale dell'ascolto allocato, senza cambiare i beat assegnati.
+I cambi dei parametri del banco Snake non sono quantizzati a battuta.
 
 ### 2. Neutralità delle metriche
-Il modulo `trip` non produce note, accordi o parametri synth. Calcola solo grandezze fisiche scalari e continue. Le decisioni estetiche (come mappare una pendenza a una scala minore o a un aumento di densità) risiedono interamente in `music`.
+`trip` legge tracce e sorgenti ambientali, calcola metriche e classifica
+il profilo. Mantiene separati tratti osservati, interruzioni e dati mancanti.
+Le interpretazioni musicali appartengono a `music`; `cli` collega gli
+interpreti ai dati e ai generatori.
 
 ### 3. Modelli musicali condivisi
 La generazione musicale si basa su due strutture dati fondamentali:
@@ -50,7 +56,7 @@ I due ruoli sono implementati in classi distinte nel package `music`: il Directo
 - **`MusicDirector`** (`music/director.py`): riceve le sezioni configurate e seleziona, dalla progressione del viaggio, un `MusicalContext` con indice e nome della sezione, tonica e scala. `journey.compose` usa questo contesto per generare i pattern; motivo, gate e trasformazioni dei gradi restano nella composizione della voce.
 - **`MusicCoordinator`** (`music/coordinator.py`): riceve generatori identificati per voce e le rispettive dipendenze. Verifica dipendenze mancanti o cicliche prima della generazione, ordina le chiamate e raccoglie le frasi. Ogni generatore riceve un `PlanningRequest` con intervallo in beat, eventuale contesto comune e frasi delle sole dipendenze dichiarate. Il chiamante può fornire frasi sorgente già pianificate.
 - **Moduli delle voci** (`music/<voce>/`): contengono regole compositive, controlli e stato specifici della voce. Il planner presente in `music/bass/` conserva continuità e transizioni dei controlli per quel generatore.
-- **Adattatori**: traducono lo stato della sorgente in frasi e i risultati musicali nel formato di destinazione. Gestiscono identificativi, revisioni dei messaggi e segnali del trasporto; configurano le voci e invocano il Coordinator.
+- **Adattatori**: traducono stato delle sorgenti e risultati musicali nei formati di destinazione; gestiscono identificativi, revisioni, trasporto e conferme dei dispositivi. Il collegamento di generatori e Coordinator è governato dai comandi in `cli`.
 
 Il Director legge anche le assegnazioni manuali delle voci per sezione. Il Coordinator verifica i ruoli supportati e passa ruolo e parametri ai generatori. `cli/ensemble.py` collega queste assegnazioni a generatori e destinazioni registrati dal chiamante. Il Coordinator propaga il contesto fornito dal chiamante senza interpretarlo. Nella sessione multivoce ogni generatore riceve il contesto delle sezioni; il generatore di accompagnamento compone dalla frase fornita come dipendenza. L’integrazione `live_bass` usa invece una frase ricostruita dalla sorgente esterna. La [sessione multivoce](SESSIONE-MULTIVOCE.md) include vista globale e dettaglio delle decisioni di pianificazione.
 

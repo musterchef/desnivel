@@ -427,7 +427,7 @@ Per una voce attiva i parametri vengono risolti in questo ordine:
 
 1. Impostazioni iniziali del generatore.
 2. Parametri dell'assegnazione della sezione corrente.
-3. Politiche adattive, quando è collegata l'analisi GPX.
+3. Politiche adattive, quando è collegata l'analisi del percorso o una sorgente di contesto con interprete musicale.
 4. Valori manuali mantenuti nella sessione Python.
 
 Le scelte manuali di ruolo hanno precedenza sul ruolo della sezione, ma

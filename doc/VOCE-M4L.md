@@ -2,6 +2,11 @@
 
 `Desnivel_Voice.amxd` è un effetto MIDI da collocare prima dello strumento su una traccia Live. Il dispositivo riceve frasi dal motore Python e le esegue sul trasporto di Live. La logica compositiva rimane in Python.
 
+La riga superiore mostra lo stato `meteo` della voce: caricamento,
+attivazione e parametri interessati nel piano corrente. I contributi
+esclusi dal controllo manuale e l'assenza di nuovi contributi sono distinti
+dallo stato disattivato. Vedere [Contesto ambientale](CONTESTO-AMBIENTALE.md#indicazione-su-device-e-dashboard).
+
 ## Componenti
 
 | Sorgente | Responsabilità |
@@ -9,6 +14,7 @@
 | `m4l/desnivel_voice.maxpat` | Interfaccia, rete locale, lettura del trasporto e uscita MIDI |
 | `m4l/desnivel_voice.js` | Identificazione dell'istanza, menu, controlli e collegamento con Python |
 | `m4l/desnivel_transport_player.js` | Esecuzione dei piani in beat assoluti con oggetti `timepoint` |
+| `m4l/desnivel_recording.js` | Creazione, routing e registrazione delle tracce REC tramite Live API |
 | `src/desnivel/adapters/voice_device.py` | Validazione dei controlli e collegamento tra voci Python e dispositivi |
 | `src/desnivel/cli/voice_device.py` | Server OSC locale e prova di esecuzione da file |
 | `tools/build_voice_device.py` | Confezionamento dal template MIDI ufficiale di Live |
@@ -33,9 +39,9 @@ Per aggiornare direttamente la cartella installata:
   --update
 ```
 
-`--update` riscrive `Desnivel_Voice.amxd` e i due script del dispositivo, mantenendo gli altri file della cartella. Dopo l'aggiornamento ricaricare il dispositivo in Live per usare la nuova versione.
+`--update` riscrive `Desnivel_Voice.amxd` e i tre script del dispositivo, mantenendo gli altri file della cartella. Dopo l'aggiornamento ricaricare il dispositivo in Live per usare la nuova versione.
 
-La cartella generata contiene il device e i due script JavaScript. Conservare i tre file insieme: il device non è congelato con risorse incorporate. Il sorgente modificabile è `m4l/desnivel_voice.maxpat`.
+La cartella generata contiene il device e tre script JavaScript. Conservare i quattro file insieme: il device non è congelato con risorse incorporate. Il sorgente modificabile è `m4l/desnivel_voice.maxpat`.
 
 ## Interfaccia
 
@@ -61,14 +67,7 @@ tutte** mentre la sessione è accesa. La porta di ingresso predefinita è 9101;
 si può scegliere un'altra porta Receive con `--connect-port 9102` all'avvio
 di `ensemble`.
 
-Con la sessione Python avviata e i device caricati in Live, dalla cartella
-del progetto si può anche eseguire in un altro terminale:
-
-```bash
-.venv/bin/python -m desnivel.cli.connect_voices
-```
-
-Il comando invia `/desnivel/v1/voice/connect-all` a `127.0.0.1:9101`.
+Il tasto invia `/desnivel/v1/voice/connect-all` alla porta configurata.
 La Voice su quella porta lo distribuisce alle altre istanze tramite il
 canale Max condiviso `desnivel_voice_connect_all`. Ogni istanza esegue lo
 stesso percorso del tasto **Collega**, usando il proprio identificativo,
@@ -76,7 +75,7 @@ la propria porta Receive e la propria porta Python. Il comando ripetuto
 mantiene identità e piani delle istanze già collegate.
 
 Se nessuna Voice usa Receive 9101, indicare la porta di una delle istanze
-caricate con `--port 9102`. Tutte le istanze devono usare il device aggiornato,
+caricate con `--connect-port 9102` all’avvio di `ensemble`. Tutte le istanze devono usare il device aggiornato,
 avere identificativi validi e porte Receive distinte. Il messaggio sul terminale
 conferma l'invio UDP; lo stato dei collegamenti è visibile nella sessione Python
 e nei device. La richiesta non modifica il trasporto di Live.
@@ -202,6 +201,13 @@ sul server i valori effettivi. Il device dichiara `transport_control` nelle
 richieste; solo l'istanza scelta come sorgente del clock riceve le azioni
 `pause`, `resume` e `restart`, applicate con `live.object` al `live_set`.
 I comandi sono identificati da sessione Python e seriale, per scartare i duplicati.
+
+La capability `recording_control` abilita i messaggi `kind: recording`
+verso la voce del trasporto: azioni `prepare`, `start`, `stop`, identificativo
+`request` e modalità `audio`, `midi`, `both`. Il device conferma con l’azione
+`recording_status` e un `report` contenente richiesta, stato, tracce ed errore.
+La perdita delle risposte Python per oltre tre secondi arresta la registrazione
+gestita dal device e annulla un’eventuale preparazione in corso.
 
 Il device osserva il tempo di Live e lo comunica come `transport.bpm`.
 Il runtime usa il BPM della voce di trasporto per proiettare le finestre

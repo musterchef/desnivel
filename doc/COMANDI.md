@@ -41,6 +41,11 @@ Opzioni utili:
 | **9002** | Invio di frasi predefinite per il player ciclico. | [Player M4L](BASSO.md) |
 | **9003** | Telemetria dello stato di Snake (`/desnivel/v1/snake/state`) e controlli live del basso (`/desnivel/v1/bass/control`). | [Snake](SNAKE.md), [Basso](BASSO.md) |
 | **9004** | Piani di esecuzione per il basso sincronizzato al trasporto di Live. | [Basso in Live](BASSO.md) |
+| **9006** | Server della sessione multivoce e ricevitore diagnostico Voice, da usare separatamente. | [Sessione multivoce](SESSIONE-MULTIVOCE.md) |
+| **9101–9104** | Ricezione delle quattro istanze Voice nella prova multivoce. | [Device Voice](VOCE-M4L.md) |
+
+La dashboard usa HTTP sulla porta **8765** quando avviata dal launcher
+multitappa; `--view-port` permette di cambiarla.
 
 ---
 
@@ -78,13 +83,15 @@ il `.command` imposta la directory del progetto e avvia il comando Python.
 Collegamento dei device, controlli e comportamento del replay sono descritti
 in [Sessione multivoce Python](SESSIONE-MULTIVOCE.md).
 
-I launcher a doppio clic per macOS si trovano in `comandi/` e usano automaticamente l'ambiente virtuale `.venv`:
+### Banchi di prova separati
+
+Anche questi launcher in `comandi/` usano l'ambiente virtuale `.venv`:
 
 - **`08 - Scegli assetto basso.command`**: avvia il generatore del basso con scelta interattiva tra gli assetti `sobrio`, `dialogo` e `ritmico`.
 - **`05 - Acquisisci Export Snake.command`**: registra gli stati esportati da Snake in un file JSONL temporaneo.
 - **`04 - Snake - sequenza di riferimento.command`**: imposta una sequenza neutra di partenza su Snake.
 
-Per l'ascolto completo delle tappe e dei percorsi modali, consultare la [Guida alle tappe e preset](TAPPE-E-PRESET.md).
+Per il banco Snake e il basso collegato, consultare [Tappe e preset](TAPPE-E-PRESET.md).
 
 ---
 
@@ -94,11 +101,10 @@ Verifica completa dei componenti Python e degli script JavaScript di Max for Liv
 
 ```sh
 # Test suite Python
-pytest -q
+.venv/bin/python -m pytest -q
 
-# Test unitari JavaScript Max for Live
-node tests/js/phrase_player.cjs
-node tests/js/snake_params.cjs
-node tests/js/snake_state.cjs
-node tests/js/transport_player.cjs
+# Test JavaScript dei device e del viewer
+for test_file in tests/js/*.cjs; do
+  node "$test_file" || exit 1
+done
 ```

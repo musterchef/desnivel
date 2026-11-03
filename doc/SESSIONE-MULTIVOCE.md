@@ -13,50 +13,35 @@ in [ANALISI-PERCORSO.md](ANALISI-PERCORSO.md#selezione-del-viaggio-osservato).
 
 Chiudere con Ctrl+C il ricevitore diagnostico `desnivel.cli.voice_device`, che usa la stessa porta.
 
-Dalla radice del repository:
+Per scegliere la tappa, aprire `comandi/09 - Sessione multitappa.command`
+oppure, dalla radice del repository:
+
+```sh
+.venv/bin/python -m desnivel.cli.launch_stage
+```
+
+Il launcher usa `organico.json`, timeline allocata e mappa sulla porta 8765.
+Accetta `01`–`12` e `07bis`; sorgenti e requisiti della variante sono in
+[Comandi](COMANDI.md#sessione-multivoce-con-scelta-della-tappa).
+
+Per scegliere direttamente sorgente e modalità:
 
 ```sh
 .venv/bin/python -m desnivel.cli.ensemble \
-  --gpx gpx/tappa05_Firenze_San_Gimignano.gpx \
+  --track gpx/tappa05_Firenze_San_Gimignano.gpx \
   --config presets/organico.json \
-  --speed 50
+  --timing allocated --view-port 8765
 ```
 
-Per verificare configurazione e generazione delle sezioni senza aprire porte o inviare note, aggiungere `--dry-run`.
+`--track` accetta FIT e GPX; `--gpx` è un alias. `--timing linear --speed 50`
+usa invece il replay accelerato. `--dry-run` verifica configurazione e
+sezioni senza aprire porte o inviare note; riusa il meteo disponibile
+senza scaricarlo.
 
-La configurazione fornita abilita guida delle drums e influenze reciproche. Il [riferimento del dialogo ritmico](DIALOGO-MUSICALE.md)
-descrive adesione delle voci, memoria, configurazione e diagnostica.
-
-`--track` accetta FIT e GPX; `--gpx` resta un alias. Per una prova con FIT:
-
-```sh
-.venv/bin/python -m desnivel.cli.ensemble \
-  --track fit/Da_Piazza_Castello_al_Castel_lo_tappa_6_Orvieto_Bagnoregio_Lago_di_Bolsena.fit \
-  --config presets/organico.json \
-  --direction presets/direzione-viaggio.json \
-  --timing allocated
-```
-
-Se la sorgente è GPX, `--timing-reference percorso.fit` permette di usare
-gli eventi timer del FIT corrispondente mantenendo coordinate e quota del GPX.
-Dettagli e provenienza dei canali in
-[ANALISI-PERCORSO.md](ANALISI-PERCORSO.md#sorgenti-fit-e-gpx).
-
-Per usare le macrosezioni del percorso e i relativi assetti musicali:
-
-```sh
-.venv/bin/python -m desnivel.cli.ensemble \
-  --gpx gpx/tappa05_Firenze_San_Gimignano.gpx \
-  --config presets/organico.json \
-  --direction presets/direzione-viaggio.json \
-  --speed 50
-```
-
-Il campo `direction` delle configurazioni fornite carica la direzione GPX
-all'avvio; `--direction` può sostituirla. Confini e assetti derivano dalle
-macrosezioni, mentre il profilo sceglie tavolozza e motivo. Per usare le
-sezioni manuali aggiungere `--manual-sections`. Criteri e override in
-[Direzione musicale dal percorso](DIREZIONE-MUSICALE.md).
+Il campo `direction` della configurazione carica la direzione del percorso.
+`--direction altro.json` la sostituisce; `--manual-sections` usa le sezioni
+manuali e richiede timing lineare. Per un GPX, `--timing-reference percorso.fit`
+usa gli eventi timer del FIT corrispondente: [lettura e criteri](ANALISI-PERCORSO.md#sorgenti-fit-e-gpx).
 
 Nella configurazione fornita:
 
@@ -105,6 +90,14 @@ Il tasto **C** nel terminale interattivo invia **Collega tutte** ai device
 Voice. Usa la porta Receive 9101, configurabile con `--connect-port`,
 senza modificare il trasporto o lo stato del viaggio.
 
+Il meteo viene caricato automaticamente dalla cache della tappa oppure
+acquisito al primo avvio; `--weather-context` permette di scegliere un file
+esplicito. Il tasto **M** attiva o disattiva il suo contributo musicale.
+Il cambiamento riguarda le prossime finestre da
+pianificare; i piani già inviati si completano. Device e dashboard mostrano
+lo stato corrente e gli eventuali cambi in coda. `--without-weather`
+permette di iniziare con il contributo disattivato.
+
 Nel terminale interattivo, **Spazio** mette in pausa o riprende viaggio e
 trasporto di Live; **R** azzera viaggio e timeline, riporta Live al beat zero e lascia il
 trasporto fermo fino al prossimo Play.
@@ -112,24 +105,18 @@ Non occorre premere Invio. Alla chiusura si ripristina la modalità di ingresso
 del terminale. Con ingresso rediretto, i tasti non sono attivi.
 Gli stessi comandi sono disponibili nel viewer.
 
-Il controllo di Live richiede il device aggiornato, dotato di
-`transport_control`, e il collegamento della voce configurata in
-`transport_voice`. Python invia il comando solo a quell'istanza del device,
-che controlla il trasporto globale del Live Set. Gli altri device ricevono
-la cancellazione dei propri piani. Le notifiche di trasporto ricevute da
-Live non generano altri comandi di trasporto. Le richieste ripetute di pausa
-sono ignorate quando la sessione è già in pausa; i device scartano comandi
-duplicati per sessione e seriale.
+Pausa, ripresa e restart richiedono il device con `transport_control`
+e il collegamento della voce `transport_voice`. I comandi agiscono sul
+trasporto globale di Live; pausa e restart cancellano i piani delle voci
+raggiungibili e spengono le note.
 
-La ripresa usa `continue_playing`; il restart usa `stop_playing`, imposta
-`current_song_time` a zero senza riavviare il trasporto. La pausa cancella i piani e spegne
-le note di tutte le voci raggiungibili. Nel replay lineare conserva i secondi
-raggiunti; nella timeline allocata conserva la prima finestra non conclusa,
-che viene ripetuta alla ripresa. Il restart azzera posizione, timeline e
-memoria dei generatori, mantenendo i valori manuali e la libreria dei preset.
-A fine tappa, terminale e viewer permettono di tornare a zero;
-la ripartenza richiede Play in Live oppure il comando di ripresa. Un comando non disponibile viene segnalato senza
-interrompere la sessione.
+La pausa conserva la posizione: in modalità allocata, alla ripresa viene
+ripetuta la prima finestra non conclusa. Il restart azzera viaggio,
+timeline e memoria dei generatori, mantenendo valori manuali e preset;
+lascia Live fermo al beat zero. La ripartenza richiede Play o il comando
+di ripresa. Un comando non disponibile viene segnalato senza interrompere
+la sessione. Protocollo e gestione dei duplicati sono in
+[Voce M4L](VOCE-M4L.md#protocollo-e-arresto).
 
 ## Configurazione
 
@@ -150,7 +137,7 @@ I preset dei generatori sono insiemi di parametri. Le modifiche manuali persisto
 
 ### Direzione dalle macrosezioni
 
-`presets/direzione-viaggio.json` contiene tre campi:
+`presets/direzione-viaggio.json` contiene:
 
 | Campo | Contenuto |
 |---|---|
@@ -188,73 +175,34 @@ Le famiglie conservano i seguenti parametri musicali, modificabili nel JSON:
 | `ascent` | `sustained_texture` / 55 | 0,85 |
 | `descent` | `sustained_texture` / 48 | 0,9 |
 
-`voice_03` usa il generatore `sustained_texture` con `degree: 0` e
-`octave: 1`: in modalità indipendente produce la nota MIDI 69 nel contesto
-fornito. Lo switch **Segui sorgente** (`follow_source`) seleziona invece un
-sostegno dalla frase di `voice_01`, letta come dipendenza facoltativa.
-La durata è quella della finestra e la nota viene riarticolata nella
-finestra seguente. Registro e dinamica sono configurabili; `soft` e
-`present` impostano velocity 40 e 65. Vedi [Tessitura sostenuta](TESSITURA.md).
+`voice_03` usa `sustained_texture`, con `degree: 0` e `octave: 1`:
+in modalità indipendente sostiene la root della sezione un'ottava sopra.
+`follow_source` sceglie invece una classe di altezza dalla frase melodica.
+La nota viene riarticolata a ogni finestra: [regole della tessitura](TESSITURA.md).
 
-I parametri non specificati usano le impostazioni del generatore; le
-regolazioni manuali hanno precedenza. Gli assetti vengono copiati per ogni
-macrosezione: tornando alla stessa famiglia si riprendono i valori configurati,
-senza accumulare modifiche della macrosezione precedente. Il cambio entra
-nella prossima finestra ancora da pianificare, senza cancellare lo stato dei
-generatori. Non viene applicata un'interpolazione graduale dei parametri.
-
-Le fasce interne non modificano l'assetto: `climb` e `steep_climb` nella
-stessa `ascent` mantengono contesto e parametri di sezione identici. La
-generazione continua a sviluppare le frasi secondo il proprio algoritmo.
-I controlli della prova agiscono su note e ritmo, non sui parametri timbrici
-degli strumenti in Live.
+Le tabelle indicano i valori base delle famiglie. Le politiche adattive
+calcolano gli obiettivi e le transizioni dei controlli gestiti; i valori
+manuali hanno precedenza. Gli altri parametri seguono l'assetto configurato.
+Il cambio di macrosezione conserva lo stato compositivo dei generatori.
+Le fasce interne alimentano il contesto locale anche quando appartengono
+alla stessa famiglia. Formule e tempi sono in
+[Direzione musicale](DIREZIONE-MUSICALE.md#adattamento-dei-parametri).
 
 ## Generatori disponibili nel registro
 
-### `motif`
+`cli/generators.py` costruisce un'istanza per voce. I controlli e i vincoli
+completi sono nel [riferimento della configurazione](CONFIGURAZIONE.md).
 
-Implementato in `music/melodic/generator.py`. Riceve un motivo di gradi non negativi (`degrees`) e il contesto di tonica e scala della sezione. Espone registro, ritmo, articolazione, velocity, sviluppo, attività, lunghezza del periodo e seed.
+| Tipo | Comportamento e riferimento |
+|---|---|
+| `motif` | Sviluppa un motivo in gradi nel contesto armonico; supporta `melody`, `bass_line` e `sustained_texture`. [Melodia](MELODIA.md) |
+| `responsive_line` | Compone il basso dalla frase di una dipendenza obbligatoria, mantenendo continuità fra finestre. [Basso](BASSO.md) |
+| `sustained_texture` | Una nota per finestra dal grado di sezione o da una dipendenza; nella prova legge facoltativamente `voice_01`. [Tessitura](TESSITURA.md) |
+| `percussion_phrase` | Sviluppa materiale precomposto e stili, con sostegni al basso e risposte alla melodia. [Stili percussivi](STILI-PERCUSSIVI.md) e [dialogo](DIALOGO-MUSICALE.md) |
 
-- `melody`: con `development > 0` sviluppa il motivo su più finestre con presentazione, elaborazione, contrasto e conclusione. Con valore `0` ripete il motivo su passi regolari.
-- `bass_line`: articola il motivo letterale nel registro assegnato.
-- `sustained_texture`: produce una sola nota, dal primo grado configurato, sostenuta per tutta la finestra.
-
-Il generatore controlla il registro MIDI e limita gli eventi per finestra. Le regole e i controlli sono descritti in [MELODIA.md](MELODIA.md).
-
-### `sustained_texture`
-
-Implementato in `music/texture/generator.py`. Supporta il ruolo omonimo
-con una nota per finestra, guidata dal grado di sezione oppure dalla frase
-di una dipendenza. Espone `octave`, `velocity` e lo switch `follow_source`.
-La prova assegna a `voice_03` la sorgente facoltativa `voice_01`.
-Le regole sono descritte in [TESSITURA.md](TESSITURA.md).
-
-### `responsive_line`
-
-Collega il generatore presente in `music/bass/` attraverso `music/bass/voice.py`. Supporta `bass_line` e richiede una sola dipendenza: la frase da accompagnare. Conserva l'ultima altezza fra finestre contigue e cancella tale continuità quando il runtime riparte dalla pianificazione.
-
-I controlli esposti sono `density`, `syncopation`, `rhythm_follow`, `melody_follow`, `mobility`, `variation` e `articulation`. Le altre impostazioni del generatore, incluso il registro, si configurano in `settings` o nei parametri di sezione; `strategy` è solo iniziale. Le regole compositive sono descritte in [BASSO.md](BASSO.md).
-
-### `percussion_phrase`
-
-La prova usa `music/percussion/development.py`, con il ruolo `percussion`.
-Legge la frase di `voice_01` e, quando attiva, quella di `voice_02`.
-Il materiale di 32 beat attraversa le finestre di pianificazione e segue
-una sequenza configurata di ripetizioni, sottrazioni, spostamenti, accenti
-e sospensioni. Alcuni attacchi sono protetti dalle trasformazioni locali.
-I colpi di sostegno si allineano agli attacchi vicini della seconda
-sorgente; le risposte lasciano spazio agli attacchi della prima. La plancia
-espone operazione, posizione logica, sorgenti effettive, sostegni e risposte omesse. Cambiare
-famiglia del terreno conserva la posizione; Stop e reset la azzerano.
-
-Le famiglie regolano soltanto il rapporto di velocity della voce. I
-controlli di sviluppo e i preset sono descritti nel
-[riferimento di configurazione](CONFIGURAZIONE.md#parametri-del-generatore-percussion_phrase).
-La mappa in `adapters/percussion.py` copre i 16 pad MIDI 36…51 del 909 Core Kit
-della prova, con entrambe le casse assegnate al sostegno. Il timbro dipende dai suoni caricati su quei pad. Le note MIDI e le
-regole ritmiche risiedono rispettivamente nell’adattatore e nel catalogo
-della voce;
-Director, Coordinator e dispositivo usano le interfacce comuni.
+La destinazione percussiva della prova usa i 16 pad MIDI 36…51 del 909 Core
+Kit, definiti in `adapters/percussion.py`. Il timbro di tutte le voci si
+sceglie negli strumenti Live.
 
 ## Stato globale
 
@@ -286,7 +234,7 @@ piano; quest'ultimo può appartenere alla macrosezione precedente finché non
 viene pianificata una nuova finestra. Nella modalità manuale questi campi
 valgono `null`.
 
-Una parte può essere collegata al server ma esclusa dall'organico della sezione. In `presets/organico.json`, `voice_02` entra al 30% della distanza: prima di quel punto la vista indica il motivo dell'attesa e la soglia d'ingresso. La selezione manuale del ruolo non modifica questa attivazione.
+Una parte collegata può essere esclusa dall’organico della sezione: la vista indica il motivo e il prossimo ingresso previsto. La selezione manuale del ruolo non la attiva. Nella direzione fornita tutte e quattro le voci partecipano alle macrosezioni; l’ingresso del basso al 30% riguarda soltanto le sezioni manuali di `organico.json`.
 
 Lo stato dei piani descrive ciò che Python ha inviato, non una conferma audio dello strumento. La scrittura JSON è separata dal motore.
 
@@ -299,25 +247,103 @@ sono in [Direzione musicale](DIREZIONE-MUSICALE.md) e
 [Dialogo ritmico](DIALOGO-MUSICALE.md). Questi ingressi alimentano le politiche adattive dei controlli nella
 sessione guidata dal GPX, rispettando il manuale per parametro.
 
-## Mappa del viaggio
+### Dimensioni della vista terminale
 
-Aggiungere `--view-port 8765` al comando della sessione e aprire
-<http://127.0.0.1:8765/> nel browser. Per esempio:
+La plancia adatta le righe alla larghezza del terminale. Se il contenuto
+supera l'altezza disponibile, mantiene stato, collegamenti delle voci,
+riepilogo del piano, errori e comandi, mostrando i dettagli che entrano.
+Un messaggio segnala la riduzione. Allargando la finestra i dettagli
+riappaiono; lo snapshot JSON conserva sempre lo stato completo. L'output
+reindirizzato a file mantiene la vista integrale.
+
+## Registrazione audio e MIDI in Live
+
+Usare il terminale in cui è in esecuzione la sessione Python:
+
+| Tasto | Operazione |
+|---|---|
+| `C` | Collega le Voice |
+| `1` | Prepara le tracce audio REC |
+| `2` | Prepara le tracce MIDI REC |
+| `3` | Prepara entrambe |
+| `G` | Riporta viaggio e trasporto a zero; dopo la conferma di Live, avvia la registrazione in Arrangement |
+| `S` | Ferma la registrazione |
+
+Attendere lo stato **REC pronta** dopo la preparazione, poi premere `G`.
+La dashboard offre le stesse operazioni con selettore e pulsanti REC.
+Il terminale della sessione e la dashboard mostrano l’esito confermato dal device.
+
+Da un secondo terminale, con il viewer attivo, gli stessi comandi REC sono
+disponibili tramite `desnivel.cli.recording`:
 
 ```sh
-.venv/bin/python -m desnivel.cli.ensemble \
-  --track gpx/tappa05_Firenze_San_Gimignano.gpx \
-  --config presets/organico.json \
-  --direction presets/direzione-viaggio.json \
-  --timing allocated \
-  --view-port 8765
+.venv/bin/python -m desnivel.cli.recording both
+.venv/bin/python -m desnivel.cli.recording start
+.venv/bin/python -m desnivel.cli.recording stop
 ```
+
+Attendere la preparazione prima di `start`. `audio` e `midi` selezionano
+una sola modalità; `--view-port` cambia la porta HTTP predefinita 8765.
+
+La preparazione ferma Live e riporta il viaggio a zero. Individua le tracce
+con un solo `Desnivel_Voice` al livello principale della catena, riconosciuto
+dal nome del device. I nomi delle sorgenti devono essere univoci.
+
+| Destinazione | Contenuto | Ingresso |
+|---|---|---|
+| `<sorgente>_AUDIO_REC` | Traccia audio senza device | Sorgente, `Post Mixer`: effetti, volume e pan inclusi; ritorni esclusi |
+| `<sorgente>_MIDI_REC` | Copia della traccia con strumenti ed effetti; `Desnivel_Voice` e clip copiate rimossi | Sorgente, `Post FX`: MIDI dopo gli effetti MIDI, prima dello strumento |
+
+Gli eventuali effetti MIDI conservati nella copia agiscono anche durante
+la riproduzione del MIDI registrato. Le tracce REC compatibili già esistenti
+vengono riutilizzate senza cancellarne le clip o aggiornare la catena.
+Un nome occupato da una traccia incompatibile interrompe la preparazione.
+Un errore di creazione o routing elimina soltanto le nuove tracce create
+dall’operazione fallita.
+
+Il monitor delle destinazioni è impostato su `Off`. Durante la registrazione
+sono armate soltanto le destinazioni selezionate; loop, punch, quantizzazione
+MIDI in registrazione e overdub Arrangement vengono temporaneamente disattivati.
+Stop ripristina armamenti e impostazioni precedenti.
+Il count-in di Live deve essere su **None** nel menu accanto al metronomo,
+alla voce **Count-In**. Spegnere il metronomo o impostare la quantizzazione
+globale su None non cambia il count-in.
+Le destinazioni restano disarmate dopo la preparazione: `G` le arma prima
+di avviare REC. Un errore nei controlli preliminari impedisce anche l’armamento.
+La fine della tappa richiede
+automaticamente l’arresto della registrazione.
+
+`adapters/live_recording.py` governa richieste e conferme; la voce del
+trasporto esegue le operazioni con `m4l/desnivel_recording.js`.
+La capability `recording_control` identifica i device aggiornati;
+`recording` nello snapshot contiene stato, modalità, destinazioni ed errore.
+I timeout non fanno partire la registrazione e vengono segnalati.
+
+## Mappa del viaggio
+
+Con `--view-port 8765`, aprire <http://127.0.0.1:8765/> nel browser.
+Il launcher multitappa abilita già questa opzione.
 
 La pagina mostra percorso completo, tratto attraversato, posizione geografica,
 distanza raggiunta e restante, percentuale, tempo del viaggio e sezione attuale.
 **Intero percorso** adatta la mappa alla traccia; **Segui posizione** mantiene
 il punto corrente al centro. Trascinare la mappa disattiva l'inseguimento.
 Il collegamento sulle coordinate apre la posizione su OpenStreetMap.
+
+Il pannello musicale distingue il piano corrente secondo il beat di Live
+dal prossimo piano già inviato: mostra sezione, root MIDI, scala e tratto
+del percorso. Le schede delle voci indicano collegamento, ruolo e numero
+di note della frase corrente, organico attuale, presenza e parametri.
+I valori effettivi sono affiancati dagli obiettivi automatici con `→`;
+ogni parametro indica `auto` o `manual`. La configurazione completa
+è espandibile. I riepiloghi diagnostici marcati «ultimo piano inviato»
+possono riferirsi alla finestra futura.
+
+Il runtime conserva i piani inviati non ancora conclusi per esporre
+`planning.current` e `planning.upcoming` nello snapshot. Stop e reset
+svuotano tale stato insieme alla pianificazione; la lettura della dashboard
+non genera frasi e non cambia i parametri. L’esecuzione indicata segue
+il clock, senza misurare l’uscita audio degli strumenti.
 
 Il selettore **Skin** nell'intestazione cambia l'aspetto della pagina:
 **Atlante** usa la cartografia chiara, **Notturna** applica colori scuri ai
@@ -336,14 +362,16 @@ un mancato aggiornamento per oltre tre secondi viene segnalato nella pagina.
 dalla sessione. `viewer/server.py` serve le risorse, legge lo snapshot e
 accoda i comandi in un thread HTTP separato. Il ciclo CLI consuma la coda
 e applica i comandi nello stesso thread della pianificazione musicale.
-`position.js` calcola posizione e tratto attraversato; `view.js` aggiorna la
+`position.js` calcola posizione e tratto attraversato; `music.js` presenta
+piani e voci; `view.js` aggiorna la
 pagina ogni 250 ms, dopo la conclusione della richiesta precedente.
 Le interfacce HTTP in sola lettura sono `/api/route` (versione, tappa e segmenti
 di punti `[secondi attivi, latitudine, longitudine]`) e `/api/state`
 (`session`, snapshot completo, e `age_s`, età del file in secondi).
 
-`POST /api/control` accetta `{"action":"pause"}`, `resume` o `restart`
-solo dalla stessa origine della pagina. La risposta `202` conferma
+`POST /api/control` accetta un oggetto `{"action":"<azione>"}` soltanto
+dalla stessa origine. Le azioni sono `pause`, `resume`, `restart`,
+`record_audio`, `record_midi`, `record_both`, `record_start` e `record_stop`. La risposta `202` conferma
 l'accodamento; l'esito è mostrato nello snapshot successivo.
 **Pausa/Riprendi** e **Riporta a zero** sono disponibili durante il
 viaggio. A fine tappa compare la domanda con il pulsante **Sì, riporta a zero**;
@@ -364,20 +392,8 @@ quando Leaflet è già caricato. La pagina segnala anche l'assenza della libreri
 
 ## Verifiche
 
-I test automatici coprono pianificazione ripetuta, passaggi di sezione, Stop,
-ripartenza, discontinuità, dispositivi mancanti, ruoli, controlli e scrittura
-dello stato. La configurazione fornita è verificata anche con `--dry-run`
-sul GPX Firenze–San Gimignano. La prova in Live ha confermato l'esecuzione
-delle parti melodica e di accompagnamento; Marco ha inoltre confermato
-l'ascolto di atmosfera e drums nella prova a quattro voci. Configurazione
-e comportamenti musicali costituiscono un banco di prova da affinare.
-
-
-### Dimensioni della vista terminale
-
-La plancia adatta le righe alla larghezza del terminale. Se il contenuto
-supera l'altezza disponibile, mantiene stato, collegamenti delle voci,
-riepilogo del piano, errori e comandi, mostrando i dettagli che entrano.
-Un messaggio segnala la riduzione. Allargando la finestra i dettagli
-riappaiono; lo snapshot JSON conserva sempre lo stato completo. L'output
-reindirizzato a file mantiene la vista integrale.
+I test coprono pianificazione, cambi di sezione, trasporto, dispositivi
+mancanti, ruoli, controlli, snapshot, registrazione e dashboard.
+`--dry-run` verifica configurazione e generazione delle sezioni; non
+riproduce il trasporto o l'audio di Live. Le prove d'ascolto servono a
+valutare suoni e corrispondenze compositive.

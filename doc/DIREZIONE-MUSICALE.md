@@ -123,11 +123,18 @@ velocità, fatica o volume audio.
 
 ## Adattamento dei parametri
 
-Con l'analisi GPX collegata, `EnsembleRuntime` abilita l'adattamento nella
-pianificazione. Senza analisi collegata, comprese le sezioni manuali, i
-parametri seguono gli assetti e gli override ordinari. Il costruttore
+`EnsembleRuntime` abilita l'adattamento quando dispone dell'analisi del
+percorso oppure di una sorgente di contesto con interprete musicale.
+Senza entrambi, i parametri seguono assetti e override ordinari. Il costruttore
 `EnsembleRuntime(..., adaptive=False)` permette il confronto tecnico con
 stesso percorso, timeline, seed e suoni.
+
+Il [meteo storico](CONTESTO-AMBIENTALE.md#meteo-storico) aggiunge contributi
+alla dinamica di melodia, tessitura e drums, allo sviluppo melodico e alla
+variazione percussiva. Può attivare le politiche anche nelle sezioni manuali;
+in assenza del profilo non viene applicato il contributo del terreno.
+Le formule seguenti descrivono terreno e osservazione musicale; i
+coefficienti ambientali sono nel riferimento del meteo.
 
 `cli.trip_direction.adaptive_context` interpreta il profilo locale:
 
