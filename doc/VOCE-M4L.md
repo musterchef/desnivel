@@ -195,6 +195,12 @@ numerica `[-1, stream, seriale, offset, totale]`, seguita da massimo 1.500 byte.
 Il device ricompone i frammenti anche fuori ordine e applica soltanto messaggi
 completi. Mantiene al massimo otto ricomposizioni, con scadenza di 1,5 secondi.
 
+Da Max a Python, i messaggi oltre 900 byte JSON usano frammenti di massimo
+900 byte e intestazione `[-2, stream, seriale, offset, totale]`. Questa
+dimensione rispetta il buffer predefinito di 5.096 byte di `udpsend`,
+considerando anche la codifica degli interi OSC. Il server accetta entrambi
+i formati; le risposte Python → Max conservano il formato `-1` descritto sopra.
+
 Le richieste contengono voce, identificativo dell'istanza, seriale, porta di risposta e azione (`hello`, `transport`, `role`, `preset`, `parameter`, `manual`, `presence`, `save_preset`, `panic`). L’azione `role` contiene l’identificativo del ruolo manuale oppure `null` per seguire la sezione. Lo stato restituisce ruoli supportati, ruolo effettivo, ruolo della sezione, modalità (`section` o `manual`) e stato di attivazione della parte. La lettura del trasporto aggiunge beat, stato di riproduzione e contatore locale delle discontinuità. Le risposte distinguono stato, errore, piano e comando di trasporto.
 `save_preset` contiene nome e flag `overwrite`; il salvataggio acquisisce
 sul server i valori effettivi. Il device dichiara `transport_control` nelle

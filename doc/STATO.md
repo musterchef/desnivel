@@ -18,7 +18,7 @@ Il launcher multitappa permette di scegliere `01`–`12` o la variante locale
 | Adattamento | Obiettivi dei controlli da contesto locale e osservazione musicale; transizioni fra finestre e precedenza manuale per parametro | [Adattamento](DIREZIONE-MUSICALE.md#adattamento-dei-parametri) |
 | Contesto ambientale | Meteo storico acquisito e salvato in cache, contributo musicale attivabile con M; fondo OSM acquisibile come informazione | [Contesto ambientale](CONTESTO-AMBIENTALE.md) |
 | Device | Dispositivo MIDI comune, menu forniti da Python, controlli auto/manual e preset utente persistenti | [Voce M4L](VOCE-M4L.md) |
-| Controllo Snake | Preparazione guidata con N, componente per istanza, tre ruoli e modalità autonoma/coordinata; banchi, durate, percorsi e suddivisione adattati al contesto locale del viaggio | [Snake](SNAKE.md#componente-multiruolo) |
+| Controllo Snake | Preparazione guidata con N, componente per istanza, tre ruoli e modalità autonoma/coordinata; adattamento al viaggio e lettura come sorgente con ruolo, previsione e note sostenute | [Snake](SNAKE.md#componente-multiruolo) |
 | Osservazione e controllo | Terminale, snapshot JSON e dashboard con mappa, piano corrente e successivo, controlli e stato del meteo | [Sessione multivoce](SESSIONE-MULTIVOCE.md) |
 | Registrazione | Preparazione delle tracce REC audio/MIDI e controllo della registrazione Arrangement in Live, con conferme del device | [Registrazione](SESSIONE-MULTIVOCE.md#registrazione-audio-e-midi-in-live) |
 

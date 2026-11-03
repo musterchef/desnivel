@@ -71,12 +71,14 @@ class MusicDirector:
     def manual_role(self, voice: str):
         return self._manual_roles.get(voice)
 
-    def decision_at(self, progress: float):
+    def decision_at(self, progress: float, *, external_sources=None):
         """Descrive la selezione configurata, senza attribuirle criteri aggiuntivi."""
         context = self.context_at(progress)
         start = self._sections[context.section_index][0]
         end = self._sections[context.section_index+1][0] if context.section_index+1 < len(self._sections) else 1.
         return {'section': context.name, 'from_progress': start, 'until_progress': end,
+                'external_sources': {name: dict(role=source.role, available=source.phrase is not None,
+                    unavailable_reason=source.unavailable_reason) for name, source in (external_sources or {}).items()},
                 'root': context.root, 'scale': context.scale,
                 'assignments': {name: {'role': spec.role, 'presence': spec.presence,
                                       'source': 'manual' if name in self._manual_roles else 'section'}

@@ -18,7 +18,7 @@ produrre il MIDI attraverso i propri banchi e percorsi. Il banco melodico
 La guida ritenta il collegamento ogni dieci secondi. **Invio** richiede
 subito un controllo; non forza una conferma se la traccia non è pronta.
 La verifica richiede controllo collegato, Snake compatibile con Length e
-strumento dopo il controllo. Il terminale indica ciò che manca e conferma
+strumento dopo il controllo e telemetria per istanza compatibile. Il terminale indica ciò che manca e conferma
 quando Snake è pronto. **C** resta disponibile per collegare tutti i device.
 **Esc** annulla la preparazione e chiude il servizio Snake, lasciando la
 sessione principale disponibile. Le tracce create manualmente restano in Live.
@@ -88,13 +88,52 @@ Il componente aggiorna il materiale dalla finestra corrente, senza leggere
 in anticipo quelle future. I pacchetti vengono confermati e ritrasmessi;
 il controllo scrive soltanto i valori effettivamente diversi. Gli
 aggiornamenti non sono quantizzati a battuta né allineati alla fase interna
-di Snake. La modalità coordinata legge le altre voci; la previsione di
-Snake non viene ancora comunicata al Coordinator.
+di Snake. Quando una previsione è già stata usata dal Coordinator, una
+nuova revisione dei banchi attende la fine delle finestre interessate.
+Il terminale mostra il beat fino al quale il materiale resta invariato.
 
 La traduzione delle altezze usa **Chromatic, tonica C**: il parametro
 nota vale MIDI − 24, con registro MIDI 24–107. Il componente imposta
 Chromatic; mantenere C come tonica in Snake. Le durate sono espresse in
 millisecondi e rimangono indipendenti dal BPM.
+
+### Snake come sorgente musicale
+
+La mod osserva i propri banchi, i percorsi, le fasi e l'uscita MIDI di
+`makenote`, comprese le note ancora sostenute. Il controllo riceve lo
+stato dello Snake precedente tramite un canale locale legato al suo
+percorso canonico in Live. La lettura è automatica: **Export non serve**
+alla sessione multivoce e resta riservato al bridge UDP sulla porta 9003.
+Gli snapshot locali e il protocollo Voice usano byte numerici; i messaggi
+OSC più grandi sono frammentati e riassemblati con limiti e scadenza.
+
+`adapters/snake_forecast.py` usa il modello `snake_sequence` per proiettare
+la finestra richiesta. Le code già emesse vengono incluse nell'occupazione
+musicale, senza contarle come nuovi attacchi. La sorgente espone ruolo,
+note, durate, registro, densità degli attacchi e rapporto di occupazione.
+Il Director riporta ruolo e disponibilità; il Coordinator rende la previsione
+accessibile ai generatori e la usa nell'adattamento delle altre voci.
+Storia musicale accettata e osservazione della previsione restano separate.
+
+Il ruolo determina come le altre voci lasciano spazio: una sorgente
+`melody` contribuisce alle scelte di densità del basso, attività delle
+altre melodie e alleggerimento delle tessiture nel registro occupato;
+una sorgente `bass_line` alleggerisce attività melodica e densità degli
+altri bassi; `sustained_texture` contribuisce alla condivisione del registro
+fra tessiture. Gli override manuali conservano la precedenza.
+
+La previsione richiede dati recenti (massimo 0,75 s), BPM e posizione
+allineati, revisione dei banchi confermata, swing zero, Shift 1 e direzioni
+supportate. Uno stato mancante o non prevedibile produce una sorgente
+**indisponibile**, distinta da una frase valida senza note. I motivi sono
+visibili nella riga `SORGENTE` del terminale e nello snapshot JSON.
+
+Durante un aggiornamento dei banchi non vengono accettate nuove previsioni
+sulla vecchia revisione. Terminate le finestre già accettate, Python applica
+il nuovo materiale e attende conferma e telemetria aggiornata. Questo può
+ritardare l'interpretazione successiva del viaggio. Modifiche dirette ai
+banchi e cambi di BPM vengono letti negli snapshot successivi; i piani
+musicali già accettati non vengono riscritti.
 
 ### Configurazione e costruzione
 
@@ -115,7 +154,9 @@ script generati insieme. Il builder riusa l'interfaccia Voice; il collegamento
 al device precedente è in `m4l/desnivel_snake_control.js`, il materiale
 musicale neutro in `music/sequence/material.py`. `cli/snake_control.py`
 collega il controllo alla sessione senza avviare un secondo replay.
-Lo snapshot espone i componenti separatamente in `components`.
+Lo snapshot espone i componenti in `components` e le previsioni di ciascun
+piano in `external_sources`. Dopo un aggiornamento della telemetria
+ricaricare entrambi i device e riavviare la sessione dal launcher ordinario.
 
 ---
 

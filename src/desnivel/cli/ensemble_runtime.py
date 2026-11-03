@@ -24,6 +24,7 @@ class EnsembleRuntime:
         if not math.isfinite(speed) or speed <= 0:
             raise ValueError('speed deve essere positiva e finita')
         self.track, self.bridge, self.speed, self.clock = track, bridge, speed, clock
+        self.external_source_provider = None
         self.window, self.lead = config['window_beats'], config['lead_beats']
         if any(type(x) not in (int, float) or not math.isfinite(x) or x <= 0 for x in (self.window, self.lead)):
             raise ValueError('finestra e anticipo devono essere positivi e finiti')
@@ -302,7 +303,9 @@ class EnsembleRuntime:
                 source_context['environment'][source.data['source']] = description
                 if description['interpretation_enabled']:
                     intent = interpret(intent, description)
-        phrases = self.session.plan(plan_progress, start, self.window, adaptive_context=intent)
+        external = (self.external_source_provider(start, self.window, beat=self.beat, bpm=self.bpm, epoch=self.epoch)
+                    if self.external_source_provider is not None else {})
+        phrases = self.session.plan(plan_progress, start, self.window, adaptive_context=intent, external_sources=external)
         for name in self.sounding - phrases.keys():
             if self.bridge.connected(name):
                 self.bridge.destination(name)(start, Phrase(self.window, ()))
@@ -319,6 +322,7 @@ class EnsembleRuntime:
                                'direction': self.section_directions[context.section_index],
                                'trip': self.section_sources[context.section_index],
                                'local_trip': source_context}
+        self.last_decisions['director'] = self.session.director.decision_at(plan_progress, external_sources=external)
         self.last_decisions['adaptive_context'] = vars(intent) if intent is not None else None
         self._sent_plans = [plan for plan in self._sent_plans
                             if plan['start']+plan['length_beats'] > self.beat]
@@ -349,7 +353,8 @@ class EnsembleRuntime:
                 'controls': {'paused': self.paused, 'restart_count': self.restart_count,
                              'contexts': {source.data['source']: {'enabled': enabled}
                                           for source, _, enabled in self.context_sources}},
-                'decisions': {'director': self.session.director.decision_at(self.progress),
+                'decisions': {'director': {**self.session.director.decision_at(self.progress),
+                                          'external_sources': current_plan.get('director', {}).get('external_sources', {}) if current_plan else {}},
                               'coordinator': self.last_decisions},
                 'trip': {'stage': self.track.stage_id, 'elapsed_s': elapsed,
                          'duration_s': self.track.duration_s, 'progress': self.progress, 'speed': self.speed,

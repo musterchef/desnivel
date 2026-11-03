@@ -14,6 +14,8 @@ def test_companion_reuses_voice_ui_passes_midi_and_isolates_its_ports():
     assert boxes['persist']['restore']==['snake_01']
     assert boxes['interface']['text']=='js desnivel_snake_voice.js'
     assert boxes['player']['text']=='route panic'
+    assert boxes['snake_state_receive']['varname']=='snake_state_receive'
+    assert boxes['snake_state_prefix']['text']=='prepend snake_state'
     assert boxes['receive']['text']=='udpreceive 9201 @defer 1'
     assert boxes['receive_port']['saved_attribute_attributes']['valueof']['parameter_initial']==[9201]
     assert boxes['server_port']['saved_attribute_attributes']['valueof']['parameter_initial']==[9007]

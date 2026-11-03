@@ -36,13 +36,17 @@ class AdaptationRequest:
     roles: Mapping[str, str]
     length_beats: float
     manual: Mapping
+    external_sources: Mapping = field(default_factory=dict)
 
     def setting(self, name):
         return self.manual.get(name, self.parameters[name])
 
     def peers(self, role):
-        return tuple(value for name, value in self.observation.voices.items()
-                     if name != self.voice and self.roles.get(name) == role and value.assigned_beats)
+        history = tuple(value for name, value in self.observation.voices.items()
+                        if name != self.voice and self.roles.get(name) == role and value.assigned_beats)
+        predicted = tuple(source.observation() for name, source in self.external_sources.items()
+                          if name != self.voice and source.role == role and source.phrase is not None)
+        return (*history, *predicted)
 
 
 @dataclass(frozen=True)

@@ -1,9 +1,9 @@
 # Snake come voce configurabile
 
-Stato: controllo multiruolo implementato come componente della sessione.
-La modalità coordinata legge una voce del piano corrente; il collegamento
-in uscita da Snake verso il Coordinator rimane proposto. Il banco Length, il controllo dei parametri e la previsione
-della sequenza esistono già: [Snake](../SNAKE.md).
+Stato: controllo multiruolo e lettura come sorgente del Coordinator
+implementati. La previsione comprende banchi, fasi e note MIDI sostenute;
+i cambi automatici dei banchi attendono le finestre già accettate.
+Comportamento attuale in [Snake](../SNAKE.md).
 
 ## Comportamento richiesto
 
@@ -40,9 +40,8 @@ per la stessa funzione.
 
 - Le classi generiche del motore non devono conoscere Snake o i nomi
   dei suoi parametri. Traduzione dei banchi e protocollo restano negli adattatori.
-- Per un futuro collegamento in uscita, Snake dovrà partecipare al coordinamento attraverso una rappresentazione
-  della sequenza che produrrà effettivamente. Una frase composta per un
-  altro esecutore non è automaticamente equivalente all'uscita di Snake.
+- Il collegamento in uscita usa la previsione ricavata dallo stato di Snake,
+  distinta dal materiale richiesto da Python e dalla storia musicale accettata.
 - L'attuale previsione supporta swing zero, Shift 1, direzioni avanti e
   indietro e le velocità elencate in [Snake](../SNAKE.md). Le condizioni
   non prevedibili devono essere segnalate, senza inventare note sorgente.
@@ -51,12 +50,12 @@ per la stessa funzione.
 
 ## Ulteriori integrazioni proposte
 
-Il componente adatta banchi, percorsi e suddivisione al viaggio. Restano da
-definire l’applicazione delle modifiche alla fase esatta del sequencer e
-l'inserimento della sequenza prevista fra le sorgenti del Coordinator.
-Il ruolo di accompagnamento attuale offre sostegno armonico con gate più
-radi quando la sorgente è fitta; risposte con allineamento temporale esatto
-richiedono queste ulteriori integrazioni.
+Resta da implementare il ruolo `accompaniment`: sostegno contenuto durante
+la melodia sorgente e risposte brevi nelle pause, con conclusione prima
+del suo rientro. Richiede la programmazione delle revisioni rispetto alla
+fase effettiva di Snake; la lettura delle previsioni non equivale ancora a
+questa funzione di risposta. Restano aperti anche l'invalidazione e il
+ricalcolo dei piani già accettati dopo interventi manuali sui banchi.
 
 ## Aggiunta degli strumenti dalla sessione
 

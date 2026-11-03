@@ -120,7 +120,22 @@ def snake_document(document, state_port):
     add(p,'state-send',f'udpsend 127.0.0.1 {state_port}',900,550)
     connect(p,'obj-115','state-defer',outlet=6);connect(p,'state-defer','state-js')
     connect(p,'state-js','state-send')
+    # Osserva l'uscita MIDI nativa e la durata corrente, comprese le note trattenute.
+    add(p,'state-duration','prepend duration',1150,550)
+    connect(p,'length-bank','state-duration');connect(p,'state-duration','state-js')
+    add(p,'state-note-pack','pack 0 0',1150,640)
+    add(p,'state-note-prefix','prepend note',1150,680)
+    connect(p,'length-notes','state-note-pack',outlet=1,inlet=1)
+    connect(p,'length-notes','state-note-pack')
+    connect(p,'state-note-pack','state-note-prefix');connect(p,'state-note-prefix','state-js')
     clock_chain(p,'state-js','snapshot')
+    boxes(p)['clock-metro']['varname']='desnivel_state_clock'
+    add(p,'state-observe-receive','receive desnivel.snake.observe',900,720)
+    connect(p,'state-observe-receive','state-js')
+    add(p,'state-ready','live.thisdevice',900,800)
+    add(p,'state-init-defer','deferlow',900,840)
+    add(p,'state-initialize','initialize',900,880,'message')
+    connect(p,'state-ready','state-init-defer');connect(p,'state-init-defer','state-initialize');connect(p,'state-initialize','state-js')
     bank=root['length-bank']['patcher']
     toggle=add(bank,'export',None,0,500,'live.toggle',presentation=1,
                presentation_rect=[0,142,18,18])
@@ -129,7 +144,8 @@ def snake_document(document, state_port):
     add(bank,'export-out',None,600,885,'outlet',index=2)
     connect(bank,'export','export-out')
     root['length-bank']['numoutlets']=2;root['length-bank']['outlettype'].append('int')
-    connect(p,'length-bank','clock-metro',outlet=1)
+    add(p,'state-legacy-prefix','prepend legacy',900,920)
+    connect(p,'length-bank','state-legacy-prefix',outlet=1);connect(p,'state-legacy-prefix','state-js')
     p['parameters']['length-bank::export']=['Export_State','Export_State',0]
     p.setdefault('dependency_cache',[]).append({'name':'desnivel_snake_state.js','type':'TEXT','implicit':1})
     return result

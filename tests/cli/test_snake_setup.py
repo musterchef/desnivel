@@ -99,7 +99,7 @@ def test_normal_ensemble_guides_setup_and_stops_an_unexpected_play_without_advan
                 self.bridge.handle(message);self.on_message(self.bridge,message)
             if self.count==3 and complete:
                 component=dict(version=1,voice='snake_01',instance='snake',reply_port=9201,serial=1,action='hello',
-                    capabilities=['bank_control'],device_state=dict(ready=True,has_instrument=True,applied=-1,error=None))
+                    capabilities=['bank_control'],device_state=dict(ready=True,source_protocol=1,has_instrument=True,applied=-1,error=None))
                 servers[1].bridge.handle(component);servers[1].on_message(servers[1].bridge,component)
     monkeypatch.setattr(voice_device,'VoiceDeviceServer',Server)
     original=snake_setup.SnakeSetup

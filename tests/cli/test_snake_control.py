@@ -21,7 +21,7 @@ def setup(components=None):
         'snake_a':{'role':'melody','mode':'autonomous','source':'a'}}}, {'a':{'name':'lead'}},server_factory=server)
     def receive(name='snake_a',serial=1,applied=-1):
         message=dict(version=1,voice=name,instance=name,reply_port=9201 if name=='snake_a' else 9202,
-                     action='hello',serial=serial,capabilities=['bank_control'],device_state=dict(ready=True,has_instrument=False,applied=applied,error=None))
+                     action='hello',serial=serial,capabilities=['bank_control'],device_state=dict(ready=True,source_protocol=1,has_instrument=False,applied=applied,error=None))
         session.server.bridge.handle(message)
         session.on_message(session.server.bridge,message)
     state=dict(state='playing',section=dict(index=0,name='ascent',root=60,scale='minor'),planning=dict(current=plan()))
@@ -94,7 +94,7 @@ def test_real_component_handshake_and_parameter_packet_use_only_its_receive_port
         receiver.bind(('127.0.0.1',0));receiver.settimeout(1)
         client=SimpleUDPClient('127.0.0.1',session.server.server.server_address[1])
         message=dict(version=1,voice='snake',instance='component',reply_port=receiver.getsockname()[1],
-                     serial=1,action='hello',capabilities=['bank_control'],device_state=dict(ready=True,applied=-1,error=None))
+                     serial=1,action='hello',capabilities=['bank_control'],device_state=dict(ready=True,source_protocol=1,applied=-1,error=None))
         client.send_message(CONTROL_ADDRESS,list(json.dumps(message).encode()))
         import select
         assert select.select([session.server.server], [], [], 1)[0]
@@ -195,3 +195,42 @@ def test_environment_uses_accepted_intent_and_disabled_adaptation_preserves_role
     session.tick(state)
     values=session.server.bridge.voices['snake_a'].read_values()
     assert values['velocity']==85 and values['movement']==.25
+
+
+def test_accepted_forecasts_hold_banks_until_their_windows_finish_and_require_new_ack():
+    from desnivel.music.sources import MusicalSource
+    from desnivel.music.phrases import Phrase, Note
+    session,sent,receive,state=setup();receive();session.tick(state)
+    component=session.components['snake_a'];component['has_instrument']=True
+    class Observed:
+        def project(self,role,start,length,**kwargs):
+            return MusicalSource(role,Phrase(length,(Note(0,67,length,80),)))
+        def invalidate(self,reason):pass
+    component['forecast']=Observed()
+    component['applied']=component['payload']['serial']
+    first=session.forecasts(4,4,beat=0,bpm=120,epoch=0)['snake_a']
+    assert first.phrase.notes[0].pitch==67 and component['hold_until']==8
+    before=len(sent)
+    state['transport']={'beat':4}
+    state['planning']['current']=plan(4,1.,1.,0.)
+    session.tick(state)
+    assert component['pending'] and len(sent)==before
+    unavailable=session.forecasts(8,4,beat=4,bpm=120,epoch=0)['snake_a']
+    assert unavailable.phrase is None and 'attesa' in unavailable.unavailable_reason
+    assert component['hold_until']==8  # No indefinite extension while waiting for a revision.
+    state['transport']['beat']=8
+    state['planning']['current']=plan(8,1.,1.,0.)
+    session.tick(state)
+    assert not component['pending'] and len(sent)>before
+    assert session.forecasts(12,4,beat=8,bpm=120,epoch=0)['snake_a'].phrase is None
+    component['applied']=component['payload']['serial']
+    assert session.forecasts(12,4,beat=8,bpm=120,epoch=0)['snake_a'].phrase is not None
+
+
+def test_silent_startup_packets_do_not_lock_out_the_initial_musical_material():
+    session,_,receive,state=setup();receive()
+    state['planning']['current']=None;session.tick(state)
+    component=session.components['snake_a'];component['has_instrument']=True
+    component['applied']=component['payload']['serial']
+    assert session.forecasts(4,4,beat=0,bpm=120,epoch=0)['snake_a'].phrase is None
+    assert component['hold_until']==0

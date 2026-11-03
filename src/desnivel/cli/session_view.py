@@ -135,6 +135,8 @@ def render_session(state):
             rows.append(f"PREPARAZIONE: prossimo controllo tra {setup['next_check_s']:.0f} s · Invio verifica ora · Esc annulla")
     for name, component in state.get('components', {}).items():
         rows.append(f"COMPONENTE {name}: {'collegato' if component['connected'] else 'SCOLLEGATO'} | {component['status']}")
+        if component.get('source_status'):
+            rows.append(f"SORGENTE {name}: {component['role']} | {component['source_status']}")
     if state['error']:
         rows.append('ERRORE: ' + state['error'])
     if state.get('control_error'):
@@ -164,7 +166,7 @@ def fit_terminal(frame, width, height):
         return '\n'.join(wrapped)
     # Riduce prima i dettagli; stato, collegamenti, errori e comandi restano visibili.
     required = {i for i, row in enumerate(rows) if i < 3 or row.startswith((
-        'IN ESECUZIONE', 'Coordinator:', 'PREPARAZIONE:', 'REC:', 'REC ·', 'ERRORE:', 'COMANDO:', 'Tappa conclusa.', 'C:'))
+        'IN ESECUZIONE', 'Coordinator:', 'PREPARAZIONE:', 'SORGENTE ', 'REC:', 'REC ·', 'ERRORE:', 'COMANDO:', 'Tappa conclusa.', 'C:'))
         or ' | in organico | ' in row or ' | fuori organico' in row}
     selected = {i: [textwrap.shorten(rows[i], width=width, placeholder='…')] for i in required}
     available = height-len(selected)-1

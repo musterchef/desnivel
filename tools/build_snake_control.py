@@ -33,6 +33,10 @@ def document(source):
     for a, ao, b, bi in (('source_midi',0,'source_flush',0), ('source_flush',0,'midi_out',0), ('player',0,'source_flush',0)):
         patch['lines'].append({'patchline': dict(source=[a,ao],destination=[b,bi])})
     patch['dependency_cache'] = [dict(name=name,type='TEXT',implicit=1) for name in SCRIPTS]
+    for ident, text in (('snake_state_receive','receive desnivel.snake.unbound'), ('snake_state_prefix','prepend snake_state')):
+        patch['boxes'].append({'box':dict(id=ident,varname=ident,maxclass='newobj',text=text,patching_rect=[20,1100,280,22])})
+    for a,b in (('snake_state_receive','snake_state_prefix'),('snake_state_prefix','interface')):
+        patch['lines'].append({'patchline':dict(source=[a,0],destination=[b,0])})
     return result
 
 

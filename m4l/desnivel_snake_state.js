@@ -8,6 +8,29 @@ var root = this.patcher, seq = null, lengths = null, lastError = '';
 var names = {notes:'Notes', gates:'Gates', velocities:'Velocities'};
 var speeds = ['32n','16n','8n','4n','2n'];
 var intervals = [0.125,0.25,0.5,1,2];
+var deviceApi=null, active={}, durationMs=275, observing=false, exporting=false, observeUntil=0;
+function initialize(){
+    if(!deviceApi)deviceApi=new LiveAPI(null,'this_device');
+    if(!(Number(deviceApi.id)>0))deviceApi.goto('this_device');
+}
+function subscribe(path,value){initialize();if(Number(deviceApi.id)>0 && path===String(deviceApi.unquotedpath))observe(value);}
+function observe(value){observing=Number(value)!==0;observeUntil=Date.now()+2500;root.getnamed('desnivel_state_clock').message(Number(observing || exporting));}
+function legacy(value){exporting=Number(value)!==0;root.getnamed('desnivel_state_clock').message(Number(observing || exporting));}
+function duration(value){durationMs=Number(value);}
+function note(pitch, velocity){
+    pitch=Number(pitch);velocity=Number(velocity);
+    if(velocity>0)active[pitch]={pitch:pitch,velocity:velocity,end_ms:Date.now()+durationMs};
+    else delete active[pitch];
+}
+function publish(packet){
+    packet.observation_version=1;
+    initialize();
+    packet.device=Number(deviceApi.id);packet.device_path=String(deviceApi.unquotedpath);packet.captured_ms=Date.now();
+    var json=JSON.stringify(packet), binary=unescape(encodeURIComponent(json)), bytes=[];
+    for(var i=0;i<binary.length;i++)bytes.push(binary.charCodeAt(i));
+    if(observing && packet.device>0)messnamed('desnivel.snake.'+packet.device_path.replace(/ /g,'_'),'list',bytes);
+    if(exporting)outlet(0,'/desnivel/v1/snake/state',json);
+}
 function scalar(p, name) {
     var box = p.getnamed(name);
     if (!box) throw new Error('controllo assente: '+name);
@@ -22,11 +45,13 @@ function phase(name, index, ticks) {
     phases[name] = {index:Number(index), ticks:Number(ticks)};
 }
 function snapshot(ticks, bpm, playing) {
+    if(observing && Date.now()>observeUntil){observing=false;root.getnamed('desnivel_state_clock').message(Number(exporting));}
+    if(!observing && !exporting)return;
     ticks=Number(ticks); playing=Number(playing);
     if (ticks < lastTick || playing !== lastPlaying) epoch++;
     lastTick=ticks;lastPlaying=playing;
     var packet={version:1, source:source, epoch:epoch, serial:++serial, beat:ticks/480, playing:playing};
-    if (!playing) {phases={};outlet(0,'/desnivel/v1/snake/state',JSON.stringify(packet));return;}
+    if (!playing) {phases={};active={};publish(packet);return;}
     try {
         if (!seq) seq=root.getnamed('desnivel_sequencer').subpatcher();
         if (!lengths) lengths=root.getnamed('Length_Bank').subpatcher();
@@ -53,7 +78,13 @@ function snapshot(ticks, bpm, playing) {
             state[lane+'_lane']={shape:scalar(seq,prefix+'Snake_Shape')+1,speed:speeds[speed],steps:steps,
                 direction:direction===0?'forwards':'backwards',phase_beats:index*interval+elapsed};
         }
-        packet.state=state;lastError='';
+        packet.state=state;packet.active_notes=[];
+        for(var pitch in active){
+            var remaining=active[pitch].end_ms-Date.now();
+            if(remaining<=0){delete active[pitch];continue;}
+            packet.active_notes.push({pitch:active[pitch].pitch,velocity:active[pitch].velocity,remaining_ms:remaining});
+        }
+        lastError='';
     } catch(e) {packet.error=String(e);if(packet.error!==lastError){post('Snake state: '+packet.error+'\n');lastError=packet.error;}}
-    outlet(0,'/desnivel/v1/snake/state',JSON.stringify(packet));
+    publish(packet);
 }

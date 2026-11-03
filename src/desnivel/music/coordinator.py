@@ -15,6 +15,7 @@ from desnivel.music.rhythm import PreparedRhythm, RhythmReference
 from desnivel.music.interactions import VoicePlan, resolve_relation, record_gestures
 from desnivel.music.observation import EnsembleObservation, MusicalMemory
 from desnivel.music.automation import AdaptiveContext, AdaptationRequest, resolve_parameters
+from desnivel.music.sources import MusicalSource
 
 
 @dataclass(frozen=True)
@@ -33,6 +34,7 @@ class PlanningRequest:
     participating: bool = True
     observation: EnsembleObservation | None = None
     intent: AdaptiveContext | None = None
+    external_sources: Mapping[str, MusicalSource] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -114,7 +116,8 @@ class MusicCoordinator:
              assignments: Mapping[str, Assignment] | None = None,
              rhythm_parameters: Mapping | None = None,
              adaptive_context: AdaptiveContext | None = None,
-             manual_parameters: Mapping | None = None) -> dict[str, Phrase]:
+             manual_parameters: Mapping | None = None,
+             external_sources: Mapping[str, MusicalSource] | None = None) -> dict[str, Phrase]:
         if not math.isfinite(start) or start < 0:
             raise ValueError('start deve essere finito e non negativo')
         if not math.isfinite(length_beats) or length_beats <= 0:
@@ -128,6 +131,10 @@ class MusicCoordinator:
                 if assignment.role not in active[name].supported_roles:
                     raise ValueError(f'ruolo non supportato dalla voce {name}: {assignment.role}')
         phrases = dict(sources or {})
+        external_sources = dict(external_sources or {})
+        if external_sources.keys() & (self._voices.keys() | phrases.keys()):
+            raise ValueError('identificativi delle sorgenti esterne già occupati')
+        phrases.update({name: source.phrase for name, source in external_sources.items() if source.phrase is not None})
         if phrases.keys() & active.keys():
             raise ValueError('una voce non può essere anche una sorgente fornita')
         if any(p.length_beats != length_beats for p in phrases.values()):
@@ -136,7 +143,7 @@ class MusicCoordinator:
         signature = deepcopy((context, {name: (a.role, dict(a.parameters), a.presence)
                                         for name, a in (assignments or {}).items()},
                               dict(sources or {}), dict(rhythm_parameters or {}), adaptive_context,
-                              dict(manual_parameters or {})))
+                              dict(manual_parameters or {}), external_sources))
         if interactive and self._accepted is not None and start <= self._accepted[0]:
             old_start, old_length, old_signature, result = self._accepted
             if (start, length_beats, signature) != (old_start, old_length, old_signature):
@@ -165,7 +172,8 @@ class MusicCoordinator:
         if adaptive_context is not None:
             if context is None or assignments is None:
                 raise ValueError('l’adattamento richiede contesto e assegnazioni esplicite')
-            roles = MappingProxyType({name: a.role for name, a in assignments.items()})
+            roles = MappingProxyType({**{name: source.role for name, source in external_sources.items()},
+                                      **{name: a.role for name, a in assignments.items()}})
             adapted = dict(assignments)
             if self.rhythm_source is not None and self.rhythm_source not in adapted:
                 voice = self._voices[self.rhythm_source]
@@ -174,7 +182,8 @@ class MusicCoordinator:
                 voice = self._voices[name]
                 request = AdaptationRequest(name, assignment.role, MappingProxyType(dict(assignment.parameters)),
                                             context, adaptive_context, observation, roles, length_beats,
-                                            MappingProxyType(dict((manual_parameters or {}).get(name, {}))))
+                                            MappingProxyType(dict((manual_parameters or {}).get(name, {}))),
+                                            MappingProxyType(external_sources))
                 targets = voice.adapt(request) if voice.adapt else {}
                 values, states, details = resolve_parameters(
                     assignment.parameters, targets, (manual_parameters or {}).get(name, {}),
@@ -221,7 +230,7 @@ class MusicCoordinator:
                 logical_start if interactive else None, self.epoch,
                 prepared.reference if prepared else None, tuple(resolved[name]),
                 prepared.material if prepared and name == self.rhythm_source else None,
-                participating and not relation_silence, observation, adaptive_context)
+                participating and not relation_silence, observation, adaptive_context, MappingProxyType(external_sources))
             if voice.stage:
                 result = voice.stage(request)
                 if not isinstance(result, VoicePlan):
@@ -267,7 +276,8 @@ class MusicCoordinator:
             self._voices[self.rhythm_source].accept_reference(prepared)
         self.last_plan = {'start': start, 'length_beats': length_beats,
                           'order': order, 'voices': decisions, 'observation': observation.to_dict(),
-                          'automation': automation_decisions}
+                          'automation': automation_decisions,
+                          'external_sources': {name: source.to_dict() for name, source in external_sources.items()}}
         self._observations = next_observations
         self._automation = next_automation
         self._parameter_frames = [f for f in self._parameter_frames if start-self.history_beats < f[1] <= start]

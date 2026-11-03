@@ -10,7 +10,7 @@ from uuid import uuid4
 
 from desnivel.adapters.voice_device import ADDRESS, CONTROL_ADDRESS, DeviceVoice, VoiceDeviceBridge
 from desnivel.music.phrases import Phrase
-from desnivel.sinks.voice_wire import voice_packets
+from desnivel.sinks.voice_wire import voice_packets, VoiceDecoder
 
 
 class VoiceDeviceServer:
@@ -25,6 +25,7 @@ class VoiceDeviceServer:
         self.on_error = on_error
         self._wire_stream = uuid4().int & 0x7fffffff
         self._wire_serial = 0
+        self._decoder = VoiceDecoder()
 
         def send(port, address, message):
             self._wire_serial = self._wire_serial % 0x7fffffff+1
@@ -42,9 +43,10 @@ class VoiceDeviceServer:
     def _receive(self, address, *args):
         message = None
         try:
-            if not args or any(type(value) is not int or not 0 <= value <= 255 for value in args):
-                raise ValueError('attesi byte UTF-8 come interi OSC')
-            message = json.loads(bytes(args).decode('utf-8'))
+            payload = self._decoder.feed(args)
+            if payload is None:
+                return
+            message = json.loads(payload.decode('utf-8'))
             if not isinstance(message, dict):
                 raise ValueError('atteso un oggetto JSON')
             self.bridge.handle(message)

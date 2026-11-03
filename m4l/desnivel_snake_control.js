@@ -3,6 +3,15 @@ var DesnivelSnakeControl = (function () {
     var parameters={}, target=0, applied=-1, error='', ready=false, hasInstrument=false;
     var selfApi=null, parentApi=null, deviceApi=null, instrumentApi=null, parameterApi=null;
     var nextCheck=0;
+    var telemetryPacket=null, appliedAt=0, targetPath='';
+    function telemetry(bytes){
+        try{
+            var packet=JSON.parse(utf8text(bytes));
+            if(packet.version!==1 || packet.device_path!==targetPath)return;
+            if(telemetryPacket && packet.source===telemetryPacket.source && packet.serial<=telemetryPacket.serial)return;
+            telemetryPacket=packet;
+        }catch(e){status('telemetria Snake non valida: '+String(e));}
+    }
     function point(api, id){if(Number(api.id)!==id)api.id=id;return api;}
     function scalar(api, key){var a=api.get(key);return Array.isArray(a)?a[0]:a;}
     function ids(api, key){var a=api.get(key), r=[];for(var i=0;i<a.length;i++)if(/^[1-9][0-9]*$/.test(String(a[i])))r.push(Number(a[i]));return r;}
@@ -38,13 +47,20 @@ var DesnivelSnakeControl = (function () {
                     throw new Error('Snake precedente senza banchi compatibili, compreso Length');
             }
             if(!map.Scales || !map.Length_Min_ms || !map.Length_Max_ms)throw new Error('mod Snake con Length richiesta');
+            if(!map.Export_State)throw new Error('mod Snake con telemetria richiesta');
             for(var lane=0;lane<3;lane++)for(var control=0;control<5;control++){
                 var required=['Notes','Gates','Velocities'][lane]+'_Sequencer_'+['Snake_Shape','Speed','Length','Direction','Steps_Shift'][control];
                 if(!map[required])throw new Error('controllo dei percorsi Snake assente: '+required);
             }
             for(var name in map)map[name]=new LiveAPI(null,'id '+map[name]);
-            parameters=map;target=id;applied=-1;error='';
+            parameters=map;target=id;applied=-1;error='';telemetryPacket=null;appliedAt=0;
         }
+        var currentPath=String(point(deviceApi,id).unquotedpath);
+        if(currentPath!==targetPath){
+            targetPath=currentPath;telemetryPacket=null;
+            patch.getnamed('snake_state_receive').message('set','desnivel.snake.'+targetPath.replace(/ /g,'_'));
+        }
+        messnamed('desnivel.snake.observe','subscribe',targetPath,1);
         hasInstrument=false;
         for(var d=index+1;d<devices.length;d++)if(Number(scalar(point(instrumentApi,devices[d]),'type'))===1){hasInstrument=true;break;}
         ready=true;
@@ -63,7 +79,9 @@ var DesnivelSnakeControl = (function () {
             nextCheck=now+1000;
             try{resolve();}catch(e){error=String(e);ready=false;}
         }
-        return {ready:ready,has_instrument:hasInstrument,error:error || null,applied:applied};
+        return {ready:ready,has_instrument:hasInstrument,error:error || null,applied:applied,
+            source_protocol:telemetryPacket && telemetryPacket.observation_version===1 ? 1 : 0,
+            telemetry:telemetryPacket && now-telemetryPacket.captured_ms<=750 && telemetryPacket.captured_ms>appliedAt ? telemetryPacket : null};
     }
     function receive(message){
         if(message.kind==='plan' && message.plan && message.plan.reset && message.plan.session===backendSession){mute();return true;}
@@ -84,9 +102,14 @@ var DesnivelSnakeControl = (function () {
                 if(Number(scalar(api,'value'))!==value)updates.push({api:api,value:value});
             }
             for(var i=0;i<updates.length;i++)updates[i].api.set('value',updates[i].value);
+            if(updates.length)appliedAt=Date.now();
             applied=message.serial;error='';
         }catch(e){error=String(e);mute();status('Snake: '+error);}
         return true;
     }
-    return {snapshot:snapshot,receive:receive,panic:mute,capabilities:['transport_control','bank_control']};
+    function dispose(){
+        if(targetPath)messnamed('desnivel.snake.observe','subscribe',targetPath,0);
+        telemetryPacket=null;outlet(1,'panic');
+    }
+    return {snapshot:snapshot,receive:receive,panic:mute,telemetry:telemetry,dispose:dispose,capabilities:['transport_control','bank_control']};
 })();

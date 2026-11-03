@@ -212,3 +212,26 @@ receiveBytes.apply(c,frames[0]);c.disconnect();
 assert.equal(Object.keys(c.wireParts).length,0);
 assert.throws(()=>c.wireBytes([-1,1,1,0,12001,1]));
 console.log('OK: frammenti UTF-8 fuori ordine, duplicati, isolamento, scadenza e limiti');
+
+// Large device state uses bounded numeric frames in the opposite direction too.
+c.connected=true;output=[];
+c.deviceAdapter={capabilities:['bank_control'],snapshot:()=>({telemetry:{text:'a'.repeat(7000)}})};
+c.request('transport',{});
+const requests=output.filter(e=>e[0]===0).map(e=>Array.from(e[1]).slice(1));
+assert(requests.length>1);
+assert(requests.every(p=>p[0]===-2&&p.length<=905));
+const restored=Buffer.from(requests.flatMap(p=>p.slice(5))).toString('utf8');
+assert.equal(JSON.parse(restored).device_state.telemetry.text.length,7000);
+
+// Even messages below the old 1500-byte JSON threshold exceed Max's 5096-byte UDP buffer.
+output=[];
+c.deviceAdapter.snapshot=()=>({telemetry:{text:'a'.repeat(950)}});
+c.request('transport',{});
+const boundary=output.filter(e=>e[0]===0).map(e=>Array.from(e[1]));
+const align=n=>Math.ceil(n/4)*4;
+const oscBytes=frame=>align(Buffer.byteLength(frame[0])+1)+align(frame.length+1)+(frame.length-1)*4;
+assert(boundary.length>1);
+assert(boundary.every(frame=>frame[1]===-2&&oscBytes(frame)<=5096));
+const boundaryBytes=boundary.flatMap(frame=>frame.slice(6));
+assert(boundaryBytes.length>1013&&boundaryBytes.length<1500);
+assert.equal(JSON.parse(Buffer.from(boundaryBytes).toString()).device_state.telemetry.text.length,950);

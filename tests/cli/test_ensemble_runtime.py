@@ -410,3 +410,27 @@ def test_restart_rewinds_and_stays_stopped_until_a_new_live_play(allocated):
     receive(beat=0, playing=1, epoch=2); runtime.tick()
     assert runtime.state == 'playing'
     assert runtime.last_decisions['section'] == 'opening'
+
+
+def test_external_voice_role_and_forecast_reach_planning_without_a_second_midi_destination():
+    from desnivel.music.sources import MusicalSource
+    from desnivel.music.phrases import Phrase, Note
+    runtime,bridge,now,sent,receive=setup()
+    calls=[]
+    def provider(start,length,**transport):
+        calls.append((start,length,transport))
+        return {'external_melody':MusicalSource('melody',Phrase(length,(Note(0,72,length,85),)))}
+    runtime.external_source_provider=provider
+    receive('voice_01',bpm=120);receive('voice_02',bpm=120)
+    runtime.elapsed=4.  # La seconda sezione include il basso.
+    runtime.adaptation_enabled=True
+    runtime.tick()
+    assert calls
+    sources=runtime.last_decisions['external_sources']
+    assert sources['external_melody']['role']=='melody'
+    assert sources['external_melody']['notes'][0]['pitch']==72
+    assert runtime.last_decisions['director']['external_sources']['external_melody']['available']
+    assert 'external_melody' not in runtime.sounding
+    assert set(runtime.last_decisions['voices']) <= set(runtime.registry)
+    # A fresh external melody changes the bass adaptation target before historical coverage exists.
+    assert runtime.last_decisions['automation']['voice_02']['density']['target'] != runtime.session.base_parameters_at('voice_02',0)['density']

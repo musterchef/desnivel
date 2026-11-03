@@ -47,6 +47,11 @@ class SnakeSetup:
         if self.waiting:
             self.check_requested = True
 
+    def forecasts(self, *args, **kwargs):
+        if self.session is None or self.status != 'ready':
+            return {}
+        return self.session.forecasts(*args, **kwargs)
+
     def cancel(self):
         if self.waiting:
             self.close()

@@ -113,10 +113,12 @@ def test_compact_terminal_keeps_errors_and_expands_again_when_resized():
 def test_device_errors_can_enter_the_panel_without_printing_over_it(capsys):
     from desnivel.cli.voice_device import VoiceDeviceServer
     server = VoiceDeviceServer.__new__(VoiceDeviceServer)
+    from desnivel.sinks.voice_wire import VoiceDecoder
+    server._decoder = VoiceDecoder()
     messages = []
     server.on_error = messages.append
     server._receive('/invalid', -1)
-    assert messages == ['attesi byte UTF-8 come interi OSC']
+    assert messages == ['frammento OSC non valido']
     assert capsys.readouterr().out == ''
     server.on_error = None
     server._receive('/invalid', -1)
@@ -162,3 +164,12 @@ def test_setup_instructions_and_immediate_check_stay_visible_in_compact_view():
     assert 'snake_01' in frame and '9201' in frame
     assert 'Invio verifica ora' in frame and 'Esc annulla' in frame
     assert 'N: prepara Snake' in frame
+
+
+def test_source_role_and_unavailability_remain_visible_in_a_compact_terminal():
+    from desnivel.cli.session_view import fit_terminal
+    state=snapshot()
+    state['components']={'snake_01':dict(role='melody',connected=True,status='melody · autonomous',
+        source_status='telemetria scaduta')}
+    frame=fit_terminal(render_session(state),80,24)
+    assert 'SORGENTE snake_01: melody' in frame and 'telemetria scaduta' in frame

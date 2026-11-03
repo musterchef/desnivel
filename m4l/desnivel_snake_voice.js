@@ -2,3 +2,4 @@
 include('desnivel_snake_control.js');
 include('desnivel_voice.js');
 deviceAdapter=DesnivelSnakeControl;
+function snake_state(){deviceAdapter.telemetry(arrayfromargs(arguments));}

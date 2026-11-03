@@ -1,6 +1,7 @@
 """Collega componenti Snake alla sessione esistente, senza un secondo replay."""
 import json
 import re
+import time
 from pathlib import Path
 
 from desnivel.adapters.snake_control import bank_parameters
@@ -11,12 +12,14 @@ from desnivel.music.phrases import Phrase
 from desnivel.music.sequence.material import DEFAULTS, ROLES, compose
 from desnivel.music.sequence.adaptation import PULSES, pulse, targets
 from desnivel.music.automation import AdaptiveContext, resolve_parameters
+from desnivel.adapters.snake_forecast import SnakeForecast
+from desnivel.music.sources import MusicalSource
 
 
 class SnakeControlSession:
     """Un server per più istanze; ogni componente ha ruolo, sorgente e override propri."""
 
-    def __init__(self, config, sources, *, server_factory=VoiceDeviceServer):
+    def __init__(self, config, sources, *, server_factory=VoiceDeviceServer, clock=time.monotonic):
         if not isinstance(config, dict) or set(config) != {'port', 'components'}:
             raise ValueError('configurazione Snake: port e components richiesti')
         if type(config['port']) is not int or not 1024 <= config['port'] <= 65535:
@@ -24,6 +27,7 @@ class SnakeControlSession:
         if not isinstance(config['components'], dict) or not config['components']:
             raise ValueError('almeno un componente Snake richiesto')
         self.port = config['port']
+        self.clock, self.transport_epoch = clock, None
         self.components = {}
         controls = {'octave': Control(-3, 3, True), 'activity': Control(0, 1),
                     'velocity': Control(1, 127, True), 'length_ms': Control(10, 10000),
@@ -33,12 +37,14 @@ class SnakeControlSession:
         devices = {}
         for name, spec in config['components'].items():
             if (not isinstance(name, str) or not re.fullmatch(r'[A-Za-z0-9_-]{1,100}', name) or not isinstance(spec, dict)
-                    or set(spec) != {'role', 'mode', 'source'} or spec['role'] not in ROLES
+                    or name in sources or set(spec) != {'role', 'mode', 'source'} or spec['role'] not in ROLES
                     or spec['mode'] not in ('autonomous', 'coordinated') or spec['source'] not in sources):
                 raise ValueError('componente Snake: identificativo, role, mode e source validi richiesti')
             component = dict(defaults=dict(spec), role=spec['role'], manual_role=None, overrides={},
                              sent=None, instance=None, notice='in attesa della sessione', error=None,
-                             automatic={}, automation={}, decisions={}, window=None)
+                             automatic={}, automation={}, decisions={}, window=None,
+                             forecast=SnakeForecast(clock=clock), hold_until=0., pending=False,
+                             source_status='telemetria non disponibile', received_serial=-1)
             self.components[name] = component
             def values(c=component):
                 return {**DEFAULTS[c['role']], **c['automatic'], 'mode': c['defaults']['mode'],
@@ -86,6 +92,9 @@ class SnakeControlSession:
 
     def on_message(self, bridge, message):
         component = self.components[message['voice']]
+        if component['instance'] == message['instance'] and message['serial'] <= component['received_serial']:
+            return
+        component['received_serial'] = message['serial']
         device = message.get('device_state', {})
         if not isinstance(device, dict):
             raise ValueError('stato del componente non valido')
@@ -94,11 +103,44 @@ class SnakeControlSession:
             component['notice'] = str(component['error'])
         if component['instance'] != message['instance']:
             component['instance'], component['sent'] = message['instance'], None
+            component['forecast'] = SnakeForecast(clock=self.clock)
+            component['hold_until'] = 0.
         component['ready'] = device.get('ready') is True and 'bank_control' in message.get('capabilities', [])
         if 'bank_control' not in message.get('capabilities', []):
             component['notice'] = 'caricare Desnivel_Snake_Control per controllare i banchi'
         component['applied'] = device.get('applied')
         component['has_instrument'] = device.get('has_instrument') is True if 'has_instrument' in device else None
+        component['source_protocol'] = device.get('source_protocol')
+        component['forecast'].update(device.get('telemetry'))
+
+    def forecasts(self, start, length_beats, *, beat, bpm, epoch):
+        """Sorgenti musicali neutre; una previsione accettata trattiene la revisione dei banchi."""
+        self.server.poll()
+        if self.transport_epoch != epoch:
+            for component in self.components.values():
+                component['hold_until'], component['pending'] = 0., False
+                if self.transport_epoch is not None:
+                    component['forecast'].invalidate('trasporto cambiato: attendo un nuovo stato Snake')
+            self.transport_epoch = epoch
+        result = {}
+        for name, component in self.components.items():
+            reason = None
+            if not self.server.bridge.connected(name) or not component.get('ready'):
+                reason = 'controllo non collegato o non pronto'
+            elif component.get('has_instrument') is not True:
+                reason = 'strumento non disponibile dopo il controllo'
+            elif component['pending']:
+                reason = 'aggiornamento dei banchi in attesa delle finestre accettate'
+            elif ('payload' not in component or 'Note_01' not in component['payload']['parameters']
+                  or component.get('applied') != component['payload']['serial']):
+                reason = 'revisione dei banchi non ancora confermata'
+            source = (MusicalSource(component['role'], None, unavailable_reason=reason) if reason else
+                      component['forecast'].project(component['role'], start, length_beats, beat=beat, bpm=bpm))
+            component['source_status'] = source.unavailable_reason or 'previsione disponibile'
+            if source.phrase is not None:
+                component['hold_until'] = max(component['hold_until'], start+length_beats)
+            result[name] = source
+        return result
 
     def setup_missing(self):
         """Distingue collegamento, compatibilità dei banchi e presenza dello strumento."""
@@ -114,6 +156,8 @@ class SnakeControlSession:
                 missing[name] = 'aggiorna e ricarica Desnivel_Snake_Control'
             elif not component['has_instrument']:
                 missing[name] = 'inserisci uno strumento dopo il controllo'
+            elif component.get('source_protocol') != 1:
+                missing[name] = 'aggiorna e ricarica Snake e Snake Control con telemetria per istanza'
         return missing
 
     def _send(self, name, parameters, key):
@@ -138,6 +182,8 @@ class SnakeControlSession:
                 continue
             try:
                 if state['state'] != 'playing':
+                    component['hold_until'], component['pending'] = 0., False
+                    component['source_status'] = 'trasporto fermo · nessuna previsione attiva'
                     self._send(name, {f'Gate_{i:02d}': 0 for i in range(1, 17)}, ('silent',))
                     component['notice'] = 'in attesa di Play · gate silenziati'
                     continue
@@ -159,6 +205,11 @@ class SnakeControlSession:
                     source=source, coordinated=values['mode'] == 'coordinated')
                 parameters = bank_parameters(material)
                 key = json.dumps(parameters, sort_keys=True)
+                if component['sent'] != key and state.get('transport', {}).get('beat', float('inf')) < component['hold_until']:
+                    component['pending'] = True
+                    component['notice'] = f"banchi invariati fino al beat {component['hold_until']:g} · nuova interpretazione in attesa"
+                    continue
+                component['pending'] = False
                 self._send(name, parameters, key)
                 component['notice'] = f"{component['role']} · {values['mode']}" + (
                     f" · sorgente {values['source']}" if values['mode'] == 'coordinated' else '')
@@ -168,7 +219,7 @@ class SnakeControlSession:
                 component['notice'] = f'errore: {error}'
                 self._send(name, {f'Gate_{i:02d}': 0 for i in range(1, 17)}, ('error', str(error)))
         return {name: dict(role=c['role'], status=c['notice'], connected=bridge.connected(name),
-                          automation=c['decisions'])
+                          automation=c['decisions'], source_status=c['source_status'], hold_until=c['hold_until'])
                 for name, c in self.components.items()}
 
     def _adapt(self, component, current, enabled):

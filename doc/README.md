@@ -55,7 +55,7 @@ Materiale di progettazione separato dalla documentazione del sistema attuale.
 - [Coordinamento ritmico](proposte/COORDINAMENTO-RITMICO.md): direzione architetturale e confini del primo blocco implementato.
 - [Contratti per le relazioni musicali](proposte/RELAZIONI-MUSICALI.md): specifica generale, stato dell'implementazione e relazioni ancora da realizzare.
 - [Evoluzione melodica](proposte/EVOLUZIONE-MELODICA.md): fraseggio e collegamento al percorso implementati; ulteriori sviluppi armonici aperti.
-- [Voce Snake](proposte/VOCE-SNAKE.md): controllo multiruolo disponibile; previsione come sorgente del Coordinator e aggiornamenti quantizzati ancora proposti.
+- [Voce Snake](proposte/VOCE-SNAKE.md): controllo multiruolo e lettura come sorgente disponibili; accompagnamento nelle pause e aggiornamenti legati alla fase ancora proposti.
 
 ---
 

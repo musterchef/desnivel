@@ -279,3 +279,19 @@ Con la configurazione corrente e senza override:
 I test verificano riproducibilità, indipendenza dal nome della tappa,
 collegamento effettivo del materiale al generatore, contesti condivisi,
 precedenze degli override, isteresi, validazione e modalità manuale.
+
+## Sorgenti musicali esterne
+
+`music/sources.py` definisce `MusicalSource`: ruolo, frase prevista, numero
+di note già sostenute al confine (`carry_in`) e motivo di indisponibilità.
+Una frase vuota è silenzio previsto; `phrase=None` indica dati indisponibili.
+
+`MusicCoordinator.plan(external_sources=...)` espone queste sorgenti in
+`PlanningRequest.external_sources` e nell'adattamento per ruolo. Densità,
+registro e occupazione delle previsioni sono distinti dalle osservazioni
+della storia accettata. Le sorgenti esterne non vengono inviate al player
+delle voci Python. `MusicDirector.decision_at(external_sources=...)`
+riporta ruolo e disponibilità, mantenendo la scelta armonica dal GPX.
+
+Snake è collegato attraverso il proprio adattatore: [lettura e validità
+delle previsioni](SNAKE.md#snake-come-sorgente-musicale).

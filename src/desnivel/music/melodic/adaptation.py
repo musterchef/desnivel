@@ -14,6 +14,8 @@ def targets(request):
     bass = attack_rate(request.peers('bass_line'))
     percussion = attack_rate(request.peers('percussion'))
     pressure = bounded(.65*(bass or 0.)+.35*(percussion or 0.)/4, 0., 1.)
+    other_melodies = sum(p.occupied_ratio or 0. for p in request.peers('melody'))
+    pressure = bounded(pressure+.5*other_melodies, 0., 1.)
     result = {'velocity': ParameterTarget(bounded(base['velocity']+16*terrain+12*dynamic, 1, 127),
               'dinamica dal contesto e dalla pressione ambientale' if intent.dynamic_pressure is not None else
               'dinamica dal contesto locale' if intent.intensity is not None else 'dinamica di sezione: contesto locale indisponibile',
@@ -22,7 +24,7 @@ def targets(request):
         result['velocity'] = result['velocity'].with_contribution('dynamic_pressure', bounded(base['velocity']+16*terrain, 1, 127))
     if request.setting('development') > 0:
         result['activity'] = ParameterTarget(bounded(base['activity']+.18*terrain-.16*pressure, 0, 1),
-            'attività dal terreno e dallo spazio lasciato dall’accompagnamento',
+            'attività dal terreno e dallo spazio lasciato dalle altre voci',
             16., request.length_beats*request.setting('phrase_windows'))
     if intent.material_change is not None:
         result['development'] = ParameterTarget(bounded(base['development']+.25*intent.material_change, 0, 1),

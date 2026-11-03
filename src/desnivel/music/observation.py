@@ -26,6 +26,15 @@ class VoiceObservation:
     assigned_beats: float
 
 
+def observe_phrase(phrase, *, carry_in=0):
+    """Occupazione di una frase prevista; le code iniziali non sono nuovi attacchi."""
+    attacks = len(phrase.notes)-carry_in
+    pitches = [n.pitch for n in phrase.notes]
+    return VoiceObservation(attacks, attacks/phrase.length_beats,
+        _union_length((n.beat, n.beat+n.duration) for n in phrase.notes)/phrase.length_beats,
+        (min(pitches), max(pitches)) if pitches else None, phrase.length_beats)
+
+
 @dataclass(frozen=True)
 class EnsembleObservation:
     start_beat: float

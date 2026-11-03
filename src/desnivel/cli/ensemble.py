@@ -96,7 +96,7 @@ class EnsembleSession:
         """Legge una configurazione JSON e collega i componenti registrati."""
         return cls(json.loads(Path(path).read_text()), generators, destinations)
 
-    def plan(self, progress: float, start: float, length_beats: float, *, adaptive_context=None):
+    def plan(self, progress: float, start: float, length_beats: float, *, adaptive_context=None, external_sources=None):
         """Produce le frasi della sezione senza inviarle alle destinazioni."""
         assignments = {
             name: Assignment(spec.role, self.base_parameters_at(name, progress) if adaptive_context is not None
@@ -111,9 +111,9 @@ class EnsembleSession:
                                {**self.base_parameters_at(self.coordinator.rhythm_source, progress),
                                 **self._manual_parameters.get(self.coordinator.rhythm_source, {})})
             if self.coordinator.rhythm_source is not None else None,
-            adaptive_context=adaptive_context, manual_parameters=self._manual_parameters)
+            adaptive_context=adaptive_context, manual_parameters=self._manual_parameters, external_sources=external_sources)
         self._parameter_progress = progress
-        return phrases
+        return {name: phrase for name, phrase in phrases.items() if name in self._destinations}
 
     def set_role(self, voice: str, role: str | None):
         """Valida la scelta manuale prima di comunicarla al Director."""
@@ -358,6 +358,7 @@ def main(argv=None):
         return 0
     from desnivel.cli.snake_setup import SnakeSetup
     snake = SnakeSetup(args.config.parent/'snake.json', runtime.voice_descriptions, args.port)
+    runtime.external_source_provider = snake.forecasts
     from desnivel.adapters.live_recording import LiveRecording, RECORDING_ACTIONS
     recording = LiveRecording(server.bridge, runtime.transport_voice,
                               lambda: apply_control(runtime, 'restart'), lambda: runtime.epoch)

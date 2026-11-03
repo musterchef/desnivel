@@ -1,6 +1,8 @@
 import json
 import socket
 
+import pytest
+
 from pythonosc.osc_packet import OscPacket
 from pythonosc.udp_client import SimpleUDPClient
 
@@ -74,3 +76,26 @@ def test_large_adaptive_state_over_real_udp():
             assert {name: control['automation'] for name, control in state['controls'].items()} == automation
         finally:
             server.close()
+
+
+@pytest.mark.parametrize('chunk_bytes', [900,1500])
+def test_large_device_telemetry_is_reassembled_over_local_udp_before_dispatch(chunk_bytes):
+    from desnivel.sinks.voice_wire import voice_packets
+    import select
+    reports=[];errors=[]
+    with socket.socket(socket.AF_INET,socket.SOCK_DGRAM) as receiver:
+        receiver.bind(('127.0.0.1',0));receiver.settimeout(1)
+        server=VoiceDeviceServer({'part':DeviceVoice()},port=0,on_message=lambda bridge,m:reports.append(m),on_error=errors.append)
+        client=SimpleUDPClient('127.0.0.1',server.server.server_address[1])
+        message=dict(version=1,voice='part',instance='device',serial=1,reply_port=receiver.getsockname()[1],action='hello',
+            device_state={'telemetry':{'active_notes':[dict(pitch=i,velocity=90,remaining_ms=9999.125) for i in range(128)]}})
+        frames=tuple(voice_packets(CONTROL_ADDRESS,message,123,1,chunk_bytes=chunk_bytes))
+        assert len(frames)>1 and all(len(p.dgram)<=(5096 if chunk_bytes==900 else 8192) for p in frames)
+        try:
+            for frame in reversed(frames):client.send(frame)
+            assert select.select([server.server],[],[],1)[0]
+            server.poll()
+            assert reports==[message] and not errors
+            assert OscPacket(receiver.recv(65535)).messages
+        finally:
+            server.close();client._sock.close()

@@ -11,6 +11,7 @@ var lastRecordingSerial=-1;
 var deviceAdapter=null;
 var presetDraft='';
 var wireParts={}, wireOrder=[];
+var wireStream=Math.floor(Math.random()*0x7fffffff), wireSerial=0;
 // I payload variabili restano byte numerici, senza simboli Max per ogni JSON.
 function utf8bytes(text){var binary=unescape(encodeURIComponent(text)), out=[];for(var i=0;i<binary.length;i++)out.push(binary.charCodeAt(i));return out;}
 function utf8text(bytes){var binary='';for(var i=0;i<bytes.length;i++){if(bytes[i]<0||bytes[i]>255||Math.floor(bytes[i])!==bytes[i])throw new Error('byte non valido');binary+=String.fromCharCode(bytes[i]);}return decodeURIComponent(escape(binary));}
@@ -34,7 +35,15 @@ function request(action, extra){
     var m={version:1,voice:voiceId,instance:instance,reply_port:replyPort,serial:++serial,action:action,capabilities:['transport_control','recording_control'],transport:{beat:beat,playing:playing,epoch:epoch,bpm:bpm}};
     if(deviceAdapter){m.capabilities=deviceAdapter.capabilities;m.device_state=deviceAdapter.snapshot();}
     for(var key in extra)m[key]=extra[key];
-    outlet(0,['/desnivel/v1/voice/control'].concat(utf8bytes(JSON.stringify(m))));
+    var bytes=utf8bytes(JSON.stringify(m));
+    if(bytes.length>12000){status('messaggio di controllo oltre il limite JSON');return;}
+    wireSerial=wireSerial%0x7fffffff+1;
+    // udpsend usa per default 5096 byte: 900 interi OSC lasciano spazio all'intestazione.
+    for(var offset=0;offset<bytes.length;offset+=900){
+        var part=bytes.slice(offset,offset+900);
+        if(bytes.length>900)part=[-2,wireStream,wireSerial,offset,bytes.length].concat(part);
+        outlet(0,['/desnivel/v1/voice/control'].concat(part));
+    }
 }
 function tempo(value){
     value=Number(value);
@@ -275,4 +284,4 @@ function choice(index){
     request('parameter',{parameter:name,value:choices[index][0]});
 }
 function panic(){playerReset();request('panic',{});}
-function notifydeleted(){playerReset();}
+function notifydeleted(){if(deviceAdapter && deviceAdapter.dispose)deviceAdapter.dispose();else playerReset();}
