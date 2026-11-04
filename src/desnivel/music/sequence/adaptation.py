@@ -43,3 +43,37 @@ def pulse(intent, settings):
     intensity = 0. if intent.intensity is None else intent.intensity
     step = int(intensity*(slowest-fastest)+.5)
     return PULSES[slowest-step]
+
+
+def _activity_limits(recipe):
+    base = recipe['parameters']['activity']
+    response = recipe['response']['activity']
+    return bounded(base-response/2, 0, 1), bounded(base+response/2, 0, 1)
+
+
+def rhythm_target(role, intent, length_beats, settings):
+    """Densità di attacchi per beat, interpolata fra gli estremi del ruolo."""
+    recipe = settings['roles'][role]
+    calm, intense = _activity_limits(recipe)
+    low = calm/SUBDIVISIONS[recipe['pulse']['slowest']]
+    high = intense/SUBDIVISIONS[recipe['pulse']['fastest']]
+    intensity = 0. if intent.intensity is None else intent.intensity
+    return ParameterTarget(low+(high-low)*intensity,
+        'densità di attacchi dal viaggio, condivisa da gate e suddivisione',
+        settings['adaptation']['transition_beats'], length_beats, deadband=0.)
+
+
+def rhythm(attack_rate, recipe):
+    """Riempie la griglia lenta prima di passare a quella più rapida.
+
+    Al cambio di griglia l'attività compensa la nuova distanza fra passi:
+    activity / step_beats resta uguale, prima dell'arrotondamento dei gate.
+    """
+    fastest, slowest = (PULSES.index(recipe['pulse'][name]) for name in ('fastest', 'slowest'))
+    ceiling = max(_activity_limits(recipe))
+    selected = recipe['pulse']['fastest']
+    for name in reversed(PULSES[fastest:slowest+1]):
+        if attack_rate*SUBDIVISIONS[name] <= ceiling+1e-9:
+            selected = name
+            break
+    return bounded(attack_rate*SUBDIVISIONS[selected], 0, 1), selected

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from desnivel.music.sequence.adaptation import pulse, targets
+from desnivel.music.sequence.adaptation import pulse, rhythm, rhythm_target, targets
 from desnivel.music.sequence.settings import validate_music
 from desnivel.music.automation import AdaptiveContext
 from desnivel.adapters.snake_control import validate_paths
@@ -78,7 +78,7 @@ def test_role_pulse_ranges_can_be_changed_without_affecting_other_roles(music):
 
 
 @pytest.mark.parametrize('intensity,expected', [(0.,'2n'), (.24,'4n'), (.5,'8n'), (.76,'16n'), (1.,'32n')])
-def test_pulse_is_selected_directly_from_intensity_across_the_allowed_subdivisions(intensity, expected):
+def test_independent_pulse_follows_intensity_when_activity_is_manual(intensity, expected):
     assert pulse(AdaptiveContext(intensity=intensity), dict(slowest='2n',fastest='32n')) == expected
 
 
@@ -88,3 +88,28 @@ def test_equal_pulse_limits_keep_a_fixed_subdivision(music):
     validate_music(music)
     for intensity in (0.,.5,1.):
         assert pulse(AdaptiveContext(intensity=intensity), settings) == '8n'
+
+
+@pytest.mark.parametrize('role', ['melody','bass_line','sustained_texture'])
+def test_coupled_rhythm_preserves_density_across_grids_with_only_gate_rounding_error(music, role):
+    from desnivel.music.rhythm import SUBDIVISIONS
+    recipe = music['roles'][role]
+    previous = 0.
+    for i in range(1001):
+        target = rhythm_target(role, AdaptiveContext(intensity=i/1000), 4, music)
+        activity, selected = rhythm(target.value, recipe)
+        step = SUBDIVISIONS[selected]
+        assert activity/step == pytest.approx(target.value)
+        actual = round(activity*16)/(16*step)
+        assert abs(actual-target.value) <= .5/(16*step)+1e-9
+        assert actual >= previous
+        assert round(activity*16) <= {'melody':8,'bass_line':6,'sustained_texture':3}[role]
+        previous = actual
+
+
+def test_zero_activity_remains_silent_without_forcing_a_faster_grid(music):
+    recipe = music['roles']['melody']
+    recipe['parameters']['activity'] = recipe['response']['activity'] = 0.
+    for intensity in (0.,.5,1.):
+        target = rhythm_target('melody', AdaptiveContext(intensity=intensity), 4, music)
+        assert rhythm(target.value, recipe) == (0.,recipe['pulse']['slowest'])

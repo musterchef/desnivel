@@ -11,6 +11,27 @@ from desnivel.music.rhythm import SUBDIVISIONS
 from desnivel.music.sequence.settings import ROLES, validate_parameters
 
 
+def _gate_order(steps):
+    """Priorità annidate: pulsazione, divisioni successive, riempimenti."""
+    if steps <= 1:
+        return tuple(range(steps))
+    return (tuple(2*i for i in _gate_order((steps+1)//2))
+            +tuple(2*i+1 for i in _gate_order(steps//2)))
+
+
+def _move_gate(index, steps, step_beats):
+    """Sposta soltanto suddivisioni deboli rappresentabili dalla griglia."""
+    if step_beats > .25:
+        return index
+    offset = round(.25/step_beats)
+    position = (index*step_beats) % 1
+    if position == .25 and index+offset < steps:
+        return index+offset
+    if position == .5:
+        return index-offset
+    return index
+
+
 @dataclass(frozen=True)
 class SequenceMaterial:
     notes: tuple[int, ...]
@@ -56,13 +77,13 @@ def compose(context, role, values, *, phrasing, motif=(0, 2, 4, 1), source: Phra
         degrees = tuple(round(d*(.6+.8*movement)) for d in degrees)
     notes = [base+intervals[d % len(intervals)]+12*(d//len(intervals))
              for d in (degrees[i % len(degrees)] for i in range(steps))]
-    candidates = list(range(steps))
+    available = steps
     ordered = []
     if coordinated:
         if source is None:
             raise ValueError('la modalità coordinata richiede una frase sorgente')
         if not source.notes:
-            candidates = []
+            available = 0
         else:
             attacks = {min(steps-1, int(n.beat/source.length_beats*steps)) for n in source.notes}
             if role == 'sustained_texture':
@@ -76,12 +97,13 @@ def compose(context, role, values, *, phrasing, motif=(0, 2, 4, 1), source: Phra
                 notes = [base+(ordered[i % len(ordered)].pitch-base) % 12 for i in range(steps)]
                 if role == 'bass_line':
                     activity *= 1-.5*len(attacks)/steps
-    count = min(len(candidates), round(steps*activity))
-    # Distribuzione stabile: gli accenti forti restano leggibili; il movimento
-    # sposta gli attacchi deboli, senza cambiare casualmente a ogni polling.
-    chosen = {candidates[int(i*len(candidates)/count)] for i in range(count)} if count else set()
+    count = min(available, round(steps*activity))
+    # Aggiungere un gate conserva quelli presenti. Il movimento è espresso
+    # in beat, così un cambio di griglia non sposta gli appoggi interi.
+    chosen = set(_gate_order(steps)[:count])
+    step_beats = SUBDIVISIONS[values['pulse']]
     if movement >= .5:
-        chosen = {i+1 if i % 4 == 1 and i+1 < steps else i-1 if i % 4 == 2 else i for i in chosen}
+        chosen = {_move_gate(i, steps, step_beats) for i in chosen}
     accents = [phrasing['accents'][i % len(phrasing['accents'])] for i in range(steps)]
     velocities = [round(bounded(velocity+(phrasing['velocity_accent']+phrasing['velocity_movement']*movement)*a, 1, 127))
                   for a in accents]
@@ -96,5 +118,11 @@ def compose(context, role, values, *, phrasing, motif=(0, 2, 4, 1), source: Phra
             lengths[i] = bounded(lengths[i]*bounded(note.duration/average_duration, .5, 2.), 10, 10000)
     if any(not 0 <= n <= 127 for n in notes):
         raise ValueError('materiale della voce ciclica fuori dal registro MIDI')
-    return SequenceMaterial(tuple(notes), tuple(int(i in chosen) for i in range(steps)),
-                            tuple(velocities), tuple(float(n) for n in lengths), movement, SUBDIVISIONS[values['pulse']])
+    # Le sequenze descrivono gli attacchi udibili, non le celle silenziose.
+    # Le celle chiuse mantengono valori validi, senza consumare il motivo.
+    placement = list(range(steps))
+    for attack, cell in enumerate(sorted(chosen)):
+        placement[cell] = attack
+    return SequenceMaterial(tuple(notes[i] for i in placement), tuple(int(i in chosen) for i in range(steps)),
+                            tuple(velocities[i] for i in placement), tuple(float(lengths[i]) for i in placement),
+                            movement, step_beats)

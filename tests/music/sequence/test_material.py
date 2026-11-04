@@ -87,3 +87,67 @@ def test_coordinated_articulation_uses_source_dynamics_and_lengths(role):
     b=compose(CONTEXT,role,DEFAULTS[role],source=uniform,coordinated=True)
     assert a.notes==b.notes and a.gates==b.gates
     assert a.velocities!=b.velocities and a.lengths_ms!=b.lengths_ms
+
+
+@pytest.mark.parametrize('steps', [3,10,16,31])
+@pytest.mark.parametrize('movement', [0.,.5,1.])
+def test_opening_gates_preserves_existing_attack_positions_and_closing_reverses_it(steps, movement):
+    positions = []
+    for count in range(steps+1):
+        material = compose(CONTEXT,'melody',{**DEFAULTS['melody'],'activity':count/steps,'movement':movement},steps=steps)
+        active = {i for i,gate in enumerate(material.gates) if gate}
+        assert len(active) == count
+        if positions:
+            assert positions[-1] < active
+        positions.append(active)
+    for before, after in zip(reversed(positions), reversed(positions[:-1])):
+        assert after < before
+
+
+@pytest.mark.parametrize('role', ROLES)
+@pytest.mark.parametrize('coordinated', [False,True])
+def test_silent_cells_do_not_skip_notes_dynamics_or_articulation(role, coordinated):
+    # Un banco interamente aperto rende udibile l'ordine musicale completo.
+    # Diradandolo, gli attacchi devono conservarne la progressione iniziale.
+    reference = compose(CONTEXT,role,{**DEFAULTS[role],'activity':1.},source=SOURCE,coordinated=coordinated)
+    expected = [(n,v,d) for n,g,v,d in zip(reference.notes,reference.gates,reference.velocities,reference.lengths_ms) if g]
+    for activity in (.125,.25,.5,.75):
+        material = compose(CONTEXT,role,{**DEFAULTS[role],'activity':activity},source=SOURCE,coordinated=coordinated)
+        actual = [(n,v,d) for n,g,v,d in zip(material.notes,material.gates,material.velocities,material.lengths_ms) if g]
+        assert actual == expected[:len(actual)]
+
+
+def _render_snake(material, phase):
+    from desnivel.adapters.snake_sequence import SPEEDS, Lane, SnakeState, predict
+    params = bank_parameters(material)
+    lane = Lane(params['Notes_Sequencer_Snake_Shape']+1,
+                tuple(SPEEDS)[params['Notes_Sequencer_Speed']],16,'forwards',phase)
+    low,high = params['Length_Min_ms'],params['Length_Max_ms']
+    state = SnakeState(tuple(params[f'Note_{i:02}']+24 for i in range(1,17)),
+        tuple(params[f'Gate_{i:02}'] for i in range(1,17)),
+        tuple(params[f'Velocity_{i:02}'] for i in range(1,17)),
+        tuple(low+params[f'Length_{i:02}']/127*(high-low) for i in range(1,17)),
+        lane,lane,lane,120.,0)
+    return predict(state,8.)
+
+
+@pytest.mark.parametrize('role', ROLES)
+@pytest.mark.parametrize('movement', [0.,.5,1.])
+@pytest.mark.parametrize('phase', [0.,.5,2.25])
+@pytest.mark.parametrize('coordinated', [False,True])
+def test_equivalent_grids_preserve_audible_motif_accents_and_attack_times_after_snake_translation(role, movement, phase, coordinated):
+    # Con il motivo di quattro note e la sorgente di due, il ciclo più corto
+    # può ancora rappresentare tutto il materiale: 8 gate/8n e 4 gate/16n.
+    # Il basso coordinato dirada ulteriormente: qui si confronta il materiale
+    # risultante dalla composizione, compensando la riduzione comune.
+    source = SOURCE if coordinated else None
+    activity = (.5,.25)
+    if coordinated and role == 'bass_line':
+        reduction = 1-.5*2/16
+        activity = tuple(value/reduction for value in activity)
+    slow,fast = (compose(CONTEXT,role,{**DEFAULTS[role],'pulse':pulse,'activity':amount,'movement':movement},
+                         source=source,coordinated=coordinated)
+                 for pulse,amount in zip(('8n','16n'),activity))
+    a,b = _render_snake(slow,phase),_render_snake(fast,phase)
+    assert [(n.beat,n.pitch,n.velocity) for n in a.notes] == [(n.beat,n.pitch,n.velocity) for n in b.notes]
+    assert [n.duration for n in a.notes] == pytest.approx([n.duration for n in b.notes],abs=.003)

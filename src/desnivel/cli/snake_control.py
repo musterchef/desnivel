@@ -12,7 +12,7 @@ from desnivel.music.director import MusicalContext
 from desnivel.music.phrases import Phrase
 from desnivel.music.sequence.material import compose
 from desnivel.music.sequence.settings import CONTROLS, CONTROL_LIMITS, ROLES, validate_music
-from desnivel.music.sequence.adaptation import PULSES, pulse, targets
+from desnivel.music.sequence.adaptation import PULSES, pulse, rhythm, rhythm_target, targets
 from desnivel.music.automation import AdaptiveContext, resolve_parameters
 from desnivel.adapters.snake_forecast import SnakeForecast
 from desnivel.music.sources import MusicalSource
@@ -244,11 +244,25 @@ class SnakeControlSession:
         base = recipe['parameters']
         intent = AdaptiveContext(**(current.get('adaptive_context') or {}))
         wanted = targets(component['role'], intent, current['length_beats'], self.music) if enabled else {}
+        coupled = enabled and not {'activity', 'pulse'}.intersection(component['overrides'])
+        if coupled:
+            density = rhythm_target(component['role'], intent, current['length_beats'], self.music)
+            # La prima finestra parte dal viaggio; le successive dal valore in corso.
+            base = {**base, 'attack_rate': density.value}
+            wanted.pop('activity')
+            wanted['attack_rate'] = density
         values, states, decisions = resolve_parameters(base, wanted, component['overrides'], component['automation'],
             start=current['start'], logical_start=current.get('logical_start', current['start']),
             scope=(component['role'], current['section_index']))
-        automatic_pulse = pulse(intent, recipe['pulse']) if enabled else recipe['pulse']['slowest']
-        values['pulse'] = component['overrides'].get('pulse', automatic_pulse)
+        if coupled:
+            values['activity'], values['pulse'] = rhythm(values['attack_rate'], recipe)
+            target_activity, _ = rhythm(density.value, recipe)
+            decisions['activity'] = dict(base=recipe['parameters']['activity'], target=target_activity,
+                effective=values['activity'], source='adaptive', reason=density.reason,
+                transition_beats=density.transition_beats)
+        else:
+            automatic_pulse = pulse(intent, recipe['pulse']) if enabled else recipe['pulse']['slowest']
+            values['pulse'] = component['overrides'].get('pulse', automatic_pulse)
         if not enabled:
             component['pulse_notice'] = 'adattamento disattivato: pulse al limite lento del ruolo'
         elif intent.intensity is None:

@@ -118,7 +118,7 @@ def test_configured_recipe_reaches_device_banks_without_changing_other_sessions(
                                  length_accent=0., length_movement=0.)
     session,sent,receive,state = setup(configure=configure)
     receive()
-    for start, gates in ((0, 4), (4, 5), (8, 5)):
+    for start, gates in ((0, 5), (4, 5), (8, 5)):
         state['planning']['current'] = plan(start,1.,1.,0.)
         session.tick(state)
         packet = sent[-1][2]['parameters']
@@ -133,15 +133,58 @@ def test_configured_recipe_reaches_device_banks_without_changing_other_sessions(
 
 
 @pytest.mark.parametrize('role,slow,fast', [('melody',2,1), ('bass_line',3,1), ('sustained_texture',4,2)])
-def test_first_window_already_selects_pulse_from_journey_and_role(role, slow, fast):
+@pytest.mark.parametrize('intensity', [0., 1.])
+def test_first_window_already_selects_pulse_from_journey_and_role(role, slow, fast, intensity):
     session,sent,receive,state = setup({'snake_a':{'role':role,'mode':'autonomous','source':'a'}})
     receive()
-    for start, intensity, expected in ((0,1.,fast), (4,0.,slow), (8,1.,fast)):
+    state['planning']['current'] = plan(0,intensity)
+    session.tick(state)
+    parameters = sent[-1][2]['parameters']
+    for lane in ('Notes','Gates','Velocities'):
+        assert parameters[f'{lane}_Sequencer_Speed'] == (fast if intensity else slow)
+
+
+def test_gates_fill_before_the_faster_grid_and_compensate_its_double_speed():
+    session,sent,receive,state = setup()
+    receive()
+    for index, (intensity, speed, count) in enumerate(((0.,2,4), (.15,2,6), (.3,2,8), (.32,1,4), (1.,1,8))):
+        for offset in (0,4,8,12):
+            state['planning']['current'] = plan(index*16+offset,intensity)
+            session.tick(state)
+        parameters = sent[-1][2]['parameters']
+        assert parameters['Notes_Sequencer_Speed'] == speed
+        assert sum(parameters[f'Gate_{i:02}'] for i in range(1,17)) == count
+
+
+def test_density_transition_precedes_a_change_of_grid_after_an_intense_window():
+    session,_,receive,state = setup()
+    receive()
+    rates = []
+    for start, intensity in ((0,0.), (4,1.), (8,1.), (12,1.)):
         state['planning']['current'] = plan(start,intensity)
         session.tick(state)
-        parameters = sent[-1][2]['parameters']
-        for lane in ('Notes','Gates','Velocities'):
-            assert parameters[f'{lane}_Sequencer_Speed'] == expected
+        rates.append(session.components['snake_a']['decisions']['attack_rate']['effective'])
+    assert rates == pytest.approx([.56,.56,1.32,2.08])
+
+
+@pytest.mark.parametrize('control,value', [('activity',.25), ('pulse','2n')])
+def test_one_manual_rhythm_control_disables_compensation_and_remains_fixed(control, value):
+    session,sent,receive,state = setup()
+    receive()
+    voice = session.server.bridge.voices['snake_a']
+    voice.apply_parameter(control,value)
+    for start, intensity in ((0,0.), (4,1.), (8,1.), (12,1.)):
+        state['planning']['current'] = plan(start,intensity)
+        session.tick(state)
+        assert voice.read_values()[control] == value
+        assert 'attack_rate' not in session.components['snake_a']['decisions']
+        if control == 'activity':
+            packet = sent[-1][2]['parameters']
+            assert sum(packet[f'Gate_{i:02}'] for i in range(1,17)) == 4
+    voice.apply_manual(control,False)
+    state['planning']['current'] = plan(16,1.)
+    session.tick(state)
+    assert 'attack_rate' in session.components['snake_a']['decisions']
 
 
 def test_missing_intensity_and_disabled_adaptation_report_the_slow_limit():

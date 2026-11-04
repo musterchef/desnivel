@@ -59,10 +59,10 @@ Il viaggio modifica il comportamento di base di ciascun ruolo:
 
 Gli obiettivi numerici evolvono con le transizioni comuni
 alle altre voci. Se un'indicazione manca, il relativo contributo resta neutro.
-Accenti forti e deboli producono velocity e durate diverse fra le celle.
-Nel preset fornito le transizioni numeriche durano otto beat. La suddivisione
-`pulse` è scelta direttamente dall'intensità della finestra corrente, fin dalla
-prima finestra, entro l'intervallo del ruolo:
+Accenti forti e deboli producono velocity e durate diverse fra gli attacchi.
+Nel preset fornito le transizioni numeriche durano otto beat. Con gate e `pulse`
+automatici, il viaggio determina una densità di attacchi per beat, condivisa
+fra attività dei gate e suddivisione, entro l'intervallo del ruolo:
 
 | Ruolo | Limite lento | Limite rapido |
 |---|---|---|
@@ -70,10 +70,33 @@ prima finestra, entro l'intervallo del ruolo:
 | `bass_line` | `4n` | `16n` |
 | `sustained_texture` | `2n` | `8n` |
 
-Intensità 0 sceglie il limite lento, intensità 1 quello rapido; fra i due
-si sceglie la suddivisione più vicina interpolando gli indici delle suddivisioni
-disponibili, con parità verso quella più rapida. Senza intensità disponibile,
-o con adattamento disattivato, si usa il limite lento e il componente lo segnala.
+La densità cresce fra l'attività calma sulla griglia lenta e quella intensa
+sulla griglia rapida. Si usa la griglia più lenta che la rappresenta senza
+superare l'attività massima del ruolo: prima aumentano i gate, poi cambia
+la suddivisione. Al cambio l'attività compensa la nuova velocità; per esempio,
+8 gate a `8n` e 4 gate a `16n` hanno la stessa densità media. Il numero intero
+di gate introduce una quantizzazione, soprattutto nelle tessiture rade.
+
+A contesto, percorso e suddivisione invariati, aumentare i gate conserva
+le posizioni già attive e aggiunge riempimenti; diminuirli ripercorre le
+stesse priorità. Il movimento sposta soltanto suddivisioni deboli esprimibili
+dalla griglia, lasciando fermi gli appoggi sui beat interi.
+Note, accenti e articolazioni avanzano sugli attacchi udibili: i gate chiusi
+non consumano il motivo. Il ciclo contiene tante note quanti sono i gate
+attivi; un motivo più lungo viene rappresentato soltanto in parte.
+Il cambio di griglia conserva la progressione quando il ciclo più corto
+contiene il motivo e i cicli sono allineati; non garantisce da solo
+la continuità della fase durante l'aggiornamento del device.
+
+La prima finestra usa subito la densità del viaggio; le successive interpolano
+la densità con `transition_beats`. La scelta della griglia segue il valore
+interpolato. Senza intensità disponibile si usa l'estremo calmo; con adattamento
+disattivato si usano i riferimenti numerici e il limite lento. Il componente
+segnala entrambe le condizioni.
+
+Un override di `activity` o `pulse` rende indipendenti i due controlli:
+con `activity` manuale i gate restano fissati e `pulse` segue l'intensità
+nell'intervallo del ruolo; con `pulse` manuale varia soltanto l'attività.
 `pulse` manuale può scegliere qualsiasi suddivisione supportata, compreso `32n`.
 
 Sui 16 passi, l'attività automatica varia da 4 a 8 gate per `melody`, da 3 a 6
@@ -175,16 +198,19 @@ La ricetta `music` è condivisa dai componenti e distingue i ruoli:
 | `adaptation` | Durata delle transizioni e pesi di cambiamento, persistenza, pressione dinamica e cambiamento del materiale |
 | `phrasing` | Accenti ciclici, loro peso sulla velocity e sulle durate, contributo del movimento |
 
-Per i gate, l'obiettivo è `parameters.activity + response.activity × (intensità − 0,5)`,
-limitato a [0, 1]. Su 16 passi il numero di gate è l'obiettivo moltiplicato per 16
-e arrotondato, dopo le transizioni e l'eventuale diradamento coordinato.
+L'attività calma è `parameters.activity − response.activity / 2`, quella intensa
+è `parameters.activity + response.activity / 2`, entrambe limitate a [0, 1].
+Divise per i beat di un passo, rispettivamente a `slowest` e `fastest`, definiscono
+gli estremi della densità di attacchi; l'intensità del viaggio interpola fra i due.
+Su 16 passi il numero di gate è l'attività effettiva moltiplicata per 16
+e arrotondata, dopo l'eventuale diradamento coordinato.
 `pulse` determina la distanza temporale tra i passi: la stessa quantità di gate
 suona più fitta con suddivisioni rapide. Impostare `slowest` e `fastest` uguali
 mantiene fissa la suddivisione automatica di quel ruolo.
 
 `paths` elenca le Shape Snake da usare al crescere di `movement`, con ID da 1 a 14;
 una sola Shape mantiene fisso il percorso. Il materiale musicale resta in ordine
-lungo il percorso scelto. I pesi in `phrasing.accents` si ripetono sulle 16 celle.
+lungo il percorso scelto. I pesi in `phrasing.accents` si ripetono sugli attacchi udibili.
 
 Per una prova modificare il JSON e riavviare la sessione, poi premere **N**.
 I valori vengono letti alla creazione del servizio; non c'è ricaricamento durante
@@ -192,6 +218,8 @@ la riproduzione. Campi mancanti, sconosciuti o fuori intervallo vengono rifiutat
 prima dell'apertura del server. Gli override nel device prevalgono sulla ricetta.
 I vincoli del device, inclusi registro MIDI, 16 celle e unità delle durate,
 restano nell'adattatore. Non serve ricostruire i device per cambiare la ricetta.
+Lo stato `automation.attack_rate` espone obiettivo e densità nominale in corso,
+prima dell'arrotondamento dei gate e del diradamento coordinato.
 
 ```sh
 .venv/bin/python tools/build_snake_control.py --output /tmp/desnivel-snake-control
