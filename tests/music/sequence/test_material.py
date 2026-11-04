@@ -1,13 +1,22 @@
 from dataclasses import replace
+from functools import partial
+import json
+from pathlib import Path
 import pytest
 
 from desnivel.music.director import MusicalContext
 from desnivel.music.phrases import Note, Phrase
-from desnivel.music.sequence.material import DEFAULTS, ROLES, compose
+from desnivel.music.sequence.material import compose
+from desnivel.music.sequence.settings import ROLES
 from desnivel.adapters.snake_control import bank_parameters
 
 CONTEXT = MusicalContext(0, 'level', 60, 'minor')
 SOURCE = Phrase(4, (Note(0, 67, .5, 90), Note(1, 70, 2, 85)))
+CONFIG = json.loads((Path(__file__).resolve().parents[3]/'presets/snake.json').read_text())
+DEFAULTS = {role: {**spec['parameters'], 'pulse': spec['pulse']['slowest']}
+            for role, spec in CONFIG['music']['roles'].items()}
+compose = partial(compose, phrasing=CONFIG['music']['phrasing'])
+bank_parameters = partial(bank_parameters, paths=CONFIG['paths'])
 
 
 def test_roles_change_register_gate_activity_and_duration_without_device_dependencies():

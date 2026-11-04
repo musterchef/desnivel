@@ -1,4 +1,6 @@
 from copy import deepcopy
+import json
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -7,18 +9,26 @@ from desnivel.adapters.voice_device import VoiceDeviceBridge
 from desnivel.cli.snake_control import SnakeControlSession
 
 
+def configuration(components):
+    config = json.loads((Path(__file__).resolve().parents[2]/'presets/snake.json').read_text())
+    config['components'] = components
+    return config
+
+
 def plan(start=0, intensity=None, change=None, persistence=None):
     return dict(start=start, length_beats=4, section_index=0, section='ascent', root=60, scale='minor',
                 adaptive_context=dict(intensity=intensity, change=change, persistence=persistence), voices={})
 
 
-def setup(components=None):
+def setup(components=None, configure=None):
     sent=[]
     def server(voices, port, *callbacks):
         return SimpleNamespace(bridge=VoiceDeviceBridge(voices,lambda *args: sent.append(args)),
                                server=SimpleNamespace(timeout=None), poll=lambda:None,close=lambda:None)
-    session=SnakeControlSession({'port':9007,'components':components or {
-        'snake_a':{'role':'melody','mode':'autonomous','source':'a'}}}, {'a':{'name':'lead'}},server_factory=server)
+    config = configuration(components or {'snake_a':{'role':'melody','mode':'autonomous','source':'a'}})
+    if configure:
+        configure(config)
+    session=SnakeControlSession(config, {'a':{'name':'lead'}},server_factory=server)
     def receive(name='snake_a',serial=1,applied=-1):
         message=dict(version=1,voice=name,instance=name,reply_port=9201 if name=='snake_a' else 9202,
                      action='hello',serial=serial,capabilities=['bank_control'],device_state=dict(ready=True,source_protocol=1,has_instrument=False,applied=applied,error=None))
@@ -71,10 +81,80 @@ def test_role_and_manual_controls_remain_distinct_and_coordination_uses_current_
 def test_configuration_validation_does_not_open_network_in_preview():
     with pytest.raises(ValueError):
         SnakeControlSession({'port':0,'components':{}},{'a':{'name':'lead'}},server_factory=None)
-    session=SnakeControlSession({'port':9007,'components':{
-        'snake':{'role':'melody','mode':'autonomous','source':'a'}}},{'a':{'name':'lead'}},server_factory=None)
+    session=SnakeControlSession(configuration({
+        'snake':{'role':'melody','mode':'autonomous','source':'a'}}),{'a':{'name':'lead'}},server_factory=None)
     assert session.server is None
     session.close()
+
+
+@pytest.mark.parametrize('section,value', [('music', {}), ('paths', [15])])
+def test_invalid_recipes_are_rejected_before_opening_the_server(section, value):
+    config = configuration({'snake':{'role':'melody','mode':'autonomous','source':'a'}})
+    config[section] = value
+    def server(*args):
+        pytest.fail('la configurazione deve essere validata prima di aprire il server')
+    with pytest.raises(ValueError, match=section):
+        SnakeControlSession(config, {'a':{'name':'lead'}}, server_factory=server)
+
+
+@pytest.mark.parametrize('source', [None, [], {}, 1])
+def test_invalid_component_sources_raise_configuration_errors(source):
+    config = configuration({'snake':{'role':'melody','mode':'autonomous','source':source}})
+    with pytest.raises(ValueError, match='componente Snake'):
+        SnakeControlSession(config, {'a':{'name':'lead'}}, server_factory=None)
+
+
+def test_configured_recipe_reaches_device_banks_without_changing_other_sessions():
+    def configure(config):
+        config['paths'] = [14]
+        music = config['music']
+        music['roles']['melody'] = {
+            'parameters': dict(octave=0, activity=.25, velocity=70, length_ms=400, movement=0.),
+            'pulse': dict(slowest='8n', fastest='8n'),
+            'response': dict(activity=.125, velocity=0., articulation=0.)}
+        music['adaptation'] = {key: 4. if key == 'transition_beats' else 0.
+                               for key in music['adaptation']}
+        music['phrasing'] = dict(accents=[0.], velocity_accent=0., velocity_movement=0.,
+                                 length_accent=0., length_movement=0.)
+    session,sent,receive,state = setup(configure=configure)
+    receive()
+    for start, gates in ((0, 4), (4, 5), (8, 5)):
+        state['planning']['current'] = plan(start,1.,1.,0.)
+        session.tick(state)
+        packet = sent[-1][2]['parameters']
+        assert sum(packet[f'Gate_{i:02}'] for i in range(1,17)) == gates
+        assert packet['Notes_Sequencer_Speed'] == 2  # 8n anche nel tratto intenso.
+        assert packet['Notes_Sequencer_Snake_Shape'] == 13
+        assert packet['Length_Min_ms'] == packet['Length_Max_ms'] == 400
+        assert {packet[f'Velocity_{i:02}'] for i in range(1,17)} == {70}
+    other,_,_,_ = setup()
+    assert other.music['roles']['melody']['parameters']['activity'] == .4
+    assert other.paths == (1,7,5,11,9)
+
+
+@pytest.mark.parametrize('role,slow,fast', [('melody',2,1), ('bass_line',3,1), ('sustained_texture',4,2)])
+def test_first_window_already_selects_pulse_from_journey_and_role(role, slow, fast):
+    session,sent,receive,state = setup({'snake_a':{'role':role,'mode':'autonomous','source':'a'}})
+    receive()
+    for start, intensity, expected in ((0,1.,fast), (4,0.,slow), (8,1.,fast)):
+        state['planning']['current'] = plan(start,intensity)
+        session.tick(state)
+        parameters = sent[-1][2]['parameters']
+        for lane in ('Notes','Gates','Velocities'):
+            assert parameters[f'{lane}_Sequencer_Speed'] == expected
+
+
+def test_missing_intensity_and_disabled_adaptation_report_the_slow_limit():
+    session,_,receive,state = setup()
+    receive()
+    session.tick(state)
+    assert session.server.bridge.voices['snake_a'].read_values()['pulse'] == '8n'
+    assert 'intensità non disponibile' in session.components['snake_a']['notice']
+    state['planning']['current'] = plan(4,1.)
+    state['adaptation_enabled'] = False
+    session.tick(state)
+    assert session.server.bridge.voices['snake_a'].read_values()['pulse'] == '8n'
+    assert 'adattamento disattivato' in session.components['snake_a']['notice']
 
 
 def test_real_component_handshake_and_parameter_packet_use_only_its_receive_port():
@@ -88,8 +168,8 @@ def test_real_component_handshake_and_parameter_packet_use_only_its_receive_port
     from desnivel.cli.voice_device import VoiceDeviceServer
     def factory(voices, port, *callbacks):
         return VoiceDeviceServer(voices,0,*callbacks)
-    session=SnakeControlSession({'port':9007,'components':{
-        'snake':{'role':'melody','mode':'autonomous','source':'a'}}}, {'a':{'name':'lead'}},server_factory=factory)
+    session=SnakeControlSession(configuration({
+        'snake':{'role':'melody','mode':'autonomous','source':'a'}}), {'a':{'name':'lead'}},server_factory=factory)
     with socket.socket(socket.AF_INET,socket.SOCK_DGRAM) as receiver:
         receiver.bind(('127.0.0.1',0));receiver.settimeout(1)
         client=SimpleUDPClient('127.0.0.1',session.server.server.server_address[1])
@@ -149,36 +229,41 @@ def test_journey_changes_all_banks_and_paths_for_each_role_with_stable_polling(r
     for start in (12,16,20,24):
         active=advance(start,1.,1.,0.)
     a,b=calm['parameters'],active['parameters']
+    limits = {'melody': (4, 8), 'bass_line': (3, 6), 'sustained_texture': (1, 3)}
+    assert (sum(a[f'Gate_{i:02}'] for i in range(1,17)),
+            sum(b[f'Gate_{i:02}'] for i in range(1,17))) == limits[role]
     assert sum(v for k,v in b.items() if k.startswith('Gate_')) > sum(v for k,v in a.items() if k.startswith('Gate_'))
     for prefix in ('Velocity_', 'Length_'):
         assert {k:v for k,v in a.items() if k.startswith(prefix)} != {k:v for k,v in b.items() if k.startswith(prefix)}
     assert a['Notes_Sequencer_Snake_Shape'] != b['Notes_Sequencer_Snake_Shape']
     assert a['Notes_Sequencer_Speed'] != b['Notes_Sequencer_Speed']
+    assert b['Notes_Sequencer_Speed'] >= 1  # L'automatismo non raggiunge i 32n.
     assert len({v for k,v in b.items() if k.startswith('Velocity_')}) > 1
     assert b['Length_Max_ms'] > b['Length_Min_ms']
     session.tick(state)
     assert sent[-1][2]==active
 
 
-def test_manual_overrides_survive_terrain_changes_and_return_to_auto():
+@pytest.mark.parametrize('pulse,speed', [('2n', 4), ('32n', 0)])
+def test_manual_overrides_survive_terrain_changes_and_return_to_auto(pulse, speed):
     session,sent,receive,state=setup();receive()
     spec=session.server.bridge.voices['snake_a']
-    for name,value in dict(activity=.25,velocity=64,length_ms=500,movement=0.,pulse='2n').items():
+    for name,value in dict(activity=.25,velocity=64,length_ms=500,movement=0.,pulse=pulse).items():
         spec.apply_parameter(name,value)
     for start in (0,4,8,12):
         state['planning']['current']=plan(start,1.,1.,0.)
         session.tick(state)
     values=spec.read_values()
     assert {k:values[k] for k in ('activity','velocity','length_ms','movement','pulse')} == dict(
-        activity=.25,velocity=64,length_ms=500,movement=0.,pulse='2n')
+        activity=.25,velocity=64,length_ms=500,movement=0.,pulse=pulse)
     packet=sent[-1][2]['parameters']
     assert sum(packet[f'Gate_{i:02}'] for i in range(1,17))==4
-    assert packet['Notes_Sequencer_Snake_Shape']==0 and packet['Notes_Sequencer_Speed']==4
+    assert packet['Notes_Sequencer_Snake_Shape']==0 and packet['Notes_Sequencer_Speed']==speed
     spec.apply_manual('activity',False)
     for start in (16,20,24):
         state['planning']['current']=plan(start,1.,1.,0.)
         session.tick(state)
-    assert spec.read_values()['activity'] > .65
+    assert .4 < spec.read_values()['activity'] <= .52
     assert spec.read_values()['velocity']==64
 
 
@@ -200,7 +285,9 @@ def test_environment_uses_accepted_intent_and_disabled_adaptation_preserves_role
 def test_accepted_forecasts_hold_banks_until_their_windows_finish_and_require_new_ack():
     from desnivel.music.sources import MusicalSource
     from desnivel.music.phrases import Phrase, Note
-    session,sent,receive,state=setup();receive();session.tick(state)
+    session,sent,receive,state=setup();receive()
+    state['planning']['current']=plan(0,0.,0.,1.)
+    session.tick(state)
     component=session.components['snake_a'];component['has_instrument']=True
     class Observed:
         def project(self,role,start,length,**kwargs):

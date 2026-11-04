@@ -35,11 +35,11 @@ interrompono anche le note trattenute dal componente.
 Il menu del ruolo usa gli identificativi musicali esistenti; `ruolo configurato`
 ripristina il ruolo iniziale del componente:
 
-| Ruolo | Uso e valori automatici iniziali |
+| Ruolo | Funzione musicale |
 |---|---|
-| `melody` | Principale: motivo nel registro della sezione, attività 0,65, velocity 85, durata 220 ms |
-| `bass_line` | Accompagnamento: un'ottava sotto, appoggi di tonica, quinta e terza, attività 0,4, velocity 75, durata 160 ms |
-| `sustained_texture` | Sottofondo: un'ottava sopra, tonica sostenuta, attività 0,15, velocity 48, durata 2500 ms |
+| `melody` | Linea principale basata sul motivo della tappa |
+| `bass_line` | Sostegno con appoggi di tonica, quinta e terza |
+| `sustained_texture` | Sottofondo con tonica sostenuta |
 
 Nel menu `parametro`, `mode` sceglie **autonomo** o **coordinato** per
 qualsiasi ruolo. Entrambe le modalità usano il contesto locale della finestra in esecuzione,
@@ -57,9 +57,29 @@ Il viaggio modifica il comportamento di base di ciascun ruolo:
 - vento e cambiamento della pioggia: dinamica e movimento, quando il
   contributo meteo è abilitato nel piano corrente.
 
-Gli obiettivi numerici evolvono su otto beat usando le transizioni comuni
+Gli obiettivi numerici evolvono con le transizioni comuni
 alle altre voci. Se un'indicazione manca, il relativo contributo resta neutro.
 Accenti forti e deboli producono velocity e durate diverse fra le celle.
+Nel preset fornito le transizioni numeriche durano otto beat. La suddivisione
+`pulse` è scelta direttamente dall'intensità della finestra corrente, fin dalla
+prima finestra, entro l'intervallo del ruolo:
+
+| Ruolo | Limite lento | Limite rapido |
+|---|---|---|
+| `melody` | `8n` | `16n` |
+| `bass_line` | `4n` | `16n` |
+| `sustained_texture` | `2n` | `8n` |
+
+Intensità 0 sceglie il limite lento, intensità 1 quello rapido; fra i due
+si sceglie la suddivisione più vicina interpolando gli indici delle suddivisioni
+disponibili, con parità verso quella più rapida. Senza intensità disponibile,
+o con adattamento disattivato, si usa il limite lento e il componente lo segnala.
+`pulse` manuale può scegliere qualsiasi suddivisione supportata, compreso `32n`.
+
+Sui 16 passi, l'attività automatica varia da 4 a 8 gate per `melody`, da 3 a 6
+per `bass_line` e da 1 a 3 per `sustained_texture`, dai tratti calmi a quelli
+intensi. La modalità coordinata può diradare ulteriormente il basso;
+una sorgente silenziosa azzera i gate. Il controllo manuale `activity` resta in [0, 1].
 In modalità coordinata anche dinamiche e articolazioni della sorgente
 modellano la linea melodica e il basso; la tessitura mantiene il sostegno.
 
@@ -137,13 +157,41 @@ musicali già accettati non vengono riscritti.
 
 ### Configurazione e costruzione
 
-`presets/snake.json` contiene `port` e `components`. Ogni componente ha
+`presets/snake.json` contiene `port`, `components`, `music` e `paths`. Ogni componente ha
 `role`, `mode` e `source`, identificativo di una voce della sessione.
 Per più Snake aggiungere componenti distinti e impostare ID e Receive
 univoci, per esempio `snake_02` e `9202`. Il server Python resta unico.
 Il file `snake.json` è cercato accanto al JSON della sessione e viene letto
 soltanto alla richiesta **N**. L’avvio ordinario e `--dry-run` non aprono il
 server Snake né richiedono questo file.
+
+La ricetta `music` è condivisa dai componenti e distingue i ruoli:
+
+| Sezione | Controlli |
+|---|---|
+| `roles.<ruolo>.parameters` | Riferimenti di `octave`, `activity`, `velocity`, `length_ms`, `movement` |
+| `roles.<ruolo>.response` | Risposta all'intensità: gate (`activity`), dinamica (`velocity`) e durata relativa (`articulation`) |
+| `roles.<ruolo>.pulse` | Suddivisioni automatiche più lenta (`slowest`) e più rapida (`fastest`) |
+| `adaptation` | Durata delle transizioni e pesi di cambiamento, persistenza, pressione dinamica e cambiamento del materiale |
+| `phrasing` | Accenti ciclici, loro peso sulla velocity e sulle durate, contributo del movimento |
+
+Per i gate, l'obiettivo è `parameters.activity + response.activity × (intensità − 0,5)`,
+limitato a [0, 1]. Su 16 passi il numero di gate è l'obiettivo moltiplicato per 16
+e arrotondato, dopo le transizioni e l'eventuale diradamento coordinato.
+`pulse` determina la distanza temporale tra i passi: la stessa quantità di gate
+suona più fitta con suddivisioni rapide. Impostare `slowest` e `fastest` uguali
+mantiene fissa la suddivisione automatica di quel ruolo.
+
+`paths` elenca le Shape Snake da usare al crescere di `movement`, con ID da 1 a 14;
+una sola Shape mantiene fisso il percorso. Il materiale musicale resta in ordine
+lungo il percorso scelto. I pesi in `phrasing.accents` si ripetono sulle 16 celle.
+
+Per una prova modificare il JSON e riavviare la sessione, poi premere **N**.
+I valori vengono letti alla creazione del servizio; non c'è ricaricamento durante
+la riproduzione. Campi mancanti, sconosciuti o fuori intervallo vengono rifiutati
+prima dell'apertura del server. Gli override nel device prevalgono sulla ricetta.
+I vincoli del device, inclusi registro MIDI, 16 celle e unità delle durate,
+restano nell'adattatore. Non serve ricostruire i device per cambiare la ricetta.
 
 ```sh
 .venv/bin/python tools/build_snake_control.py --output /tmp/desnivel-snake-control

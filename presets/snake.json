@@ -1,5 +1,41 @@
 {
   "port": 9007,
+  "paths": [1, 7, 5, 11, 9],
+  "music": {
+    "roles": {
+      "melody": {
+        "parameters": {"octave": 0, "activity": 0.4, "velocity": 85, "length_ms": 220, "movement": 0.25},
+        "pulse": {"slowest": "8n", "fastest": "16n"},
+        "response": {"activity": 0.24, "velocity": 24, "articulation": -0.45}
+      },
+      "bass_line": {
+        "parameters": {"octave": -1, "activity": 0.3, "velocity": 75, "length_ms": 160, "movement": 0.15},
+        "pulse": {"slowest": "4n", "fastest": "16n"},
+        "response": {"activity": 0.2, "velocity": 18, "articulation": -0.3}
+      },
+      "sustained_texture": {
+        "parameters": {"octave": 1, "activity": 0.125, "velocity": 48, "length_ms": 2500, "movement": 0.1},
+        "pulse": {"slowest": "2n", "fastest": "8n"},
+        "response": {"activity": 0.125, "velocity": 12, "articulation": 0.3}
+      }
+    },
+    "adaptation": {
+      "transition_beats": 8,
+      "movement_change": 0.45,
+      "movement_persistence": -0.2,
+      "movement_material_change": 0.25,
+      "velocity_pressure": 12,
+      "length_persistence": 0.25,
+      "length_change": -0.2
+    },
+    "phrasing": {
+      "accents": [1, -0.5, 0.35, -0.5],
+      "velocity_accent": 4,
+      "velocity_movement": 12,
+      "length_accent": 0.25,
+      "length_movement": 0.2
+    }
+  },
   "components": {
     "snake_01": {
       "role": "melody",

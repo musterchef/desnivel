@@ -3,11 +3,17 @@ from desnivel.music.sequence.material import SequenceMaterial
 from desnivel.adapters.snake_sequence import SHAPES, SPEEDS
 
 LANES = ('Notes', 'Gates', 'Velocities')
-# Dal percorso lineare a serpentine, spirale e diagonali, secondo il movimento.
-PATHS = (1, 7, 5, 11, 9)
 
 
-def bank_parameters(material: SequenceMaterial):
+def validate_paths(paths):
+    if (not isinstance(paths, (list, tuple)) or not paths
+            or any(type(shape) is not int or not 1 <= shape <= len(SHAPES) for shape in paths)
+            or len(set(paths)) != len(paths)):
+        raise ValueError(f'paths: lista non vuota di Shape distinte fra 1 e {len(SHAPES)} richiesta')
+
+
+def bank_parameters(material: SequenceMaterial, paths):
+    validate_paths(paths)
     if any(len(values) != 16 for values in (material.notes, material.gates, material.velocities, material.lengths_ms)):
         raise ValueError('Snake richiede 16 celle per banco')
     # In Chromatic/C il parametro nota di Snake è MIDI - 24.
@@ -17,7 +23,7 @@ def bank_parameters(material: SequenceMaterial):
     if not 10 <= low <= high <= 10000:
         raise ValueError('durate Snake richieste fra 10 e 10000 ms')
     result = {'Scales': 0, 'Length_Min_ms': low, 'Length_Max_ms': high}
-    shape = PATHS[min(len(PATHS)-1, int(material.movement*len(PATHS)))]
+    shape = paths[min(len(paths)-1, int(material.movement*len(paths)))]
     speed = next(i for i, step in enumerate(SPEEDS.values()) if float(step) == material.step_beats)
     for lane in LANES:
         prefix = f'{lane}_Sequencer_'

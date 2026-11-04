@@ -8,13 +8,7 @@ from desnivel.music.patterns import Pattern, SCALES
 from desnivel.music.phrases import Phrase
 from desnivel.music.automation import bounded
 from desnivel.music.rhythm import SUBDIVISIONS
-
-DEFAULTS = {
-    'melody': dict(octave=0, activity=.65, velocity=85, length_ms=220, movement=.25, pulse='16n'),
-    'bass_line': dict(octave=-1, activity=.4, velocity=75, length_ms=160, movement=.15, pulse='8n'),
-    'sustained_texture': dict(octave=1, activity=.15, velocity=48, length_ms=2500, movement=.1, pulse='4n'),
-}
-ROLES = tuple(DEFAULTS)
+from desnivel.music.sequence.settings import ROLES, validate_parameters
 
 
 @dataclass(frozen=True)
@@ -38,7 +32,7 @@ class SequenceMaterial:
             raise ValueError('movimento o suddivisione della sequenza non validi')
 
 
-def compose(context, role, values, *, motif=(0, 2, 4, 1), source: Phrase | None = None,
+def compose(context, role, values, *, phrasing, motif=(0, 2, 4, 1), source: Phrase | None = None,
             coordinated=False, steps=16):
     """Restituisce celle musicali; non assume percorsi o parametri di un device.
 
@@ -50,16 +44,9 @@ def compose(context, role, values, *, motif=(0, 2, 4, 1), source: Phrase | None 
         raise ValueError('ruolo o scala della voce ciclica non valido')
     if type(steps) is not int or not 1 <= steps <= 128:
         raise ValueError('numero di celle richiesto fra 1 e 128')
-    if set(values) != set(DEFAULTS[role]):
-        raise ValueError('controlli della voce ciclica non validi')
+    validate_parameters(values)
     octave, activity, velocity, length = (values[k] for k in ('octave', 'activity', 'velocity', 'length_ms'))
     movement = values['movement']
-    if (type(octave) is not int or not -3 <= octave <= 3 or type(velocity) is not int or not 1 <= velocity <= 127
-            or type(activity) not in (int, float) or not math.isfinite(activity) or not 0 <= activity <= 1
-            or type(length) not in (int, float) or not math.isfinite(length) or not 10 <= length <= 10000
-            or type(movement) not in (int, float) or not math.isfinite(movement) or not 0 <= movement <= 1
-            or values['pulse'] not in SUBDIVISIONS):
-        raise ValueError('controlli della voce ciclica fuori intervallo')
     if not motif or any(type(d) is not int or d < 0 for d in motif):
         raise ValueError('motivo richiesto come gradi interi non negativi')
     intervals = SCALES[context.scale]
@@ -95,9 +82,11 @@ def compose(context, role, values, *, motif=(0, 2, 4, 1), source: Phrase | None 
     chosen = {candidates[int(i*len(candidates)/count)] for i in range(count)} if count else set()
     if movement >= .5:
         chosen = {i+1 if i % 4 == 1 and i+1 < steps else i-1 if i % 4 == 2 else i for i in chosen}
-    accents = [1. if i % 4 == 0 else .35 if i % 2 == 0 else -.5 for i in range(steps)]
-    velocities = [round(bounded(velocity+(4+12*movement)*a, 1, 127)) for a in accents]
-    lengths = [bounded(length*(1+.25*a-movement*.2*(1-a)), 10, 10000) for a in accents]
+    accents = [phrasing['accents'][i % len(phrasing['accents'])] for i in range(steps)]
+    velocities = [round(bounded(velocity+(phrasing['velocity_accent']+phrasing['velocity_movement']*movement)*a, 1, 127))
+                  for a in accents]
+    lengths = [bounded(length*(1+phrasing['length_accent']*a-movement*phrasing['length_movement']*(1-a)), 10, 10000)
+               for a in accents]
     if ordered:
         average_velocity = sum(n.velocity for n in ordered)/len(ordered)
         average_duration = sum(n.duration for n in ordered)/len(ordered)

@@ -2,14 +2,16 @@
 import json
 import re
 import time
+from copy import deepcopy
 from pathlib import Path
 
-from desnivel.adapters.snake_control import bank_parameters
+from desnivel.adapters.snake_control import bank_parameters, validate_paths
 from desnivel.adapters.voice_device import ADDRESS, ChoiceControl, Control, DeviceVoice
 from desnivel.cli.voice_device import VoiceDeviceServer
 from desnivel.music.director import MusicalContext
 from desnivel.music.phrases import Phrase
-from desnivel.music.sequence.material import DEFAULTS, ROLES, compose
+from desnivel.music.sequence.material import compose
+from desnivel.music.sequence.settings import CONTROLS, CONTROL_LIMITS, ROLES, validate_music
 from desnivel.music.sequence.adaptation import PULSES, pulse, targets
 from desnivel.music.automation import AdaptiveContext, resolve_parameters
 from desnivel.adapters.snake_forecast import SnakeForecast
@@ -20,25 +22,29 @@ class SnakeControlSession:
     """Un server per più istanze; ogni componente ha ruolo, sorgente e override propri."""
 
     def __init__(self, config, sources, *, server_factory=VoiceDeviceServer, clock=time.monotonic):
-        if not isinstance(config, dict) or set(config) != {'port', 'components'}:
-            raise ValueError('configurazione Snake: port e components richiesti')
+        if not isinstance(config, dict) or set(config) != {'port', 'components', 'music', 'paths'}:
+            raise ValueError('configurazione Snake: port, components, music e paths richiesti')
         if type(config['port']) is not int or not 1024 <= config['port'] <= 65535:
             raise ValueError('porta Snake richiesta fra 1024 e 65535')
         if not isinstance(config['components'], dict) or not config['components']:
             raise ValueError('almeno un componente Snake richiesto')
+        validate_music(config['music'])
+        validate_paths(config['paths'])
+        self.music = deepcopy(config['music'])
+        self.paths = tuple(config['paths'])
         self.port = config['port']
         self.clock, self.transport_epoch = clock, None
         self.components = {}
-        controls = {'octave': Control(-3, 3, True), 'activity': Control(0, 1),
-                    'velocity': Control(1, 127, True), 'length_ms': Control(10, 10000),
-                    'movement': Control(0, 1), 'pulse': ChoiceControl(tuple((p, p) for p in PULSES)),
+        controls = {**{name: Control(*limits) for name, limits in CONTROL_LIMITS.items()},
+                    'pulse': ChoiceControl(tuple((p, p) for p in PULSES)),
                     'mode': ChoiceControl((('autonomous', 'autonomo'), ('coordinated', 'coordinato'))),
                     'source': ChoiceControl(tuple((name, value['name']) for name, value in sources.items()))}
         devices = {}
         for name, spec in config['components'].items():
             if (not isinstance(name, str) or not re.fullmatch(r'[A-Za-z0-9_-]{1,100}', name) or not isinstance(spec, dict)
                     or name in sources or set(spec) != {'role', 'mode', 'source'} or spec['role'] not in ROLES
-                    or spec['mode'] not in ('autonomous', 'coordinated') or spec['source'] not in sources):
+                    or spec['mode'] not in ('autonomous', 'coordinated')
+                    or not isinstance(spec['source'], str) or spec['source'] not in sources):
                 raise ValueError('componente Snake: identificativo, role, mode e source validi richiesti')
             component = dict(defaults=dict(spec), role=spec['role'], manual_role=None, overrides={},
                              sent=None, instance=None, notice='in attesa della sessione', error=None,
@@ -47,7 +53,8 @@ class SnakeControlSession:
                              source_status='telemetria non disponibile', received_serial=-1)
             self.components[name] = component
             def values(c=component):
-                return {**DEFAULTS[c['role']], **c['automatic'], 'mode': c['defaults']['mode'],
+                recipe = self.music['roles'][c['role']]
+                return {**recipe['parameters'], 'pulse': recipe['pulse']['slowest'], **c['automatic'], 'mode': c['defaults']['mode'],
                         'source': c['defaults']['source'], **c['overrides']}
             def apply(parameters, c=component):
                 c['overrides'] = dict(parameters)
@@ -83,7 +90,7 @@ class SnakeControlSession:
     @classmethod
     def from_file(cls, path, sources, main_port):
         config = json.loads(Path(path).read_text())
-        if config.get('port') == main_port:
+        if isinstance(config, dict) and config.get('port') == main_port:
             raise ValueError('porta del controllo Snake e porta della sessione devono essere distinte')
         return cls(config, sources)
 
@@ -200,10 +207,10 @@ class SnakeControlSession:
                     part = current['voices'].get(values['source'])
                     source = Phrase.from_dict(dict(length_beats=current['length_beats'], notes=part['notes'] if part else []))
                 material = compose(context,
-                    component['role'], {k: values[k] for k in DEFAULTS[component['role']]},
+                    component['role'], {k: values[k] for k in CONTROLS}, phrasing=self.music['phrasing'],
                     motif=(state.get('trip_music') or {}).get('motif_degrees', (0, 2, 4, 1)),
                     source=source, coordinated=values['mode'] == 'coordinated')
-                parameters = bank_parameters(material)
+                parameters = bank_parameters(material, self.paths)
                 key = json.dumps(parameters, sort_keys=True)
                 if component['sent'] != key and state.get('transport', {}).get('beat', float('inf')) < component['hold_until']:
                     component['pending'] = True
@@ -213,6 +220,8 @@ class SnakeControlSession:
                 self._send(name, parameters, key)
                 component['notice'] = f"{component['role']} · {values['mode']}" + (
                     f" · sorgente {values['source']}" if values['mode'] == 'coordinated' else '')
+                if component['pulse_notice'] and 'pulse' not in component['overrides']:
+                    component['notice'] += ' · '+component['pulse_notice']
                 if component['error']:
                     component['notice'] = 'errore device: '+str(component['error'])
             except (ValueError, KeyError, TypeError) as error:
@@ -231,14 +240,22 @@ class SnakeControlSession:
         previous = component['window']
         if previous and (previous[0] != key[0] or previous[1] > key[1]):
             component['automation'] = {}
-        base = DEFAULTS[component['role']]
+        recipe = self.music['roles'][component['role']]
+        base = recipe['parameters']
         intent = AdaptiveContext(**(current.get('adaptive_context') or {}))
-        wanted = targets(component['role'], base, intent, current['length_beats']) if enabled else {}
+        wanted = targets(component['role'], intent, current['length_beats'], self.music) if enabled else {}
         values, states, decisions = resolve_parameters(base, wanted, component['overrides'], component['automation'],
             start=current['start'], logical_start=current.get('logical_start', current['start']),
             scope=(component['role'], current['section_index']))
-        values['pulse'] = component['overrides'].get('pulse', pulse(base['pulse'], intent) if enabled else base['pulse'])
-        component.update(automatic={k: values[k] for k in base}, automation=states,
+        automatic_pulse = pulse(intent, recipe['pulse']) if enabled else recipe['pulse']['slowest']
+        values['pulse'] = component['overrides'].get('pulse', automatic_pulse)
+        if not enabled:
+            component['pulse_notice'] = 'adattamento disattivato: pulse al limite lento del ruolo'
+        elif intent.intensity is None:
+            component['pulse_notice'] = 'intensità non disponibile: pulse al limite lento del ruolo'
+        else:
+            component['pulse_notice'] = ''
+        component.update(automatic={k: values[k] for k in CONTROLS}, automation=states,
                          decisions=decisions, window=key)
 
     def close(self):
