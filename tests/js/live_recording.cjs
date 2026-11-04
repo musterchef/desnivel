@@ -106,4 +106,29 @@ assert(lastRejected);
 assert.equal(reports.at(-1).status,'error');
 assert.match(reports.at(-1).error,/atteso.*ricevuto/);
 assert.deepEqual(order,originals);
+// Le sorgenti Snake producono audio e MIDI; le copie non devono generare note.
+rejectRouting=false;
+const snake=track('snake',true,false), snakeTrack=objects.get(snake);
+snakeTrack.devices.unshift(object({name:'MDD_SNAKE_LengthBank'}),object({name:'Desnivel_Snake_Control'}));
+const snakeDevices=snakeTrack.devices.slice();
+send('prepare',7);flush();
+assert.equal(reports.at(-1).status,'ready');
+const snakeReports=reports.at(-1).tracks.filter(t=>t.source==='snake');
+assert.deepEqual(Array.from(snakeReports,t=>t.type),['audio','midi']);
+const snakeMidi=objects.get(order.find(id=>objects.get(id).name==='snake_MIDI_REC'));
+const snakeAudio=objects.get(order.find(id=>objects.get(id).name==='snake_AUDIO_REC'));
+assert.deepEqual(snakeMidi.devices.map(id=>objects.get(id).name),['instrument','reverb']);
+assert.equal(snakeMidi.arrangement_clips.length,0);
+assert.equal(snakeMidi.input_routing_type.identifier,String(snake));
+assert.equal(snakeMidi.input_routing_channel.identifier,'fx');
+assert.equal(snakeAudio.devices.length,0);
+assert.equal(snakeAudio.input_routing_channel.identifier,'mixer');
+assert.deepEqual(snakeTrack.devices,snakeDevices);
+const preparedCount=order.length;
+for(const mode of ['audio','midi']){
+ send('prepare',8,mode);flush();
+ assert.equal(reports.at(-1).status,'ready');
+ assert.equal(order.length,preparedCount);
+ assert(reports.at(-1).tracks.some(t=>t.source==='snake'&&t.type===mode));
+}
 console.log('live_recording: copie, FX, routing differito e annidato, riuso, armamenti, timeout e rollback verificati');

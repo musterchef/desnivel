@@ -292,13 +292,14 @@ Attendere la preparazione prima di `start`. `audio` e `midi` selezionano
 una sola modalità; `--view-port` cambia la porta HTTP predefinita 8765.
 
 La preparazione ferma Live e riporta il viaggio a zero. Individua le tracce
-con un solo `Desnivel_Voice` al livello principale della catena, riconosciuto
-dal nome del device. I nomi delle sorgenti devono essere univoci.
+con un solo controllo `Desnivel_Voice` o `Desnivel_Snake_Control` al livello
+principale della catena, riconosciuto dal nome del device. I nomi delle
+sorgenti devono essere univoci.
 
 | Destinazione | Contenuto | Ingresso |
 |---|---|---|
 | `<sorgente>_AUDIO_REC` | Traccia audio senza device | Sorgente, `Post Mixer`: effetti, volume e pan inclusi; ritorni esclusi |
-| `<sorgente>_MIDI_REC` | Copia della traccia con strumenti ed effetti; `Desnivel_Voice` e clip copiate rimossi | Sorgente, `Post FX`: MIDI dopo gli effetti MIDI, prima dello strumento |
+| `<sorgente>_MIDI_REC` | Copia della traccia con strumenti ed effetti; controllo Desnivel e clip copiate rimossi; per Snake viene rimosso anche il generatore immediatamente precedente al controllo | Sorgente, `Post FX`: MIDI dopo gli effetti MIDI, prima dello strumento |
 
 Gli eventuali effetti MIDI conservati nella copia agiscono anche durante
 la riproduzione del MIDI registrato. Le tracce REC compatibili già esistenti

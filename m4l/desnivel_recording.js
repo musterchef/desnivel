@@ -42,7 +42,7 @@ var DesnivelRecording = (function () {
         var devices=ids(track,'devices'), result=[];
         for(var i=0;i<devices.length;i++){
             var name=String(value(api(devices[i]),'name')).toLowerCase().replace(/[ _-]/g,'');
-            if(name==='desnivelvoice')result.push(i);
+            if(name==='desnivelvoice' || name==='desnivelsnakecontrol')result.push(i);
         }
         return result;
     }
@@ -86,8 +86,17 @@ var DesnivelRecording = (function () {
     }
     function clearCopy(track){
         var devices=voiceDevices(track);
-        for(var i=devices.length-1;i>=0;i--)track.call('delete_device',devices[i]);
-        if(voiceDevices(track).length)throw new Error('Desnivel_Voice ancora presente nella copia');
+        var all=ids(track,'devices'), remove={};
+        for(var d=0;d<devices.length;d++){
+            var index=devices[d];remove[index]=true;
+            var name=String(value(api(all[index]),'name')).toLowerCase().replace(/[ _-]/g,'');
+            if(name==='desnivelsnakecontrol'){
+                if(index===0)throw new Error('Snake precedente al controllo non trovato nella copia');
+                remove[index-1]=true;
+            }
+        }
+        for(var i=all.length-1;i>=0;i--)if(remove[i])track.call('delete_device',i);
+        if(voiceDevices(track).length)throw new Error('controllo Desnivel ancora presente nella copia');
         var clips=ids(track,'arrangement_clips'), slots=ids(track,'clip_slots');
         for(i=0;i<slots.length;i++)if(value(api(slots[i]),'has_clip')){
             var clip=ids(api(slots[i]),'clip');if(clip.length)clips.push(clip[0]);
@@ -110,7 +119,7 @@ var DesnivelRecording = (function () {
             if(!value(track,'has_midi_input'))throw new Error('sorgente MIDI richiesta: '+name);
             sources.push({id:all[i],name:name});
         }
-        if(!sources.length)throw new Error('nessuna traccia con Desnivel_Voice trovata');
+        if(!sources.length)throw new Error('nessuna traccia con Desnivel_Voice o Desnivel_Snake_Control trovata');
         var operations=[];
         for(i=0;i<sources.length;i++)for(var t=0;t<2;t++){
             var type=t===0?'audio':'midi';
@@ -199,7 +208,7 @@ var DesnivelRecording = (function () {
             for(i=0;i<arms.length;i++)api(arms[i].id).set('arm',0);
             for(i=0;i<prepared.length;i++){
                 var target=api(prepared[i].id);
-                if(voiceDevices(target).length)throw new Error('Desnivel_Voice presente in una traccia REC');
+                if(voiceDevices(target).length)throw new Error('controllo Desnivel presente in una traccia REC');
                 target.set('current_monitoring_state',2);target.set('arm',1);
             }
             recording.task=new Task(advanceStart);
