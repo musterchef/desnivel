@@ -399,6 +399,10 @@ def test_restart_rewinds_and_stays_stopped_until_a_new_live_play(allocated):
     assert runtime.elapsed == runtime.progress == runtime.beat == 0
     assert runtime.last_decisions is None
     # La conferma di Stop mantiene lo zero, anche col trascorrere del tempo.
+    receive(beat=9, playing=0, epoch=1); runtime.tick()
+    assert runtime.beat == 0 and runtime._restart_epoch is not None
+    receive(beat=9, playing=1, epoch=2); runtime.tick()
+    assert runtime.state == 'stopped' and runtime.elapsed == 0
     receive(beat=0, playing=0, epoch=1); runtime.tick()
     now[0] += 100
     receive(beat=0, playing=0, epoch=1)

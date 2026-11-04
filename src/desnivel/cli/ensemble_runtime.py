@@ -191,9 +191,10 @@ class EnsembleRuntime:
         if bpm is not None and (type(bpm) not in (int, float) or not math.isfinite(bpm) or bpm <= 0):
             raise ValueError('BPM del trasporto positivo e finito richiesto')
         # Durante il riavvolgimento possono arrivare notifiche inviate prima
-        # del comando. Il device cambia epoch allo Stop o al ritorno al beat zero.
+        # del comando. Attendere una nuova epoca con Live fermo al beat zero.
         if self._restart_epoch is not None:
-            if self.instance == message['instance'] and epoch <= self._restart_epoch:
+            if (beat != 0 or playing != 0
+                    or (self.instance == message['instance'] and epoch <= self._restart_epoch)):
                 self.transport_serial = message['serial']
                 return
             self._restart_epoch = None

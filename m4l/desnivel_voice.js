@@ -8,6 +8,7 @@ var connected=false, lastReply=0, state=null, snapshot='', parameterNames=[], pr
 var selectedParameter=0, patch=this.patcher;
 var lastTransportSerial=-1, backendSession='';
 var lastRecordingSerial=-1;
+var rewindPending=false;
 var deviceAdapter=null;
 var presetDraft='';
 var wireParts={}, wireOrder=[];
@@ -51,7 +52,8 @@ function tempo(value){
 }
 function clock(ticks,running){
     ticks=Number(ticks);running=Number(running);
-    if(ticks<lastTick || running!==playing)epoch++;
+    if(rewindPending && ticks===0 && running===0){epoch++;rewindPending=false;}
+    else if(!rewindPending && (ticks<lastTick || running!==playing))epoch++;
     lastTick=ticks;beat=ticks/480;playing=running;
     if(connected)request('transport',{});
 }
@@ -118,8 +120,9 @@ function receive(){
             if(m.action==='pause'){playerReset();outlet(3,'call','stop_playing');}
             else if(m.action==='resume')outlet(3,'call','continue_playing');
             else if(m.action==='restart'){
-                epoch++;
+                rewindPending=true;
                 playerReset();outlet(3,'call','stop_playing');
+                outlet(3,'set','start_time',0);
                 outlet(3,'set','current_song_time',0);
             }else return;
             lastTransportSerial=m.serial;return;

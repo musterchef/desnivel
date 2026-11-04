@@ -154,9 +154,12 @@ c.receive(JSON.stringify(plan));assert.equal(output.at(-1)[1][0],'planbytes');
 const liveCommand={version:1,kind:'transport',voice:'part_a',instance:c.instance,session:'python-1',serial:100,action:'restart'};
 const rewindEpoch=c.epoch;
 c.receive(JSON.stringify(liveCommand));
-assert.equal(c.epoch,rewindEpoch+1); // Conferma anche un reset quando Live è già fermo a zero.
+assert.equal(c.epoch,rewindEpoch); // La conferma attende il clock di Live fermo a zero.
 assert.deepStrictEqual(output.filter(a=>a[0]===3),[
- [3,'call','stop_playing'],[3,'set','current_song_time',0]]);
+ [3,'call','stop_playing'],[3,'set','start_time',0],[3,'set','current_song_time',0]]);
+c.clock(4800,0);assert.equal(c.epoch,rewindEpoch);
+c.clock(0,0);assert.equal(c.epoch,rewindEpoch+1);
+c.clock(0,0);assert.equal(c.epoch,rewindEpoch+1);
 const liveCount=output.filter(a=>a[0]===3).length;
 c.receive(JSON.stringify(liveCommand));assert.equal(output.filter(a=>a[0]===3).length,liveCount);
 c.receive(JSON.stringify({...liveCommand,serial:101,action:'pause'}));
