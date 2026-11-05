@@ -44,12 +44,13 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--template', type=Path, default=DEFAULT_TEMPLATE)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--update', action='store_true', help='Aggiorna il dispositivo e gli script nella cartella esistente.')
     args = parser.parse_args(argv)
-    if args.output.exists():
-        parser.error('usare una cartella di output nuova')
+    if args.output.exists() and not args.update:
+        parser.error('la cartella di output deve essere nuova oppure usare --update')
     patch = document(json.loads((ROOT/'m4l/desnivel_voice.maxpat').read_text()))
     device = build(args.template.read_bytes(), patch)
-    args.output.mkdir(parents=True)
+    args.output.mkdir(parents=True, exist_ok=args.update)
     path = args.output/'Desnivel_Snake_Control.amxd'
     path.write_bytes(device)
     for name in SCRIPTS:

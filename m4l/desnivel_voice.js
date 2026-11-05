@@ -1,6 +1,6 @@
 // Interfaccia della voce. Le scelte compositive restano nel motore Python.
 include('desnivel_recording.js');
-inlets=1;outlets=4; // UDP, player, diagnostica, API del trasporto Live
+inlets=1;outlets=5; // UDP, player, diagnostica, API del trasporto Live
 var voiceId='', replyPort=9101, instance='', serial=0, acknowledged=-1;
 var backendPort=9006, beat=0, playing=0, epoch=0, lastTick=-1;
 var bpm=null;
@@ -8,11 +8,43 @@ var connected=false, lastReply=0, state=null, snapshot='', parameterNames=[], pr
 var selectedParameter=0, patch=this.patcher;
 var lastTransportSerial=-1, backendSession='';
 var lastRecordingSerial=-1;
-var rewindPending=false;
+var rewindPending=false, startFromZero=false;
 var deviceAdapter=null;
 var presetDraft='';
 var wireParts={}, wireOrder=[];
 var wireStream=Math.floor(Math.random()*0x7fffffff), wireSerial=0;
+var endpointId='', liveDeviceId=0;
+function endpoint(){
+    var values=arrayfromargs(arguments);
+    if(values[0]==='symbol')values.shift();
+    var value=values.join(' ');
+    // Live può ripristinare 0 prima del valore persistito: non è un'identità.
+    if(/^endpoint_[0-9]+_[0-9]+$/.test(value))endpointId=value;
+}
+function announce(){
+    if(typeof LiveAPI==='undefined')return;
+    try{
+        var device=new LiveAPI(null,'this_device');
+        if(!device.id)return;
+        if(!liveDeviceId){
+            liveDeviceId=Number(device.id);
+            if(!instance)instance='device_'+liveDeviceId+'_'+Math.floor(Math.random()*1000000000);
+            ui('receive_port').message('bang');
+            if(replyPort===9101 || replyPort===9201)ui('receive_port').message(10000+liveDeviceId%50000);
+        }
+        if(!endpointId){
+            endpointId='endpoint_'+new Date().getTime()+'_'+Math.floor(Math.random()*1000000000);
+            ui('endpoint_identity').setvalueof(endpointId);
+        }
+        var path=String(device.path).replace(/"/g,'').split(' ');
+        // Controlli al livello principale delle tracce normali di Live.
+        if(path.length!==5 || path[0]!=='live_set' || path[1]!=='tracks' || path[3]!=='devices')return;
+        var track=new LiveAPI(null,path.slice(0,3).join(' '));
+        var m={version:1,action:'discover',device_id:endpointId,instance:instance,reply_port:replyPort,
+            device_kind:deviceAdapter?'snake':'voice',playing:playing,track:{name:String(track.get('name')),index:Number(path[2]),id:Number(track.id)}};
+        outlet(4,['/desnivel/v1/voice/control'].concat(utf8bytes(JSON.stringify(m))));
+    }catch(e){status('rilevamento Live: '+e);}
+}
 // I payload variabili restano byte numerici, senza simboli Max per ogni JSON.
 function utf8bytes(text){var binary=unescape(encodeURIComponent(text)), out=[];for(var i=0;i<binary.length;i++)out.push(binary.charCodeAt(i));return out;}
 function utf8text(bytes){var binary='';for(var i=0;i<bytes.length;i++){if(bytes[i]<0||bytes[i]>255||Math.floor(bytes[i])!==bytes[i])throw new Error('byte non valido');binary+=String.fromCharCode(bytes[i]);}return decodeURIComponent(escape(binary));}
@@ -28,12 +60,12 @@ function connect(){
     if(connected){request('hello',{});return;}
     disconnect();
     if(!/^[A-Za-z0-9_-]+$/.test(voiceId)){status('Enter a voice ID');return;}
-    instance='device_'+new Date().getTime()+'_'+Math.floor(Math.random()*1000000000);
-    serial=0;acknowledged=-1;lastTransportSerial=-1;lastRecordingSerial=-1;backendSession='';lastReply=new Date().getTime();connected=true;request('hello',{});
+    if(!instance)instance='device_'+new Date().getTime()+'_'+Math.floor(Math.random()*1000000000);
+    acknowledged=-1;lastTransportSerial=-1;lastRecordingSerial=-1;backendSession='';lastReply=new Date().getTime();connected=true;request('hello',{});
 }
 function request(action, extra){
     if(!connected)return;
-    var m={version:1,voice:voiceId,instance:instance,reply_port:replyPort,serial:++serial,action:action,capabilities:['transport_control','recording_control'],transport:{beat:beat,playing:playing,epoch:epoch,bpm:bpm}};
+    var m={version:1,voice:voiceId,device_id:endpointId,instance:instance,reply_port:replyPort,serial:++serial,action:action,capabilities:['transport_control','recording_control'],transport:{beat:beat,playing:playing,epoch:epoch,bpm:bpm}};
     if(deviceAdapter){m.capabilities=deviceAdapter.capabilities;m.device_state=deviceAdapter.snapshot();}
     for(var key in extra)m[key]=extra[key];
     var bytes=utf8bytes(JSON.stringify(m));
@@ -54,10 +86,12 @@ function clock(ticks,running){
     ticks=Number(ticks);running=Number(running);
     if(rewindPending && ticks===0 && running===0){epoch++;rewindPending=false;}
     else if(!rewindPending && (ticks<lastTick || running!==playing))epoch++;
+    if(!rewindPending && running===1)startFromZero=false;
     lastTick=ticks;beat=ticks/480;playing=running;
     if(connected)request('transport',{});
 }
 function heartbeat(){
+    announce();
     if(!connected)return;
     DesnivelRecording.heartbeat();
     expireWire();
@@ -101,10 +135,21 @@ function wireBytes(data){
 }
 function receive(){
     try{
-        if(!connected)return;
         var bytes=wireBytes(arrayfromargs(arguments));
         if(bytes===null)return;
         var m=JSON.parse(utf8text(bytes));
+        if(m.version===1 && m.kind==='release' && m.instance===instance && m.device_id===endpointId){
+            disconnect();voiceId='';ui('voice_id').message('set','');return;
+        }
+        if(m.version===1 && m.kind==='binding' && m.instance===instance && m.device_id===endpointId){
+            if(!/^[A-Za-z0-9_-]{1,100}$/.test(m.voice) || typeof m.backend_port!=='number'
+                || Math.floor(m.backend_port)!==m.backend_port || m.backend_port<1024 || m.backend_port>65535)return;
+            if(connected && voiceId===m.voice && backendPort===m.backend_port){request('hello',{});return;}
+            disconnect();voiceId=m.voice;
+            ui('voice_id').message('set',voiceId);
+            ui('server_port').message(m.backend_port);
+            backendPort=m.backend_port;connect();return;
+        }
         if(!connected || m.version!==1 || m.voice!==voiceId || m.instance!==instance)return;
         if(deviceAdapter && deviceAdapter.receive(m))return;
         if(m.kind==='recording'){
@@ -118,10 +163,12 @@ function receive(){
             if(!backendSession||m.session!==backendSession)return;
             if(typeof m.serial!=='number'||!isFinite(m.serial)||Math.floor(m.serial)!==m.serial||m.serial<0||m.serial<=lastTransportSerial)return;
             if(m.action==='pause'){playerReset();outlet(3,'call','stop_playing');}
-            else if(m.action==='resume')outlet(3,'call','continue_playing');
+            else if(m.action==='resume')outlet(3,'call',startFromZero?'start_playing':'continue_playing');
             else if(m.action==='restart'){
                 rewindPending=true;
-                playerReset();outlet(3,'call','stop_playing');
+                startFromZero=true;
+                playerReset();
+                if(playing)outlet(3,'call','stop_playing');
                 outlet(3,'set','start_time',0);
                 outlet(3,'set','current_song_time',0);
             }else return;

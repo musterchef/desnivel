@@ -156,7 +156,7 @@ const rewindEpoch=c.epoch;
 c.receive(JSON.stringify(liveCommand));
 assert.equal(c.epoch,rewindEpoch); // La conferma attende il clock di Live fermo a zero.
 assert.deepStrictEqual(output.filter(a=>a[0]===3),[
- [3,'call','stop_playing'],[3,'set','start_time',0],[3,'set','current_song_time',0]]);
+ [3,'set','start_time',0],[3,'set','current_song_time',0]]);
 c.clock(4800,0);assert.equal(c.epoch,rewindEpoch);
 c.clock(0,0);assert.equal(c.epoch,rewindEpoch+1);
 c.clock(0,0);assert.equal(c.epoch,rewindEpoch+1);
@@ -166,10 +166,22 @@ c.receive(JSON.stringify({...liveCommand,serial:101,action:'pause'}));
 assert.deepStrictEqual(output.at(-1),[3,'call','stop_playing']);
 c.receive(JSON.stringify({...state,serial:5,session:'python-2'}));
 c.receive(JSON.stringify({...liveCommand,session:'python-2',serial:1,action:'resume'}));
+assert.deepStrictEqual(output.at(-1),[3,'call','start_playing']);
+c.clock(0,1);
+c.clock(480,0);
+c.receive(JSON.stringify({...liveCommand,session:'python-2',serial:2,action:'resume'}));
 assert.deepStrictEqual(output.at(-1),[3,'call','continue_playing']);
 const afterNewSession=output.filter(a=>a[0]===3).length;
 c.receive(JSON.stringify({...liveCommand,serial:102,action:'pause'}));
 assert.equal(output.filter(a=>a[0]===3).length,afterNewSession);
+c.clock(3840,1);
+const beforePlayingRewind=output.filter(a=>a[0]===3).length;
+c.receive(JSON.stringify({...liveCommand,session:'python-2',serial:3}));
+assert.deepStrictEqual(output.filter(a=>a[0]===3).slice(beforePlayingRewind),[
+ [3,'call','stop_playing'],[3,'set','start_time',0],[3,'set','current_song_time',0]]);
+c.clock(0,0);
+c.receive(JSON.stringify({...liveCommand,session:'python-2',serial:4,action:'resume'}));
+assert.deepStrictEqual(output.at(-1),[3,'call','start_playing']);
 c.lastReply=0;c.heartbeat();assert(output.some(a=>a[0]===1&&a[1]==='panic'));
 c.disconnect();assert(!c.connected);c.receive(JSON.stringify(plan));assert.notEqual(output.at(-1)[1][0],'planbytes');
 console.log('OK: identity, menus, validated values, plan routing, timeout and disconnect');

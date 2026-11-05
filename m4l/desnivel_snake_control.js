@@ -111,5 +111,5 @@ var DesnivelSnakeControl = (function () {
         if(targetPath)messnamed('desnivel.snake.observe','subscribe',targetPath,0);
         telemetryPacket=null;outlet(1,'panic');
     }
-    return {snapshot:snapshot,receive:receive,panic:mute,telemetry:telemetry,dispose:dispose,capabilities:['transport_control','bank_control']};
+    return {snapshot:snapshot,receive:receive,panic:mute,telemetry:telemetry,dispose:dispose,capabilities:['transport_control','recording_control','bank_control']};
 })();

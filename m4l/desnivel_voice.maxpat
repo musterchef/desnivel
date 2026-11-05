@@ -1532,6 +1532,62 @@
           ],
           "annotation": "Stato del meteo e parametri interessati nel piano corrente della voce."
         }
+      },
+      {
+        "box": {
+          "id": "inventory_send",
+          "maxclass": "newobj",
+          "text": "udpsend 127.0.0.1 9006",
+          "patching_rect": [
+            20,
+            1160,
+            210,
+            22
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "endpoint_identity",
+          "varname": "endpoint_identity",
+          "maxclass": "newobj",
+          "text": "pattr endpoint_identity",
+          "patching_rect": [
+            20,
+            1200,
+            190,
+            22
+          ],
+          "restore": [
+            "unassigned"
+          ],
+          "saved_object_attributes": {
+            "parameter_enable": 1,
+            "parameter_mappable": 0
+          },
+          "saved_attribute_attributes": {
+            "valueof": {
+              "parameter_longname": "Endpoint_ID",
+              "parameter_shortname": "endpoint",
+              "parameter_type": 3,
+              "parameter_invisible": 1,
+              "parameter_initial_enable": 0
+            }
+          }
+        }
+      },
+      {
+        "box": {
+          "id": "endpoint_prefix",
+          "maxclass": "newobj",
+          "text": "prepend endpoint",
+          "patching_rect": [
+            220,
+            1200,
+            190,
+            22
+          ]
+        }
       }
     ],
     "lines": [
@@ -2662,6 +2718,42 @@
             0
           ]
         }
+      },
+      {
+        "patchline": {
+          "source": [
+            "interface",
+            4
+          ],
+          "destination": [
+            "inventory_send",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "endpoint_identity",
+            0
+          ],
+          "destination": [
+            "endpoint_prefix",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "endpoint_prefix",
+            0
+          ],
+          "destination": [
+            "interface",
+            0
+          ]
+        }
       }
     ],
     "parameters": {
@@ -2678,6 +2770,11 @@
       "persist": [
         "Voice_ID",
         "Part",
+        0
+      ],
+      "endpoint_identity": [
+        "Endpoint_ID",
+        "endpoint",
         0
       ]
     },
