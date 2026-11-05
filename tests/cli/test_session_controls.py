@@ -3,7 +3,8 @@ import os
 import pty
 import termios
 
-from desnivel.cli.session_controls import TerminalControls, apply_control
+from desnivel.cli.session_controls import TerminalControls
+from desnivel.cli.session_controller import apply_control
 
 
 def test_only_the_transport_voice_receives_commands_and_duplicate_pause_is_idempotent():
@@ -37,10 +38,10 @@ def test_terminal_reads_adjacent_keys_and_restores_settings_on_exit():
         try:
             with TerminalControls(stream) as keyboard:
                 os.write(master, b' rCc123gSmMn\n\x1b')
-                assert list(keyboard.poll()) == ['toggle', 'restart', 'connect', 'connect',
+                assert list(keyboard.poll()) == ['toggle', 'restart', 'scan', 'scan',
                                                  'record_audio', 'record_midi', 'record_both',
                                                  'record_start', 'record_stop', 'weather_toggle', 'weather_toggle',
-                                                 'snake_setup', 'setup_check', 'setup_cancel']
+                                                 'component_prepare', 'component_check', 'setup_cancel']
             restored = termios.tcgetattr(stream.fileno())
             # macOS può attivare PENDIN al ritorno in modalità canonica:
             # è il flag transitorio di rielaborazione dell'input, non un'impostazione cambiata.
@@ -56,3 +57,37 @@ def test_weather_key_changes_context_without_sending_live_transport_commands():
     runtime = SimpleNamespace(toggle_context=lambda name: calls.append(name))
     apply_control(runtime, 'weather_toggle')
     assert calls == ['weather']
+
+
+def test_terminal_command_input_preserves_utf8_and_does_not_trigger_shortcuts():
+    master, slave = pty.openpty()
+    try:
+        with os.fdopen(slave, 'r') as stream, TerminalControls(stream) as keyboard:
+            os.write(master, ':aggiungi traccia\n'.encode())
+            assert list(keyboard.poll()) == ['command:aggiungi traccia']
+            keyboard.read_command()
+            os.write(master, 'città\x7fà\n'.encode())
+            assert list(keyboard.poll()) == ['command:città']
+            keyboard.read_command()
+            os.write(master, b'abc\x1b')
+            assert list(keyboard.poll()) == ['setup_cancel']
+            assert keyboard.command is None
+    finally:
+        os.close(master)
+
+
+def test_preparation_shortcuts_and_pasted_answers_follow_the_current_question():
+    master, slave = pty.openpty()
+    try:
+        with os.fdopen(slave, 'r') as stream, TerminalControls(stream) as keyboard:
+            os.write(master, b'abtvd')
+            assert list(keyboard.poll()) == ['setup_begin', 'setup_associate', 'scan', 'setup_save', 'details_toggle']
+            os.write(master, ':aggiungi traccia\n1\ncittà\n'.encode())
+            answers = []
+            for action in keyboard.poll():
+                answers.append(action)
+                if len(answers) < 3:
+                    keyboard.read_command()
+            assert answers == ['command:aggiungi traccia', 'command:1', 'command:città']
+    finally:
+        os.close(master)

@@ -9,7 +9,7 @@ import time
 import numpy as np
 
 from desnivel.adapters.voice_device import DeviceVoice
-from desnivel.cli.ensemble import EnsembleSession
+from desnivel.music.session import EnsembleSession
 from desnivel.cli.generators import build_generator
 from desnivel.cli.window_context import WindowContext
 from desnivel.music.phrases import Phrase
@@ -18,7 +18,7 @@ from desnivel.music.timeline import TimelineManager, allocate_timeline
 
 class EnsembleRuntime:
     def __init__(self, track, config, bridge, speed=1., clock=time.monotonic, *, timing="linear", adaptive=True,
-                 context_sources=()):
+                 context_sources=(), external_voices=None):
         if type(adaptive) is not bool:
             raise ValueError('adaptive richiede un booleano')
         if not math.isfinite(speed) or speed <= 0:
@@ -53,8 +53,14 @@ class EnsembleRuntime:
                 window_beats=self.window, **settings)
             self.timeline = TimelineManager(plan)
         self.transport_voice = config['transport_voice']
-        if self.transport_voice not in config['voices']:
+        external_voices = dict(external_voices or {})
+        if external_voices.keys() & config['voices'].keys():
+            raise ValueError('identificativi delle voci esterne duplicati')
+        bridge.voices.update(external_voices)
+        if self.transport_voice is not None and self.transport_voice not in (config['voices'].keys() | external_voices.keys()):
             raise ValueError('transport_voice non registrata')
+        if (config['voices'] or external_voices) and self.transport_voice is None:
+            raise ValueError('scegliere la voce del trasporto')
         self.elapsed = 0.
         self.playing = False
         self.beat = 0.
@@ -77,6 +83,8 @@ class EnsembleRuntime:
                                          'dependencies': list(spec.get('dependencies', [])),
                                          'optional_dependencies': list(spec.get('optional_dependencies', []))}
                                    for name, spec in config['voices'].items()}
+        self.voice_descriptions.update({name: dict(name=name, generator=None, dependencies=[], optional_dependencies=[])
+                                       for name in external_voices})
         self.window_context = WindowContext(track, config.get('trip_analysis'))
         self.context_sources = tuple(context_sources)
         names = set()
@@ -122,7 +130,7 @@ class EnsembleRuntime:
                 describe_controls=describe_controls, preset_defaults=registered.preset_defaults,
                 migrate_preset=registered.migrate_preset)
             bridge.voices[name].read_weather = lambda name=name: self.weather_status(name)
-        self.state = 'waiting_for_transport'
+        self.state = 'waiting_for_transport' if bridge.voices else 'empty'
 
     def toggle_context(self, name):
         """Cambia il contributo alle finestre future, conservando i piani già inviati."""
@@ -159,7 +167,7 @@ class EnsembleRuntime:
         distance = float(np.interp(self.track.t[0]+self.elapsed, self.track.t, self.distances))
         return min(1., max(0., (distance-self.distances[0])/(self.distances[-1]-self.distances[0])))
 
-    def reset(self):
+    def reset(self, *, preserve_development=False):
         for name in self.sounding:
             if self.bridge.connected(name):
                 self.bridge.reset(name)
@@ -171,10 +179,11 @@ class EnsembleRuntime:
         self.last_section = None
         self.last_decisions = None
         self._sent_plans.clear()
-        self.session.coordinator.reset()
-        for registered in self.registry.values():
-            if registered.reset:
-                registered.reset()
+        self.session.coordinator.reset(preserve_development=preserve_development)
+        if not preserve_development:
+            for registered in self.registry.values():
+                if registered.reset:
+                    registered.reset()
 
     def on_message(self, bridge, message):
         if message['voice'] != self.transport_voice:
@@ -202,7 +211,7 @@ class EnsembleRuntime:
         if self.instance == message['instance'] and beat >= self.beat and self.epoch == epoch:
             self._consume_windows(beat)
         if self.instance != message['instance'] or self.epoch != epoch or beat < self.beat or not playing:
-            self.reset()
+            self.reset(preserve_development=self.instance == message['instance'] and beat >= self.beat)
         self.instance, self.transport_serial = message['instance'], message['serial']
         self.beat, self.playing, self.epoch = beat, bool(playing), epoch
         self.bpm = bpm
@@ -227,7 +236,7 @@ class EnsembleRuntime:
             self.state = 'stopped'
         elif action == 'pause':
             self._consume_windows(self.beat)
-            self.reset()
+            self.reset(preserve_development=True)
             self.paused = True
             if self.state != 'finished':
                 self.state = 'paused'
@@ -253,6 +262,9 @@ class EnsembleRuntime:
 
     def tick(self):
         self.advance()
+        if not self.bridge.voices:
+            self.state = 'empty'
+            return
         if self.error:
             self.state = 'error'
             return
@@ -280,7 +292,7 @@ class EnsembleRuntime:
             self.state = 'playing'
         if self.state != 'playing':
             if self.sounding or self.pending_windows:
-                self.reset()
+                self.reset(preserve_development=True)
             return
         if self.timeline and self.next_window == self.timeline.timeline.total_windows:
             return  # L'ultima finestra deve ancora concludersi in Live.

@@ -38,13 +38,14 @@ class SnakeControlSession:
         controls = {**{name: Control(*limits) for name, limits in CONTROL_LIMITS.items()},
                     'pulse': ChoiceControl(tuple((p, p) for p in PULSES)),
                     'mode': ChoiceControl((('autonomous', 'autonomo'), ('coordinated', 'coordinato'))),
-                    'source': ChoiceControl(tuple((name, value['name']) for name, value in sources.items()))}
+                    'source': ChoiceControl((('none', 'nessuna'), *tuple((name, value['name']) for name, value in sources.items())))}
         devices = {}
         for name, spec in config['components'].items():
             if (not isinstance(name, str) or not re.fullmatch(r'[A-Za-z0-9_-]{1,100}', name) or not isinstance(spec, dict)
                     or name in sources or set(spec) != {'role', 'mode', 'source'} or spec['role'] not in ROLES
                     or spec['mode'] not in ('autonomous', 'coordinated')
-                    or not isinstance(spec['source'], str) or spec['source'] not in sources):
+                    or not isinstance(spec['source'], str)
+                    or spec['source'] not in sources and not (spec['mode'] == 'autonomous' and spec['source'] == 'none')):
                 raise ValueError('componente Snake: identificativo, role, mode e source validi richiesti')
             component = dict(defaults=dict(spec), role=spec['role'], manual_role=None, overrides={},
                              sent=None, instance=None, notice='in attesa della sessione', error=None,
@@ -57,14 +58,19 @@ class SnakeControlSession:
                 return {**recipe['parameters'], 'pulse': recipe['pulse']['slowest'], **c['automatic'], 'mode': c['defaults']['mode'],
                         'source': c['defaults']['source'], **c['overrides']}
             def apply(parameters, c=component):
+                chosen = {**c['defaults'], **parameters}
+                if chosen['mode'] == 'coordinated' and chosen['source'] not in sources:
+                    raise ValueError('scegli una sorgente prima della modalità coordinata')
                 c['overrides'] = dict(parameters)
-            def parameter(key, value, c=component):
-                c['overrides'][key] = value
-            def manual(key, enabled, c=component, read=values):
+            def parameter(key, value, c=component, update=apply):
+                update({**c['overrides'], key: value})
+            def manual(key, enabled, c=component, read=values, update=apply):
+                parameters = dict(c['overrides'])
                 if enabled:
-                    c['overrides'][key] = read()[key]
+                    parameters[key] = read()[key]
                 else:
-                    c['overrides'].pop(key, None)
+                    parameters.pop(key, None)
+                update(parameters)
             def role(value, c=component):
                 c['manual_role'] = value
                 c['role'] = value or c['defaults']['role']
@@ -83,6 +89,8 @@ class SnakeControlSession:
                     if params['mode'] == 'autonomous' else {},
                     'activity': {'label': 'attività dei gate'}, 'length_ms': {'label': 'durata di riferimento (ms)'},
                     'movement': {'label': 'movimento del percorso'}, 'pulse': {'label': 'suddivisione'}})
+        self.devices = devices
+        self._bridge = None
         self.server = server_factory(devices, config['port'], self.on_message, self.on_error) if server_factory else None
         if self.server:
             self.server.server.timeout = 0
@@ -93,6 +101,17 @@ class SnakeControlSession:
         if isinstance(config, dict) and config.get('port') == main_port:
             raise ValueError('porta del controllo Snake e porta della sessione devono essere distinte')
         return cls(config, sources)
+
+    @property
+    def bridge(self):
+        return self.server.bridge if self.server else self._bridge
+
+    def attach_bridge(self, bridge):
+        if self.server is not None:
+            raise ValueError('il componente usa già un server dedicato')
+        if self.devices.keys()-bridge.voices.keys():
+            raise ValueError('registrare i controlli del componente prima di collegare il server')
+        self._bridge = bridge
 
     def on_error(self, error):
         print(f'Snake: {error}', flush=True)
@@ -122,7 +141,8 @@ class SnakeControlSession:
 
     def forecasts(self, start, length_beats, *, beat, bpm, epoch):
         """Sorgenti musicali neutre; una previsione accettata trattiene la revisione dei banchi."""
-        self.server.poll()
+        if self.server:
+            self.server.poll()
         if self.transport_epoch != epoch:
             for component in self.components.values():
                 component['hold_until'], component['pending'] = 0., False
@@ -132,7 +152,7 @@ class SnakeControlSession:
         result = {}
         for name, component in self.components.items():
             reason = None
-            if not self.server.bridge.connected(name) or not component.get('ready'):
+            if not self.bridge.connected(name) or not component.get('ready'):
                 reason = 'controllo non collegato o non pronto'
             elif component.get('has_instrument') is not True:
                 reason = 'strumento non disponibile dopo il controllo'
@@ -153,7 +173,7 @@ class SnakeControlSession:
         """Distingue collegamento, compatibilità dei banchi e presenza dello strumento."""
         missing = {}
         for name, component in self.components.items():
-            if not self.server.bridge.connected(name):
+            if not self.bridge.connected(name):
                 missing[name] = 'controllo non collegato'
             elif component['error']:
                 missing[name] = str(component['error'])
@@ -168,7 +188,7 @@ class SnakeControlSession:
         return missing
 
     def _send(self, name, parameters, key):
-        bridge = self.server.bridge
+        bridge = self.bridge
         component = self.components[name]
         connection = bridge.connections[name]
         if component['sent'] == key:
@@ -182,8 +202,9 @@ class SnakeControlSession:
         bridge.send(connection['port'], ADDRESS, component['payload'])
 
     def tick(self, state):
-        self.server.poll()
-        bridge = self.server.bridge
+        if self.server:
+            self.server.poll()
+        bridge = self.bridge
         for name, component in self.components.items():
             if not bridge.connected(name) or not component.get('ready'):
                 continue
@@ -273,9 +294,10 @@ class SnakeControlSession:
                          decisions=decisions, window=key)
 
     def close(self):
-        if self.server is None:
+        if self.bridge is None:
             return
         for name in self.components:
-            if self.server.bridge.connected(name):
+            if self.bridge.connected(name):
                 self._send(name, {f'Gate_{i:02d}': 0 for i in range(1, 17)}, ('closed',))
-        self.server.close()
+        if self.server:
+            self.server.close()

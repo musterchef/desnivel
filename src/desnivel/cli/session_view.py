@@ -14,7 +14,7 @@ def _value(value):
     return value if isinstance(value, str) else f'{value:.3g}'
 
 
-def render_session(state):
+def render_details(state):
     trip, transport = state['trip'], state['transport']
     decision = state['decisions']['director']
     rows = [f"DESNIVEL | {state['state']} | Live {'PLAY' if transport['playing'] else 'STOP'} | beat {transport['beat']:.2f}",
@@ -152,7 +152,121 @@ def render_session(state):
         if recording.get('error'):
             rows.append('ERRORE: REC · '+recording['error'])
         rows.append('REC · 1: prepara audio | 2: prepara MIDI | 3: entrambi | G: registra da zero | S: stop REC')
-    rows.append('C: collega tutte le Voice | Spazio: pausa/riprendi | R: torna a zero | M: meteo | N: prepara Snake | Ctrl+C: chiudi.')
+    rows.append('C: collega tutte le Voice | Spazio: pausa/riprendi | R: torna a zero | M: meteo | N: prepara Snake | : comandi tracce | Ctrl+C: chiudi.')
+    if state.get('command_input') is not None:
+        rows.insert(len(rows)-1, 'COMANDO: '+state['command_input'])
+    return '\n'.join(rows)
+
+
+def _errors(state):
+    rows = []
+    if state.get('error'):
+        rows.append('ERRORE: '+state['error'])
+    if state.get('control_error'):
+        rows.append('COMANDO: '+state['control_error'])
+    return rows
+
+
+def render_preparation(state):
+    setup = state['setup']
+    counts = setup['counts']
+    title = 'DESNIVEL · preparazione del set'
+    if state.get('configuration'):
+        title += ' · '+state['configuration']['name']
+    rows = [title,
+            f"Live {'in riproduzione' if state['transport']['playing'] else 'fermo'} · "
+            f"{counts['detected']} tracce rilevate · {counts['associated']} associate · {counts['connected']} collegate",
+            'Viaggio: '+state['trip']['stage'], '']
+    step = setup.get('step')
+    titles = {'destination': '1 · scegli la traccia', 'name': '2 · nome della voce',
+              'voice': '3 · voce musicale', 'behavior': '4 · comportamento',
+              'existing_voice': 'scegli la voce da ricollegare',
+              'source': 'sorgente del basso', 'texture_source': 'sorgente della nota sostenuta',
+              'support': 'sorgente di sostegno', 'answer': 'sorgente delle risposte',
+              'snake_source': 'sorgente di Snake'}
+    rows.append('TRACCE NEL SET')
+    if step == 'destination':
+        rows.append('Scrivi il numero tra [ ] della traccia e premi Invio.')
+    statuses = {'available': 'disponibile', 'connected': 'associata', 'connecting': 'collegamento in corso',
+                'missing': 'non rilevata', 'conflict': 'da verificare', 'update_required': 'controllo da aggiornare'}
+    for track in setup['tracks']:
+        number = f"[{track['choice']}]" if track.get('choice') else f"#{track['position']}" if track.get('position') else '—'
+        label = f"  {number:>3}  {track['name']} · {statuses[track['status']]}"
+        if track.get('voice_name') and track['voice_name'] != track['name']:
+            label += ' → '+track['voice_name']
+        rows.append(label)
+    if not setup['tracks']:
+        rows.append('  Nessuna traccia con controllo Desnivel rilevata.')
+    for diagnostic in setup.get('diagnostics', []):
+        rows.extend(['', 'COLLEGAMENTO: '+diagnostic])
+    rows.append('')
+    if step:
+        rows.append('ASSOCIAZIONE · '+titles[step])
+        rows.append(setup['notice'])
+        if step == 'destination':
+            first = next((track for track in setup['tracks'] if track.get('choice')
+                          and track['status'] == 'available'), None)
+            if first:
+                rows.append(f"Esempio: {first['choice']} + Invio seleziona {first['name']}.")
+            rows.append('  [0] solo istruzioni per una nuova traccia, non associa quelle esistenti')
+        rows.extend(f"  [{choice['value']}] {choice['label']}" for choice in setup['choices'])
+    elif setup.get('notice'):
+        rows.append(setup['notice'])
+    rows.extend(_errors(state))
+    rows.append('')
+    if state.get('command_input') is not None:
+        rows.append('Invio conferma · Esc annulla')
+        rows.append('> '+state['command_input']+'▏')
+    else:
+        rows.extend(['A associa traccia · B ricollega voce · T cerca · V salva',
+                     'D dettagli · : comando · Spazio avvia/pausa · Ctrl+C esci'])
+    return '\n'.join(rows)
+
+
+def render_session(state, *, details=False):
+    if details:
+        return render_details(state)
+    setup = state.get('setup', {})
+    if setup.get('kind') == 'guided' and (not state['transport']['playing'] or setup.get('status') == 'waiting'):
+        return render_preparation(state)
+    trip, transport = state['trip'], state['transport']
+    rows = [f"DESNIVEL · {'Live PLAY' if transport['playing'] else 'Live STOP'} · beat {transport['beat']:.2f}",
+            f"Viaggio {trip['progress']:.2%} · {trip['distance_m']/1000:.2f} km · "
+            f"{_time(trip['elapsed_s'])} / {_time(trip['duration_s'])}", '']
+    if state.get('configuration'):
+        rows[0] += ' · '+state['configuration']['name']
+    if state.get('timeline'):
+        timeline = state['timeline']
+        rows[1] += f" · timeline {timeline['beat']:g} / {timeline['total_beats']:g} beat"
+    decision = state['decisions']['director']
+    rows.append(f"Sezione: {decision['section']} · root {decision['root']} · {decision['scale']}")
+    rows.extend(['', 'VOCI'])
+    for name, voice in state['voices'].items():
+        status = 'collegata' if voice['connected'] else 'SCOLLEGATO'
+        if not voice['active']:
+            status += (f" · fuori organico; ingresso al {voice['next_entry_progress']:.0%}"
+                       if voice.get('next_entry_progress') is not None else ' · fuori organico')
+        rows.append(f"  {voice.get('name', name)} · {voice['role'] or 'nessun ruolo'} · {status}")
+    for name, component in state.get('components', {}).items():
+        if component.get('source_status'):
+            rows.append(f"SORGENTE {name}: {component['role']} · {component['source_status']}")
+    if setup.get('status') == 'waiting':
+        rows.extend(['', 'PREPARAZIONE: '+setup['notice']])
+        rows.extend('PREPARAZIONE: '+line for line in setup.get('instructions', []))
+        rows.append('Invio verifica ora · Esc annulla')
+    recording = state.get('recording')
+    if recording:
+        labels = {'unprepared': 'da preparare', 'preparing': 'preparazione', 'ready': 'pronta',
+                  'rewinding': 'ritorno a zero', 'starting': 'avvio', 'recording': 'REGISTRAZIONE',
+                  'stopping': 'arresto', 'error': 'errore'}
+        rows.extend(['', f"REC: {labels[recording['status']]} · {len(recording['tracks'])} tracce"])
+        if recording.get('error'):
+            rows.append('ERRORE: REC · '+recording['error'])
+    rows.extend(_errors(state))
+    rows.extend(['', 'Spazio pausa/riprendi · R inizio · A associa · T cerca · D dettagli',
+                 'REC 1 audio / 2 MIDI / 3 entrambi · G registra · S stop · Ctrl+C esci'])
+    if state.get('command_input') is not None:
+        rows.append('> '+state['command_input']+'▏')
     return '\n'.join(rows)
 
 
@@ -164,6 +278,29 @@ def fit_terminal(frame, width, height):
         row, width=width, subsequent_indent='  ', replace_whitespace=False) or ['']]
     if len(wrapped) <= height:
         return '\n'.join(wrapped)
+    if frame.startswith('DESNIVEL ·'):
+        question = next((i for i, row in enumerate(rows) if row.startswith('ASSOCIAZIONE ·')), len(rows))
+        groups = []
+        for i, row in enumerate(rows):
+            choice = row.lstrip().startswith('[') and not row.lstrip().startswith('[0]')
+            priority = (0 if choice or i < 2 or i == question or i >= len(rows)-2 or row.startswith(('ERRORE:', 'COMANDO:', '> ', 'Scrivi il numero', 'Viaggio:')) else
+                        1 if i >= question or row.startswith('COLLEGAMENTO:') else
+                        2 if row and not row.startswith('  ') else 3 if row else 4)
+            lines = ([textwrap.shorten(row, width=width, placeholder='…')] if choice else
+                     textwrap.wrap(row, width=width, subsequent_indent='  ', replace_whitespace=False) or [''])
+            groups.append((priority, i, lines))
+        selected, available = {}, max(0, height-1)
+        for priority, i, lines in sorted(groups):
+            if len(lines) <= available:
+                selected[i] = lines
+                available -= len(lines)
+            elif priority == 0 and available:
+                selected[i] = [textwrap.shorten(rows[i], width=width, placeholder='…')]
+                available -= 1
+        compact = [line for i in sorted(selected) if i < len(rows)-2 for line in selected[i]]
+        footer = [line for i in sorted(selected) if i >= len(rows)-2 for line in selected[i]]
+        hint = textwrap.shorten('… amplia il terminale per vedere tutte le righe.', width=width, placeholder='…')
+        return '\n'.join((compact+[hint]+footer)[:height])
     # Riduce prima i dettagli; stato, collegamenti, errori e comandi restano visibili.
     required = {i for i, row in enumerate(rows) if i < 3 or row.startswith((
         'IN ESECUZIONE', 'Coordinator:', 'PREPARAZIONE:', 'SORGENTE ', 'REC:', 'REC ·', 'ERRORE:', 'COMANDO:', 'Tappa conclusa.', 'C:'))
@@ -194,17 +331,38 @@ class TerminalSessionView:
         self.stream = stream if stream is not None else sys.stdout
         self.clock, self.interval = clock, interval
         self.last_refresh = None
+        self.last_frame = None
+        self.details = False
+
+    def __enter__(self):
+        if self.stream.isatty():
+            self.stream.write('\x1b[?1049h\x1b[?25l')
+            self.stream.flush()
+        return self
+
+    def __exit__(self, *args):
+        if self.stream.isatty():
+            self.stream.write('\x1b[?25h\x1b[?1049l')
+            self.stream.flush()
+
+    def toggle_details(self):
+        self.details = not self.details
+        self.last_refresh = None
 
     def update(self, state):
         now = self.clock()
         if self.last_refresh is not None and now-self.last_refresh < self.interval:
             return
-        frame = render_session(state)
+        frame = render_session(state, details=self.details)
         if self.stream.isatty():
             size = shutil.get_terminal_size()
             frame = fit_terminal(frame, size.columns, size.lines)
-            self.stream.write('\x1b[H\x1b[2J'+frame+'\x1b[J')
-        else:
+            if frame != self.last_frame:
+                # Cancella anche le code delle righe accorciate e le righe vuote.
+                painted = '\r\n'.join(row+'\x1b[K' for row in frame.split('\n'))
+                self.stream.write(('\x1b[H\x1b[2J' if self.last_frame is None else '\x1b[H')+painted+'\x1b[J')
+        elif frame != self.last_frame:
             self.stream.write(frame+'\n\n')
+        self.last_frame = frame
         self.stream.flush()
         self.last_refresh = now

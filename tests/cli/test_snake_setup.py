@@ -85,6 +85,8 @@ def test_normal_ensemble_guides_setup_and_stops_an_unexpected_play_without_advan
     class Server:
         def __init__(self,voices,port,*callbacks):
             self.bridge=VoiceDeviceBridge(voices,lambda *args:sent.append(args))
+            from desnivel.adapters.live_devices import LiveDevices
+            self.devices=LiveDevices(self.bridge.send)
             self.server=self;self.port=port;self.count=0;self.closed=False;servers.append(self)
             if callbacks:self.on_message=callbacks[0]
         def poll(self):pass
@@ -109,16 +111,19 @@ def test_normal_ensemble_guides_setup_and_stops_an_unexpected_play_without_advan
         return original(*args,create_session=create_session,connect=lambda port:probes.append(port))
     monkeypatch.setattr(snake_setup,'SnakeSetup',create_guide)
     class Keys:
+        command = None
         def __enter__(self):self.count=0;return self
         def __exit__(self,*args):pass
         def poll(self):
             self.count+=1
             if self.count==1:
                 assert len(servers)==1  # Four default voices; no Snake server at startup.
-                return ['snake_setup']
-            return ['setup_check'] if self.count==2 else [] if complete or self.count==4 else ['setup_cancel']
+                return ['component_prepare']
+            return ['component_check'] if self.count==2 else [] if complete or self.count==4 else ['setup_cancel']
     monkeypatch.setattr('desnivel.cli.session_controls.TerminalControls',Keys)
     class View:
+        def __enter__(self): return self
+        def __exit__(self, *args): pass
         def update(self,state):frames.append(deepcopy(state))
     monkeypatch.setattr('desnivel.cli.session_view.TerminalSessionView',View)
     assert ensemble.main(['--track','unused.gpx','--config','presets/organico.json',

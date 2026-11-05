@@ -1,10 +1,13 @@
 """Selezione interattiva della tappa e avvio della sessione multivoce."""
 import argparse
+import json
 from pathlib import Path
 import re
-import subprocess
 
 from . import ensemble
+from desnivel.cli.file_dialogs import choose_file, choose_track
+from desnivel.cli.session_files import new_session_path, saved_sessions
+from desnivel.cli.session_config import resolve_journey
 
 
 VARIANTS = {
@@ -12,27 +15,39 @@ VARIANTS = {
 }
 
 
-def choose_track():
-    """Apre il selettore macOS; restituisce None se viene annullato."""
-    result = subprocess.run([
-        'osascript', '-e',
-        'try\n'
-        'set trackFile to choose file with prompt "Seleziona una traccia FIT o GPX" '
-        'of type {"fit", "gpx"}\n'
-        'return POSIX path of trackFile\n'
-        'on error number -128\n'
-        'return ""\n'
-        'end try',
-    ], capture_output=True, text=True)
-    if result.returncode:
-        raise ValueError('Impossibile aprire il selettore file: ' + result.stderr.strip())
-    selected = result.stdout.strip()
-    if not selected:
-        return None
-    path = Path(selected)
-    if path.suffix.lower() not in {'.fit', '.gpx'} or not path.is_file():
-        raise ValueError('Seleziona un file FIT o GPX esistente.')
-    return path
+def choose_session(root, *, read=None):
+    read = input if read is None else read
+    paths = saved_sessions(root)
+    print('\nSESSIONI DESNIVEL\n  [0] crea una nuova sessione\n  [A] apri file…')
+    for index, path in enumerate(paths, 1):
+        print(f'  [{index}] {path.stem} — {path.relative_to(root)}')
+    while True:
+        choice = read('Sessione [numero, A apri file, q annulla]: ').strip()
+        if choice.lower() == 'q':
+            return None
+        if choice.lower() == 'a':
+            try:
+                path = choose_file('Apri una sessione Desnivel', ('.json',))
+                if path is not None and path.name.casefold().endswith('.voice-presets.json'):
+                    raise ValueError('Scegli la configurazione di una sessione, non la libreria dei preset voce.')
+            except ValueError as error:
+                print(error)
+                continue
+            if path is not None:
+                return path, False
+            continue
+        if choice == '0':
+            while True:
+                name = read('Nome della nuova sessione [q annulla]: ').strip()
+                if name.lower() == 'q':
+                    return None
+                try:
+                    return new_session_path(root, name), True
+                except ValueError as error:
+                    print(error)
+        if choice.isdecimal() and 1 <= int(choice) <= len(paths):
+            return paths[int(choice)-1], False
+        print('Scegli uno dei numeri elencati, A per aprire un file oppure q per annullare.')
 
 
 def resolve_track(stage: str, root: Path) -> Path:
@@ -56,29 +71,46 @@ def main(argv=None):
         description=__doc__,
         epilog='Gli altri argomenti sono passati a desnivel.cli.ensemble e possono '
                'sostituire i valori predefiniti di config, timing e view-port.')
-    parser.add_argument('--tappa', help='01–12, 07bis oppure 99 per scegliere un file; se omessa viene richiesta.')
+    parser.add_argument('--tappa', help='01–12, 07bis oppure 99 per sostituire il viaggio; se omessa riusa quello salvato nella sessione.')
+    parser.add_argument('--config', type=Path, help='Carica direttamente una configurazione, senza mostrare il menu delle sessioni.')
     args, session_args = parser.parse_known_args(argv)
     try:
-        stage = (args.tappa if args.tappa is not None else
-                 input('Numero tappa (01–12, 07bis oppure 99 per un file FIT/GPX): ')).strip()
-        track = choose_track() if stage == '99' else resolve_track(stage, Path.cwd())
+        selection = (args.config, False) if args.config is not None else choose_session(Path.cwd())
+        if selection is None:
+            print('Avvio annullato.')
+            return 130
+        config, create = selection
+        stage = None
+        track = None
+        if args.tappa is None and not create and config.is_file():
+            saved = json.loads(config.read_text())
+            if 'journey' in saved:
+                track, _, _ = resolve_journey(saved, config)
+                if not track.is_file():
+                    raise ValueError(f'Viaggio della sessione non trovato: {track}. Usa --tappa 99 per scegliere un altro file.')
+        if track is None:
+            stage = (args.tappa if args.tappa is not None else
+                     input('Numero tappa (01–12, 07bis oppure 99 per un file FIT/GPX): ')).strip()
+            track = choose_track() if stage == '99' else resolve_track(stage, Path.cwd())
         if track is None:
             print('Avvio annullato.')
             return 130
     except (EOFError, KeyboardInterrupt):
         print('\nAvvio annullato.')
         return 130
-    except ValueError as error:
+    except (ValueError, OSError) as error:
         parser.error(str(error))
-    print(f'Tappa {stage}: {track}', flush=True)
+    print(f'Sessione {config.stem}: {config}', flush=True)
+    print(f"{'Viaggio salvato nella sessione' if stage is None else 'Tappa '+stage}: {track}", flush=True)
     if stage == '99' and track.suffix.lower() == '.fit':
         print('FIT: se mancano gli eventi timer, le pause saranno stimate dai campioni GPS.',
               flush=True)
-        if '--infer-fit-pauses' not in session_args:
+        if not any(flag in session_args for flag in ('--infer-fit-pauses', '--no-infer-fit-pauses')):
             session_args.append('--infer-fit-pauses')
     return ensemble.main([
-        '--track', str(track),
-        '--config', 'presets/organico.json',
+        *(['--track', str(track)] if stage is not None else []),
+        '--config', str(config),
+        *(['--setup'] if create else []),
         '--timing', 'allocated',
         '--view-port', '8765',
         *session_args,

@@ -4,7 +4,7 @@ from dataclasses import asdict, dataclass, field
 from desnivel.adapters.percussion import PAD_NOTES
 from desnivel.adapters.percussion_presets import migrate_preset as migrate_percussion_preset
 from desnivel.adapters.voice_device import Control, ChoiceControl
-from desnivel.cli.ensemble import Generator
+from desnivel.music.session import Generator
 from desnivel.music.melodic.generator import MotifGenerator, ROLES
 from desnivel.music.bass.voice import BassVoice
 from desnivel.music.percussion.generator import PercussionGenerator, ROLES as PERCUSSION_ROLES

@@ -128,6 +128,12 @@ def prepare_trip_config(track, config, path):
     resolved = deepcopy(config)
     resolved['sections'] = sections
     resolved['trip_analysis'] = analysis
+    if 'arrangement' in config:
+        for section in sections:
+            section['assignments'] = deepcopy(config['arrangement'])
+        if decision is not None:
+            decision['motif_generators'] = [name for name, spec in config['generators'].items()
+                                            if spec['type'] == 'motif']
     if decision is not None:
         for name in decision['motif_generators']:
             if name not in resolved['generators'] or resolved['generators'][name]['type'] != 'motif':

@@ -335,6 +335,46 @@ def test_allocated_missing_device_freezes_cursor_and_replans_current_window():
     assert runtime.next_window == index+1
 
 
+@pytest.mark.parametrize('session_pause', [False, True])
+@pytest.mark.parametrize('allocated', [False, True])
+def test_pause_preserves_development_and_restart_clears_it(session_pause, allocated):
+    runtime, _, now, _, receive = allocated_setup() if allocated else setup()
+    receive(); runtime.tick()
+    resets = []
+    for name, registered in runtime.registry.items():
+        original = registered.reset
+        def reset(name=name, original=original):
+            resets.append(name)
+            if original:
+                original()
+        registered.reset = reset
+    coordinator = runtime.session.coordinator
+    origin = coordinator._origin
+    automation = coordinator._automation
+    now[0] = .5
+    if session_pause:
+        runtime.control('pause')
+    receive(beat=1, playing=0, epoch=1); runtime.tick()
+    elapsed = runtime.elapsed
+    now[0] = 1
+    receive(beat=1, playing=0, epoch=1); runtime.tick()
+    assert not runtime.sounding and not runtime.pending_windows
+    assert runtime.elapsed == elapsed
+    assert resets == []
+    assert coordinator._origin == origin
+    assert coordinator._automation is automation
+    if session_pause:
+        runtime.control('resume')
+    receive(beat=1, playing=1, epoch=2); runtime.tick()
+    assert runtime.state == 'playing'
+    assert runtime.elapsed == elapsed
+    assert resets == []
+    runtime.control('restart')
+    assert set(resets) == set(runtime.registry)
+    assert coordinator._origin is None and coordinator._automation == {}
+    assert runtime.elapsed == 0
+
+
 def test_pause_freezes_linear_trip_and_restart_resets_position_and_generator_memory():
     runtime, _, now, _, receive = setup()
     receive(); runtime.tick()

@@ -36,6 +36,8 @@ class VoiceDeviceServer:
                 self.clients[port].send(packet)
 
         self.bridge = VoiceDeviceBridge(voices, send)
+        from desnivel.adapters.live_devices import LiveDevices
+        self.devices = LiveDevices(send)
         dispatcher = Dispatcher()
         dispatcher.map(CONTROL_ADDRESS, self._receive)
         self.server = BlockingOSCUDPServer(('127.0.0.1', port), dispatcher)
@@ -49,6 +51,12 @@ class VoiceDeviceServer:
             message = json.loads(payload.decode('utf-8'))
             if not isinstance(message, dict):
                 raise ValueError('atteso un oggetto JSON')
+            if message.get('action') == 'discover':
+                self.devices.observe(message)
+                return
+            self.devices.observe_control(message)
+            if message.get('action') in ('hello', 'transport') and message.get('voice') not in self.bridge.voices:
+                return  # Il controllo resta nell'inventario in attesa dell'associazione.
             self.bridge.handle(message)
             if self.on_message:
                 self.on_message(self.bridge, message)

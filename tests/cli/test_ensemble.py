@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from desnivel.cli.ensemble import EnsembleSession, Generator
+from desnivel.music.session import EnsembleSession, Generator
 from desnivel.music.bass.generator import generate_bass, BassSettings
 from desnivel.music.phrases import Note, Phrase
 

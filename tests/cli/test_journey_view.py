@@ -58,7 +58,7 @@ def test_server_reads_replaced_snapshots_reports_age_and_serves_only_view_assets
         assert payload['age_s'] >= 10
         assert json.loads(get('api/route')) == route_payload(track())
         assert b'lang="it"' in get('')
-        for path in ('view.js', 'music.js', 'position.js', 'view.css'):
+        for path in ('view.js', 'music.js', 'position.js', 'view.css', 'theme.css', 'skin.js', 'session/', 'session.js', 'session.css'):
             assert get(path)
         with pytest.raises(HTTPError) as error:
             get('../state.json')
@@ -88,6 +88,8 @@ def test_ensemble_starts_view_with_initial_state_and_closes_it_on_interrupt(tmp_
     class DeviceServer:
         def __init__(self, *args):
             self.bridge = VoiceDeviceBridge({}, lambda *args: None)
+            from desnivel.adapters.live_devices import LiveDevices
+            self.devices = LiveDevices(self.bridge.send)
             self.server = self
             self.closed = False
 
@@ -115,7 +117,8 @@ def test_http_controls_are_queued_and_reject_other_origins(tmp_path):
     view = JourneyViewServer(track(), tmp_path / 'state.json', 0)
     view.start()
     def send(action, origin):
-        request = Request(view.url+'api/control', data=json.dumps({'action': action}).encode(),
+        payload = action if isinstance(action, dict) else {'action': action}
+        request = Request(view.url+'api/control', data=json.dumps(payload).encode(),
                           headers={'Content-Type': 'application/json', 'Origin': origin})
         return urlopen(request, timeout=2)
     try:
@@ -127,11 +130,18 @@ def test_http_controls_are_queued_and_reject_other_origins(tmp_path):
             assert response.status == 202
         with send('restart', view.url.rstrip('/')):
             pass
-        assert list(view.take_commands()) == ['pause', 'restart']
+        assert list(view.take_commands()) == [{'action': 'pause'}, {'action': 'restart'}]
         from desnivel.cli.recording import main as record
         for mode in ('audio', 'midi', 'both', 'start', 'stop'):
             record([mode, '--view-port', str(view.server.server_port)])
-        assert list(view.take_commands()) == ['record_audio', 'record_midi', 'record_both', 'record_start', 'record_stop']
+        assert list(view.take_commands()) == [{'action': action} for action in ('record_audio', 'record_midi', 'record_both', 'record_start', 'record_stop')]
+        with send({'action': 'setup_reply', 'value': '2'}, view.url.rstrip('/')):
+            pass
+        assert list(view.take_commands()) == [{'action': 'setup_reply', 'value': '2'}]
+        with pytest.raises(HTTPError) as error:
+            send({'action': 'setup_reply', 'value': ['2']}, view.url.rstrip('/'))
+        assert error.value.code == 400
+        assert list(view.take_commands()) == []
         with pytest.raises(HTTPError) as error:
             send('arbitrary', view.url.rstrip('/'))
         assert error.value.code == 400

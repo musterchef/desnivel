@@ -85,7 +85,7 @@ def capture(spec, style, variation):
 
 
 def capture_session(config, style):
-    from desnivel.cli.ensemble import EnsembleSession
+    from desnivel.music.session import EnsembleSession
     generators = {key: build_generator(value).generator for key, value in config['generators'].items()}
     destinations = {v['destination']: lambda *args: None for v in config['voices'].values()}
     session = EnsembleSession(config, generators, destinations)

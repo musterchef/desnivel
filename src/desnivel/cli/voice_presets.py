@@ -2,8 +2,8 @@
 from functools import partial
 
 
-def connect_preset_library(library, voices):
-    if library.voices.keys()-voices.keys():
+def connect_preset_library(library, voices, *, allow_missing=False):
+    if not allow_missing and library.voices.keys()-voices.keys():
         raise ValueError('la libreria contiene voci non presenti nella configurazione')
     for voice, spec in voices.items():
         custom = library.voices.get(voice, {})
