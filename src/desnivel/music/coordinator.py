@@ -88,10 +88,12 @@ class MusicCoordinator:
         self.epoch = -1
         self.reset()
 
-    def reset(self):
-        """Invalida memoria, piani accettati e risposte della sequenza precedente."""
+    def reset(self, *, preserve_development=False):
+        """Invalida i piani; una pausa conserva origine e automazione musicale."""
         self.epoch += 1
-        self._origin = None
+        if not preserve_development:
+            self._origin = None
+            self._automation = {}
         self._history = []
         self._pending = {}
         self._used = set()
@@ -99,7 +101,6 @@ class MusicCoordinator:
         self._plan_serial = 0
         self.last_plan = None
         self._observations = MusicalMemory()
-        self._automation = {}
         self._parameter_frames = []
 
     def parameter_states_at(self, voice, beat=None):

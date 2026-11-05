@@ -1,0 +1,16 @@
+{
+  "selection_mode": "manual",
+  "window_beats": 4,
+  "lead_beats": 2,
+  "timeline": {
+    "beats_per_km": 12,
+    "min_windows": 2,
+    "distance_exponent": 0.5
+  },
+  "direction": "direzione-viaggio.json",
+  "transport_voice": null,
+  "generators": {},
+  "voices": {},
+  "arrangement": {},
+  "live_bindings": {}
+}
