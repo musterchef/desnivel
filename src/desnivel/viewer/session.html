@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="it" data-skin="atlas">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Desnivel · Sessione</title>
+  <link rel="stylesheet" href="/theme.css">
+  <link rel="stylesheet" href="/session.css">
+  <script defer src="/skin.js"></script>
+  <script defer src="/music.js"></script>
+  <script defer src="/session.js"></script>
+</head>
+<body>
+  <header class="app-header">
+    <a class="brand" href="/session/">desnivel<span>controllo della sessione</span></a>
+    <nav><label class="skin-picker" for="skin">Skin <select id="skin"><option value="atlas">Atlante</option><option value="night">Notturna</option></select></label><span id="connection" role="status">Connessione…</span><a href="/">Viaggio ↗</a></nav>
+  </header>
+  <main>
+    <section class="session-heading" aria-labelledby="session-name">
+      <div><p class="eyebrow">SESSIONE ATTIVA</p><h1 id="session-name">In attesa di Desnivel</h1><p id="session-file" class="muted"></p><p id="session-journey" class="muted"></p></div>
+      <div class="transport">
+        <span id="live-state" class="badge">Live —</span><span id="beat" class="muted">beat —</span>
+        <button id="play" class="primary" data-action="resume" disabled>Riprendi</button>
+        <button data-action="restart" disabled>Riporta a zero</button>
+      </div>
+    </section>
+    <div class="workspace">
+      <section class="panel tracks-panel" aria-labelledby="tracks-title">
+        <div class="panel-heading"><div><p class="eyebrow">DESTINAZIONI</p><h2 id="tracks-title">Tracce di Ableton</h2></div><button data-action="scan" disabled>Cerca tracce</button></div>
+        <p id="counts" class="muted">In attesa dell’inventario.</p>
+        <div class="table-scroll"><table><thead><tr><th>Traccia</th><th>Controllo</th><th>Stato</th><th><span class="sr-only">Scelta</span></th></tr></thead><tbody id="tracks"></tbody></table></div>
+        <div id="diagnostics" class="diagnostics" role="status"></div>
+        <div class="panel-actions"><button class="primary" data-action="setup_begin" disabled>Associa una traccia</button><button data-action="setup_associate" disabled>Ricollega una voce</button></div>
+      </section>
+      <aside class="panel preparation" aria-labelledby="setup-title">
+        <p class="eyebrow">PREPARAZIONE</p><h2 id="setup-title">Una voce alla volta</h2>
+        <p id="setup-notice">Avvia una sessione dal terminale per iniziare.</p>
+        <div id="question"></div>
+        <button id="cancel" class="text-button" data-action="setup_cancel" hidden>Annulla preparazione</button>
+        <div class="save-area"><p class="muted">Salva voci, ruoli e associazioni nel file della sessione.</p><button data-action="setup_save" disabled>Salva sessione</button></div>
+      </aside>
+    </div>
+    <section class="panel recording" aria-labelledby="recording-title">
+      <div><p class="eyebrow">REGISTRAZIONE</p><h2 id="recording-title">Audio e MIDI</h2><p id="record-state" class="muted">Da preparare</p></div>
+      <div class="record-actions"><label>Formato <select id="record-mode"><option value="both">audio + MIDI</option><option value="audio">audio</option><option value="midi">MIDI</option></select></label><button id="record-prepare" disabled>Prepara REC</button><button data-action="record_start" disabled>Registra da zero</button><button data-action="record_stop" disabled>Stop REC</button></div>
+    </section>
+    <section class="music" aria-labelledby="music-title">
+      <div class="music-heading"><div><p class="eyebrow">INSIEME MUSICALE</p><h2 id="music-title">Cosa sta suonando</h2></div><span id="music-clock" class="muted">In attesa del trasporto</span></div>
+      <div id="music-plans" class="music-plans"></div>
+      <p id="music-notice" class="muted"></p>
+      <p id="weather-summary" class="weather-summary" role="status">meteo: in attesa dello stato</p>
+    </section>
+    <p id="edit-reason" class="muted" role="status"></p>
+    <p id="command-error" class="error" role="alert" hidden></p>
+    <footer><span id="trip-summary">Il processo Python governa la sessione.</span><span>Interfaccia locale · <a href="/">apri il viaggio</a></span></footer>
+    <noscript>Questa interfaccia richiede JavaScript. La sessione resta controllabile dal terminale.</noscript>
+  </main>
+</body>
+</html>

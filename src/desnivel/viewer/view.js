@@ -30,9 +30,6 @@ async function start() {
   el('record-prepare').onclick = () => command('record_'+el('record-mode').value);
   el('record-start').onclick = () => command('record_start');
   el('record-stop').onclick = () => command('record_stop');
-  el('skin').addEventListener('change', event => {
-    document.documentElement.dataset.skin = event.target.value;
-  });
   const route = await getJSON('/api/route');
   el('stage').textContent = route.stage.replaceAll('_', ' ');
   let map, marker, passed, outline, following = false, position, tileError = false;
@@ -73,7 +70,6 @@ async function start() {
       const captureLabels = {unprepared:'REC da preparare',preparing:'Preparazione REC…',ready:'REC pronta',
         rewinding:'Ritorno a zero…',starting:'Avvio REC…',recording:'Registrazione in corso',stopping:'Arresto REC…',error:'Errore REC'};
       el('record-status').textContent = capture ? capture.error || `${captureLabels[capture.status]} · ${capture.mode || '—'} · ${capture.tracks.length} tracce` : '';
-      DesnivelMusic.render(state, stale);
       paused = state.controls?.paused || false;
       el('pause').textContent = paused ? 'Riprendi' : 'Pausa';
       el('pause').disabled = stale || ['finished', 'closed', 'error'].includes(state.state);
@@ -105,7 +101,6 @@ async function start() {
       }
     } catch (error) {
       el('record-prepare').disabled = el('record-start').disabled = el('record-stop').disabled = true;
-      DesnivelMusic.markStale();
       el('pause').disabled = el('restart').disabled = el('restart-finished').disabled = true;
       el('status').textContent = 'Collegamento interrotto';
       el('notice').textContent = `${error.message}. L’ultima posizione ricevuta resta visibile.`;

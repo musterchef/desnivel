@@ -10,7 +10,7 @@ import time
 from urllib.parse import urlsplit
 
 from desnivel.viewer.route import route_payload
-from desnivel.adapters.live_recording import RECORDING_ACTIONS
+from desnivel.cli.session_commands import validate_command
 
 
 class JourneyViewServer:
@@ -26,6 +26,11 @@ class JourneyViewServer:
                      '/view.js': ('view.js', 'text/javascript; charset=utf-8'),
                      '/music.js': ('music.js', 'text/javascript; charset=utf-8'),
                      '/position.js': ('position.js', 'text/javascript; charset=utf-8')}
+        resources.update({'/theme.css': ('theme.css', 'text/css; charset=utf-8'),
+                          '/skin.js': ('skin.js', 'text/javascript; charset=utf-8'),
+                          '/session/': ('session.html', 'text/html; charset=utf-8'),
+                          '/session.css': ('session.css', 'text/css; charset=utf-8'),
+                          '/session.js': ('session.js', 'text/javascript; charset=utf-8')})
 
         class Handler(BaseHTTPRequestHandler):
             def do_POST(self):
@@ -38,14 +43,10 @@ class JourneyViewServer:
                     return
                 try:
                     size = int(self.headers.get('Content-Length', '0'))
-                    if not 0 < size <= 1024:
+                    if not 0 < size <= 4096:
                         raise ValueError('dimensione del comando non valida')
                     payload = json.loads(self.rfile.read(size))
-                    if (not isinstance(payload, dict) or set(payload) != {'action'}
-                            or not isinstance(payload['action'], str)
-                            or payload['action'] not in {'pause', 'resume', 'restart'} | RECORDING_ACTIONS):
-                        raise ValueError('comando non valido')
-                    commands.put_nowait(payload['action'])
+                    commands.put_nowait(validate_command(payload))
                 except (ValueError, Full) as error:
                     self.respond(400, json.dumps({'error': str(error) or 'coda piena'}).encode(), 'application/json')
                     return
