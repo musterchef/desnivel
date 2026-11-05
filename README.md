@@ -17,17 +17,23 @@ dinamica e relazioni fra le voci.
 3. **Adattatori e trasporto (`adapters`, `sinks`)**: traducono le strutture
    musicali nei protocolli delle destinazioni e trasmettono i messaggi.
 4. **Sessione (`cli`, `viewer`)**: governa replay e pianificazione, espone
-   stato e controlli nel terminale e nella dashboard con mappa.
+   stato e controlli nel terminale e nel pannello web locale, con una vista
+   separata del viaggio sulla mappa.
 
-La prova principale usa quattro voci in Ableton Live: melodia, basso,
-tessitura e percussioni. Il trasporto di Live fornisce il clock musicale;
+Il launcher avvia una sessione vuota e permette di aggiungere voci dal
+terminale o dal pannello web, associandole alle tracce con controllo Desnivel
+in Ableton Live. Le due interfacce usano gli stessi comandi e lo stesso stato;
+il motore può funzionare senza interfaccia web.
+L’organico di esempio comprende melodia, basso, tessitura e percussioni. Il trasporto di Live fornisce il clock musicale;
 il viaggio avanza con replay lineare oppure timeline allocata in beat.
 Il meteo storico può contribuire ai controlli automatici. La sessione
 permette anche di preparare e registrare tracce audio e MIDI in Live.
-Snake e il player dedicato del basso sono banchi di prova separati.
+Snake può partecipare alla sessione tramite il suo controllo dedicato;
+il player del basso resta disponibile come banco di prova separato.
 
 ## Per iniziare
 
+- [Sessione guidata](doc/SESSIONE-GUIDATA.md): aggiunta delle voci e associazione delle tracce Live.
 - [Comandi e launcher](doc/COMANDI.md): installazione, scelta della tappa e avvio.
 - [Sessione multivoce](doc/SESSIONE-MULTIVOCE.md): device, trasporto, dashboard e registrazione.
 - [Guida ai controlli](doc/GUIDA-DEVICE.md): valori di partenza per le quattro voci.

@@ -7,7 +7,15 @@ produrre il MIDI attraverso i propri banchi e percorsi. Il banco melodico
 
 ## Componente multiruolo
 
-1. Avviare `comandi/09 - Sessione multitappa.command` e scegliere la tappa.
+Nella [sessione guidata](SESSIONE-GUIDATA.md), `:aggiungi traccia` oppure
+**N** permette di selezionare una traccia con `Desnivel_Snake_Control` e
+scegliere ruolo, modalità e sorgente. Il terminale imposta l'associazione;
+Snake può essere l'unica traccia e fornire il trasporto sulla porta comune 9006.
+
+La procedura seguente riguarda il banco di esempio a quattro voci,
+avviato con `--config presets/organico.json`:
+
+1. Avviare `.venv/bin/python -m desnivel.cli.launch_stage --config presets/organico.json` e scegliere la tappa.
    La sessione parte con le quattro voci della prova.
 2. Prima del Play, premere **N** nel terminale per preparare Snake.
 3. In Live creare una traccia MIDI con `MDD_SNAKE_LengthBank.amxd`,

@@ -10,6 +10,7 @@ Guida alla documentazione di **Desnivel**, organizzata per aree tematiche.
 |---|---|
 | [Presentazione](../README.md) | Scopo, flusso del sistema e accesso alle guide. |
 | [Architettura](ARCHITETTURA.md) | Pipeline modulare, flusso dei dati, modelli musicali e organizzazione del codice. |
+| [Sessione guidata](SESSIONE-GUIDATA.md) | Avvio vuoto, aggiunta di voci, inventario e associazione delle tracce Live. |
 | [Sessione multivoce Python](SESSIONE-MULTIVOCE.md) | Avvio, replay, dispositivi, dashboard e registrazione in Live. |
 | [Guida pratica ai device](GUIDA-DEVICE.md) | Valori di partenza per ottenere risultati su melodia, basso, tessitura e drums. |
 | [Configurazione](CONFIGURAZIONE.md) | Campi JSON, unità, limiti dei controlli, ruoli e precedenze. |

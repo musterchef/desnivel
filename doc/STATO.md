@@ -1,9 +1,9 @@
 # Stato del progetto
 
 Desnivel legge registrazioni FIT/GPX e compone frasi multivoce. La sessione
-principale è `desnivel.cli.ensemble`, con `presets/organico.json`.
-Il launcher multitappa permette di scegliere `01`–`12` o la variante locale
-`07bis`: [avvio e sorgenti](COMANDI.md#sessione-multivoce-con-scelta-della-tappa).
+principale è `desnivel.cli.ensemble`. Il launcher permette di creare sessioni
+con un nome o caricare le configurazioni salvate in `output/sessioni/`, e
+di scegliere `01`–`12`, la variante locale `07bis` o un file con `99`: [avvio e sorgenti](COMANDI.md#sessione-multivoce-con-scelta-della-tappa).
 
 ## Funzionalità operative
 
@@ -17,13 +17,15 @@ Il launcher multitappa permette di scegliere `01`–`12` o la variante locale
 | Dialogo | Guida delle drums, relazioni fra frasi e osservazione degli ultimi 16 beat accettati | [Dialogo musicale](DIALOGO-MUSICALE.md) |
 | Adattamento | Obiettivi dei controlli da contesto locale e osservazione musicale; transizioni fra finestre e precedenza manuale per parametro | [Adattamento](DIREZIONE-MUSICALE.md#adattamento-dei-parametri) |
 | Contesto ambientale | Meteo storico acquisito e salvato in cache, contributo musicale attivabile con M; fondo OSM acquisibile come informazione | [Contesto ambientale](CONTESTO-AMBIENTALE.md) |
+| Configurazione guidata | Sessione vuota, rilevamento dei controlli Live, aggiunta e associazione di voci, rimozione con verifica delle dipendenze e salvataggio | [Sessione guidata](SESSIONE-GUIDATA.md) |
 | Device | Dispositivo MIDI comune, menu forniti da Python, controlli auto/manual e preset utente persistenti | [Voce M4L](VOCE-M4L.md) |
 | Controllo Snake | Preparazione guidata con N, componente per istanza, tre ruoli e modalità autonoma/coordinata; adattamento al viaggio e lettura come sorgente con ruolo, previsione e note sostenute | [Snake](SNAKE.md#componente-multiruolo) |
 | Osservazione e controllo | Terminale, snapshot JSON e dashboard con mappa, piano corrente e successivo, controlli e stato del meteo | [Sessione multivoce](SESSIONE-MULTIVOCE.md) |
 | Registrazione | Preparazione delle tracce REC audio/MIDI e controllo della registrazione Arrangement in Live, con conferme del device | [Registrazione](SESSIONE-MULTIVOCE.md#registrazione-audio-e-midi-in-live) |
 
-La prova in Live usa quattro voci. Snake e il player dedicato del basso
-restano banchi di prova separati, descritti in [Snake](SNAKE.md),
+L’organico di esempio usa quattro voci. Snake può partecipare alla sessione
+guidata e resta disponibile come banco separato; il player dedicato del basso
+è un ulteriore banco di prova. Sono descritti in [Snake](SNAKE.md),
 [Basso](BASSO.md) e [Tappe e preset](TAPPE-E-PRESET.md).
 
 ## Limiti e lavoro aperto

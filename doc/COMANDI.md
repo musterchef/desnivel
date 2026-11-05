@@ -43,9 +43,12 @@ Opzioni utili:
 | **9004** | Piani di esecuzione per il basso sincronizzato al trasporto di Live. | [Basso in Live](BASSO.md) |
 | **9007** | Controllo dei componenti Snake, con Receive iniziale 9201 per il primo componente. | [Snake multiruolo](SNAKE.md#componente-multiruolo) |
 | **9006** | Server della sessione multivoce e ricevitore diagnostico Voice, da usare separatamente. | [Sessione multivoce](SESSIONE-MULTIVOCE.md) |
-| **9101–9104** | Ricezione delle quattro istanze Voice nella prova multivoce. | [Device Voice](VOCE-M4L.md) |
+| **9101–9104** | Ricezione manuale delle quattro istanze Voice nel banco di esempio. | [Device Voice](VOCE-M4L.md) |
 
-La dashboard usa HTTP sulla porta **8765** quando avviata dal launcher
+Nella sessione guidata i controlli annunciano la presenza sulla porta **9006**
+e scelgono una porta Receive per istanza; le associazioni sono gestite dal terminale.
+
+Il pannello web e la mappa usano HTTP sulla porta **8765** quando avviati dal launcher
 multitappa; `--view-port` permette di cambiarla.
 
 ---
@@ -56,8 +59,10 @@ multitappa; `--view-port` permette di cambiarla.
 
 ### Sessione multivoce con scelta della tappa
 
-Aprire `comandi/09 - Sessione multitappa.command` dal Finder e inserire
-una tappa da `01` a `12`, oppure `07bis` per il FIT ricostruito da Komoot.
+Aprire `comandi/09 - Sessione multitappa.command` dal Finder, scegliere
+una sessione salvata oppure `0` per crearne una con un nome, poi inserire
+una tappa da `01` a `12`, `07bis` per il FIT ricostruito da Komoot
+oppure `99` per scegliere un file FIT o GPX.
 Le tappe numerate usano i GPX in `gpx/`; `07bis` richiede il file locale
 `output/ricostruzione-tappa07/tappa07_Roma_Sabaudia.fit`.
 
@@ -70,24 +75,37 @@ La provenienza dei punti aggiunti è in
 esclusa da Git: per usare `07bis` su un'altra copia del progetto occorre
 trasferire anche questi file.
 
-Il launcher usa `presets/organico.json`, il timing `allocated` e la mappa
-sulla porta `8765`. Dal terminale, nella radice del progetto:
+Il menu elenca le configurazioni in `output/sessioni/` e il file
+`output/sessione.json` quando presente. Le nuove sessioni partono senza voci
+e **V** le salva in `output/sessioni/<nome>.json`. `--config <file>` carica
+direttamente una configurazione; **A: apri file…** nel menu permette
+di sceglierla dal dialogo macOS. Il launcher usa il timing `allocated`
+e la mappa sulla porta `8765`. Dal terminale, nella radice del progetto:
 
 ```sh
 .venv/bin/python -m desnivel.cli.launch_stage --tappa 07bis
 ```
 
-Senza `--tappa` la scelta è interattiva. Gli altri argomenti sono inoltrati
+Senza `--tappa` viene riutilizzato il viaggio salvato nella sessione; se il
+riferimento manca, la scelta è interattiva. **V** salva anche il viaggio
+attivo. `--tappa 99` permette di scegliere un altro FIT/GPX per la sessione.
+Gli altri argomenti sono inoltrati
 a `desnivel.cli.ensemble`; per esempio `--view-port 8766` cambia la porta
-della mappa. La selezione della traccia è gestita da `cli.launch_stage`;
+dell'interfaccia web. `--no-terminal` disabilita tastiera e pannello del terminale
+durante l'esecuzione. Il controllo web è su <http://127.0.0.1:8765/session/>,
+la mappa su <http://127.0.0.1:8765/>.
+La selezione della traccia è gestita da `cli.launch_stage`;
 il `.command` imposta la directory del progetto e avvia il comando Python.
 Collegamento dei device, controlli e comportamento del replay sono descritti
 in [Sessione multivoce Python](SESSIONE-MULTIVOCE.md).
 
-Prima del Play, **N** nel terminale avvia la preparazione guidata di Snake:
-controllo automatico ogni dieci secondi, **Invio** per verificare subito,
-**Esc** per annullare. Il launcher resta unico e l’avvio base mantiene le
-quattro voci. Istruzioni in [Snake](SNAKE.md#componente-multiruolo).
+A Live fermo, **A** apre la procedura per associare una traccia con controllo
+Desnivel e creare la voce; **B** ricollega una voce esistente, **T** ripete
+la ricerca e **V** salva. La schermata mostra tracce e domanda corrente;
+**D** apre i dettagli. I comandi testuali con `:` e il tasto **N** restano disponibili.
+Comandi, costruzione dei device e configurazione sono descritti in
+[Sessione guidata](SESSIONE-GUIDATA.md). L’organico a quattro voci resta
+caricabile con `--config presets/organico.json`.
 
 ### Banchi di prova separati
 

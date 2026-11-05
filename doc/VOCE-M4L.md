@@ -7,6 +7,10 @@ attivazione e parametri interessati nel piano corrente. I contributi
 esclusi dal controllo manuale e l'assenza di nuovi contributi sono distinti
 dallo stato disattivato. Vedere [Contesto ambientale](CONTESTO-AMBIENTALE.md#indicazione-su-device-e-dashboard).
 
+Nella [sessione guidata](SESSIONE-GUIDATA.md) il dispositivo viene rilevato
+prima dell’associazione; il terminale imposta identificativo della voce
+e porta Python. L’identità del controllo viene conservata nel Live Set.
+
 ## Componenti
 
 | Sorgente | Responsabilità |

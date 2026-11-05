@@ -1,7 +1,7 @@
 # Tappe, percorsi modali e preset musicali
 
 Questa guida riguarda il banco Snake, avviato con `desnivel.cli.trip_music`,
-e il basso che ne legge la melodia. La sessione principale a quattro voci
+e il basso che ne legge la melodia. La sessione multivoce
 usa invece la [direzione automatica del percorso](DIREZIONE-MUSICALE.md)
 e si avvia dal [launcher multitappa](COMANDI.md#sessione-multivoce-con-scelta-della-tappa).
 

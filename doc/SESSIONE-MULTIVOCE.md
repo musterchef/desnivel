@@ -20,15 +20,15 @@ oppure, dalla radice del repository:
 .venv/bin/python -m desnivel.cli.launch_stage
 ```
 
-Il launcher usa `organico.json`, timeline allocata e mappa sulla porta 8765.
-Accetta `01`–`12` e `07bis`; sorgenti e requisiti della variante sono in
-[Comandi](COMANDI.md#sessione-multivoce-con-scelta-della-tappa).
+Il launcher permette di scegliere una sessione salvata oppure crearne una
+vuota con un nome, conservata in `output/sessioni/<nome>.json`. Usa timeline allocata e mappa sulla porta 8765.
+Accetta `01`–`12`, `07bis` e `99` per scegliere un file FIT o GPX.
+La [sessione guidata](SESSIONE-GUIDATA.md) permette di aggiungere voci,
+associare i controlli presenti in Live e salvare la configurazione.
 
-**N** nel terminale apre la preparazione guidata di Snake, prima del Play.
-La guida controlla periodicamente il componente; **Invio** verifica subito
-e **Esc** annulla. L’avvio base conserva le quattro voci e apre il servizio
-Snake soltanto su richiesta. Ruoli, modalità autonoma/coordinata e
-istruzioni in [Snake](SNAKE.md#componente-multiruolo).
+La configurazione di esempio `presets/organico.json` contiene quattro voci.
+Con questo banco, **N** apre la preparazione Snake dedicata: controlli
+periodici, **Invio** per verificare ed **Esc** per annullare.
 
 Per scegliere direttamente sorgente e modalità:
 
@@ -326,10 +326,15 @@ La capability `recording_control` identifica i device aggiornati;
 `recording` nello snapshot contiene stato, modalità, destinazioni ed errore.
 I timeout non fanno partire la registrazione e vengono segnalati.
 
-## Mappa del viaggio
+## Pannello web e mappa del viaggio
 
-Con `--view-port 8765`, aprire <http://127.0.0.1:8765/> nel browser.
-Il launcher multitappa abilita già questa opzione.
+Con `--view-port 8765`, il controllo della sessione è disponibile su
+<http://127.0.0.1:8765/session/> e la mappa su <http://127.0.0.1:8765/>.
+Il launcher multitappa abilita già questa opzione. Il pannello permette
+associazione guidata delle tracce, ricollegamento delle voci, salvataggio,
+trasporto e registrazione. La scelta iniziale della configurazione e del
+viaggio avviene nel launcher. Vedere [Sessione guidata](SESSIONE-GUIDATA.md).
+`--no-terminal` disabilita tastiera e renderer del terminale durante l'esecuzione.
 
 La pagina mostra percorso completo, tratto attraversato, posizione geografica,
 distanza raggiunta e restante, percentuale, tempo del viaggio e sezione attuale.
@@ -337,14 +342,10 @@ distanza raggiunta e restante, percentuale, tempo del viaggio e sezione attuale.
 il punto corrente al centro. Trascinare la mappa disattiva l'inseguimento.
 Il collegamento sulle coordinate apre la posizione su OpenStreetMap.
 
-Il pannello musicale distingue il piano corrente secondo il beat di Live
+In Sessione, «Cosa sta suonando» distingue il piano corrente secondo il beat di Live
 dal prossimo piano già inviato: mostra sezione, root MIDI, scala e tratto
-del percorso. Le schede delle voci indicano collegamento, ruolo e numero
-di note della frase corrente, organico attuale, presenza e parametri.
-I valori effettivi sono affiancati dagli obiettivi automatici con `→`;
-ogni parametro indica `auto` o `manual`. La configurazione completa
-è espandibile. I riepiloghi diagnostici marcati «ultimo piano inviato»
-possono riferirsi alla finestra futura.
+del percorso, insieme al riepilogo del contributo meteo. Tracce, associazioni
+e piani musicali sono raccolti in Sessione; Viaggio mostra mappa e avanzamento.
 
 Il runtime conserva i piani inviati non ancora conclusi per esporre
 `planning.current` e `planning.upcoming` nello snapshot. Stop e reset
@@ -352,7 +353,8 @@ svuotano tale stato insieme alla pianificazione; la lettura della dashboard
 non genera frasi e non cambia i parametri. L’esecuzione indicata segue
 il clock, senza misurare l’uscita audio degli strumenti.
 
-Il selettore **Skin** nell'intestazione cambia l'aspetto della pagina:
+Le due pagine condividono la palette in `theme.css`. Il selettore **Skin**
+nell'intestazione cambia l'aspetto della pagina:
 **Atlante** usa la cartografia chiara, **Notturna** applica colori scuri ai
 tasselli e mette in risalto percorso attraversato e posizione. Il trattamento
 è applicato nel browser agli stessi tasselli OpenStreetMap; non richiede
@@ -367,21 +369,36 @@ un mancato aggiornamento per oltre tre secondi viene segnalato nella pagina.
 
 `viewer/route.py` prepara una volta la geometria dalla stessa traccia caricata
 dalla sessione. `viewer/server.py` serve le risorse, legge lo snapshot e
-accoda i comandi in un thread HTTP separato. Il ciclo CLI consuma la coda
-e applica i comandi nello stesso thread della pianificazione musicale.
+accoda i comandi in un thread HTTP separato. Il ciclo CLI consuma la coda;
+`cli/session_controller.py` applica i comandi nello stesso thread della
+pianificazione musicale, condividendo validazione e workflow con il terminale.
 `position.js` calcola posizione e tratto attraversato; `music.js` presenta
-piani e voci; `view.js` aggiorna la
-pagina ogni 250 ms, dopo la conclusione della richiesta precedente.
+piani e meteo nella pagina Sessione; `view.js` aggiorna Viaggio ogni 250 ms,
+dopo la conclusione della richiesta precedente.
 Le interfacce HTTP in sola lettura sono `/api/route` (versione, tappa e segmenti
 di punti `[secondi attivi, latitudine, longitudine]`) e `/api/state`
 (`session`, snapshot completo, e `age_s`, età del file in secondi).
 
-`POST /api/control` accetta un oggetto `{"action":"<azione>"}` soltanto
-dalla stessa origine. Le azioni sono `pause`, `resume`, `restart`,
-`record_audio`, `record_midi`, `record_both`, `record_start` e `record_stop`. La risposta `202` conferma
-l'accodamento; l'esito è mostrato nello snapshot successivo.
+`POST /api/control` accetta comandi soltanto dalla stessa origine.
+Il contratto in `cli/session_commands.py` distingue le azioni semplici
+`{"action":"<azione>"}` dalle risposte del workflow
+`{"action":"setup_reply","value":"<risposta>"}` e dai comandi testuali
+`{"action":"setup_command","value":"<comando>"}`. Le azioni semplici
+comprendono trasporto, meteo, ricerca dei controlli, preparazione,
+salvataggio e registrazione. La risposta `202` conferma l'accodamento;
+l'esito è mostrato nello snapshot successivo, compreso `control_error`.
+`session.js` aggiorna il pannello di controllo ogni 500 ms e conserva il
+campo del nome durante gli aggiornamenti dello stato.
 **Pausa/Riprendi** e **Riporta a zero** sono disponibili durante il
-viaggio. A fine tappa compare la domanda con il pulsante **Sì, riporta a zero**;
+viaggio. Se Live è in Play, **Riporta a zero** (o **R** dal terminale) invia
+prima Pausa e attende la conferma di Stop prima di riavvolgere. Se Live non
+conferma lo Stop entro tre secondi, il riavvolgimento viene annullato e
+segnalato nello stato. Dopo il riavvolgimento, il viaggio resta fermo a zero
+fino al successivo Play.
+Il controllo Live imposta a zero posizione e punto iniziale; il primo
+Riprendi dopo il riavvolgimento usa `start_playing`. Le riprese dopo una
+normale pausa usano `continue_playing`, conservando la posizione raggiunta.
+A fine tappa compare la domanda con il pulsante **Sì, riporta a zero**;
 la ripartenza richiede un successivo Play.
 
 Il server ascolta solo su `127.0.0.1` e si chiude con la sessione. La porta HTTP

@@ -4,6 +4,14 @@ L'[indice dei preset](../presets/README.md) distingue tutti i JSON operativi
 per funzione e comando. Questa guida descrive i campi della sessione
 `desnivel.cli.ensemble` e dei generatori registrati in `cli/generators.py`.
 
+La [sessione guidata](SESSIONE-GUIDATA.md#identità-collegamento-e-salvataggio)
+usa `presets/sessione.json` come base vuota e salva voci, ruoli, associazioni
+e viaggio nel file utente. Il campo `journey` contiene `track`, l'eventuale
+`timing_reference` e il booleano `infer_fit_pauses`; i percorsi sono relativi
+alla cartella della configurazione. Il launcher riutilizza il viaggio salvato
+quando `--tappa` è omesso; il comando `ensemble` lo usa quando manca `--track`.
+Gli altri campi della procedura sono descritti nella guida.
+
 ## Organico e pianificazione
 
 In `presets/organico.json`:

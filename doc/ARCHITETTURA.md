@@ -21,7 +21,7 @@ Traccia FIT/GPX ──► [trip] Metriche neutre ──► [music] Generazione m
 | **Adattatori** | Converte strutture musicali astratte (`Pattern`, `Phrase`) nei parametri specifici dei dispositivi o protocolli di destinazione. | `src/desnivel/adapters/` |
 | **Trasporto** | Gestisce la trasmissione dei messaggi via rete (es. OSC) e il salvataggio dei log di acquisizione. | `src/desnivel/sinks/` |
 | **Interfaccia CLI** | Entry point eseguibili da riga di comando o tramite launcher per orchestrare replay, analisi e sessioni. | `src/desnivel/cli/` |
-| **Vista della sessione** | Serve mappa e dashboard; legge lo snapshot e accoda i comandi al ciclo della sessione. | `src/desnivel/viewer/` |
+| **Vista della sessione** | Serve pannello di controllo, mappa e dashboard; legge lo snapshot e accoda i comandi al ciclo della sessione. | `src/desnivel/viewer/` |
 | **Integrazioni attive** | Device MIDI comune per la prova multivoce, registrazione Live e bridge dei banchi Snake e basso. | `m4l/` |
 
 ---
@@ -58,7 +58,26 @@ I due ruoli sono implementati in classi distinte nel package `music`: il Directo
 - **Moduli delle voci** (`music/<voce>/`): contengono regole compositive, controlli e stato specifici della voce. Il planner presente in `music/bass/` conserva continuità e transizioni dei controlli per quel generatore.
 - **Adattatori**: traducono stato delle sorgenti e risultati musicali nei formati di destinazione; gestiscono identificativi, revisioni, trasporto e conferme dei dispositivi. Il collegamento di generatori e Coordinator è governato dai comandi in `cli`.
 
-Il Director legge anche le assegnazioni manuali delle voci per sezione. Il Coordinator verifica i ruoli supportati e passa ruolo e parametri ai generatori. `cli/ensemble.py` collega queste assegnazioni a generatori e destinazioni registrati dal chiamante. Il Coordinator propaga il contesto fornito dal chiamante senza interpretarlo. Nella sessione multivoce ogni generatore riceve il contesto delle sezioni; il generatore di accompagnamento compone dalla frase fornita come dipendenza. L’integrazione `live_bass` usa invece una frase ricostruita dalla sorgente esterna. La [sessione multivoce](SESSIONE-MULTIVOCE.md) include vista globale e dettaglio delle decisioni di pianificazione.
+Il Director legge anche le assegnazioni manuali delle voci per sezione. Il Coordinator verifica i ruoli supportati e passa ruolo e parametri ai generatori. `music/session.py` collega queste assegnazioni ai generatori registrati dal chiamante, senza dipendere dai dispositivi. Il Coordinator propaga il contesto fornito dal chiamante senza interpretarlo. Nella sessione multivoce ogni generatore riceve il contesto delle sezioni; il generatore di accompagnamento compone dalla frase fornita come dipendenza. L’integrazione `live_bass` usa invece una frase ricostruita dalla sorgente esterna. La [sessione multivoce](SESSIONE-MULTIVOCE.md) include vista globale e dettaglio delle decisioni di pianificazione.
+
+## Controllo della sessione e interfacce
+
+`cli/ensemble.py` carica dati e configurazione, collega le integrazioni e
+gestisce il ciclo di esecuzione. `session_controller.py` riceve i comandi,
+governa trasporto, preparazione e registrazione e produce lo stato condiviso.
+`session_commands.py` valida lo stesso contratto per terminale e HTTP.
+Il runtime e i dispositivi vengono modificati soltanto nel thread della sessione.
+
+`session_setup.py` gestisce domande e modifiche all'organico;
+`session_config.py` risolve, valida e salva la configurazione.
+`live_components.py` collega le integrazioni Live, compreso il banco Snake,
+al runtime comune. Le regole degli strumenti restano nei rispettivi moduli.
+
+`session_frontend.py` traduce la tastiera in comandi e passa lo stato al
+renderer del terminale. La bozza di testo digitata resta locale al terminale.
+Con `--no-terminal` tastiera e renderer non vengono costruiti.
+Il server in `viewer/` legge gli snapshot su file e accoda le richieste HTTP;
+il pannello web presenta lo stato e invia comandi, senza generare musica.
 
 ---
 
