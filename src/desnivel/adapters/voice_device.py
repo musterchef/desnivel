@@ -131,6 +131,15 @@ class VoiceDeviceBridge:
         self.session = uuid4().hex
         self.serial = 0
         self.last_plans = {}
+        self.bindings = {}
+
+    def set_bindings(self, bindings):
+        if (not isinstance(bindings, dict) or bindings.keys()-self.voices.keys()
+                or any(not isinstance(uid, str) or not re.fullmatch(r'[A-Za-z0-9_-]{1,100}', uid)
+                       for uid in bindings.values())
+                or len(set(bindings.values())) != len(bindings)):
+            raise ValueError('associazioni dei device sconosciute, duplicate o non valide')
+        self.bindings = dict(bindings)
 
     def _snapshot(self, voice):
         spec = self.voices[voice]
@@ -164,6 +173,8 @@ class VoiceDeviceBridge:
                 or type(serial) is not int or serial < 0
                 or not isinstance(capabilities, list) or any(not isinstance(c, str) for c in capabilities)):
             raise ValueError('identità, porta o seriale non valido')
+        if voice in self.bindings and message.get('device_id') != self.bindings[voice]:
+            raise ValueError('device diverso da quello associato alla voce')
         now = self.clock()
         previous = self.connections.get(voice)
         if previous and previous['instance'] != instance and now - previous['seen'] < 3:

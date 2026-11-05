@@ -113,7 +113,7 @@ def test_reset_and_player_limits():
 
 
 def test_device_controls_reach_the_shared_python_composition():
-    from desnivel.cli.ensemble import EnsembleSession, Generator
+    from desnivel.music.session import EnsembleSession, Generator
     observed, sent = [], []
     def generate(request):
         observed.append(request)
@@ -140,7 +140,7 @@ def test_device_controls_reach_the_shared_python_composition():
 
 
 def test_manual_role_survives_sections_and_follow_section_restores_current_assignment():
-    from desnivel.cli.ensemble import EnsembleSession, Generator
+    from desnivel.music.session import EnsembleSession, Generator
     calls, sent, progress = [], [], [0]
     def generate(request):
         calls.append(request)
@@ -198,7 +198,7 @@ def test_unbound_device_cannot_assign_roles():
 
 
 def parameter_session(reject=None):
-    from desnivel.cli.ensemble import EnsembleSession, Generator
+    from desnivel.music.session import EnsembleSession, Generator
     progress = [0.]
     defaults = dict(velocity=80, activity=.5, seed=7)
     controls = dict(velocity=Control(1, 127, True), activity=Control(0, 1), seed=Control(0, 100, True))
