@@ -5,12 +5,12 @@ from desnivel.adapters.percussion import PAD_NOTES
 from desnivel.adapters.percussion_presets import migrate_preset as migrate_percussion_preset
 from desnivel.adapters.voice_device import Control, ChoiceControl
 from desnivel.music.session import Generator
-from desnivel.music.melodic.generator import MotifGenerator, ROLES
+from desnivel.music.melodic.generator import MotifGenerator
 from desnivel.music.bass.voice import BassVoice
-from desnivel.music.percussion.generator import PercussionGenerator, ROLES as PERCUSSION_ROLES
+from desnivel.music.percussion.generator import PercussionGenerator
 from desnivel.music.percussion.development import PercussionPhraseGenerator
 from desnivel.music.percussion.catalog import STYLE_OPTIONS, reference_material
-from desnivel.music.texture.generator import TextureGenerator, ROLES as TEXTURE_ROLES
+from desnivel.music.texture.generator import TextureGenerator
 
 
 @dataclass
@@ -54,7 +54,6 @@ def build_generator(spec):
                     'development': Control(0, 1), 'activity': Control(0, 1),
                     'phrase_windows': Control(2, 8, True), 'seed': Control(0, 2147483647, True),
                     'groove_follow': Control(0, 1)}
-        roles = ROLES
         values = compose.settings
     elif kind == 'responsive_line':
         compose = BassVoice(spec.get('settings'))
@@ -62,13 +61,11 @@ def build_generator(spec):
                     'rhythm_follow': Control(0, 1), 'melody_follow': Control(0, 1),
                     'mobility': Control(0, 1), 'variation': Control(0, 1),
                     'articulation': Control(.05, 1), 'groove_follow': Control(0, 1)}
-        roles = ('bass_line',)
         values = {**asdict(compose.settings), 'groove_follow': compose.groove_follow}
     elif kind == 'sustained_texture':
         compose = TextureGenerator(spec.get('degree', 0), spec.get('settings'))
         controls = {'octave': Control(-5, 5, True), 'velocity': Control(1, 127, True),
                     'follow_source': Control(0, 1, True, toggle=True)}
-        roles = TEXTURE_ROLES
         values = compose.settings
     elif kind == 'percussion_phrase':
         compose = PercussionPhraseGenerator(**percussion_definition(spec))
@@ -76,13 +73,11 @@ def build_generator(spec):
                     'velocity_ratio': Control(.05, 1), 'gate_beats': Control(.01, 1),
                     'seed': Control(0, 2147483647, True), 'support_tolerance_beats': Control(0, 1),
                     'answer_clearance_beats': Control(0, 1)}
-        roles = PERCUSSION_ROLES
         values = compose.settings
     elif kind == 'percussion_pattern':
         compose = PercussionGenerator(spec['lanes'], spec['patterns'], spec.get('settings'))
         controls = {'pattern': Control(0, len(compose.patterns)-1, True),
                     'velocity_ratio': Control(.05, 1), 'gate_beats': Control(.01, 1)}
-        roles = PERCUSSION_ROLES
         values = compose.settings
     else:
         raise ValueError(f'tipo di generatore sconosciuto: {kind}')
@@ -93,7 +88,7 @@ def build_generator(spec):
             raise ValueError('preset con controlli sconosciuti')
         for name, value in values.items():
             controls[name].validate(value)
-        for role in roles:
+        for role in compose.supported_roles:
             compose.validate(role, values)
     def validate(role, parameters):
         compose.validate(role, parameters)
@@ -101,8 +96,8 @@ def build_generator(spec):
             if name in parameters:
                 control.validate(parameters[name])
     describe = (lambda: compose.last_decision) if kind in ('motif', 'sustained_texture', 'percussion_pattern', 'percussion_phrase') else None
-    rhythmic_roles = ('melody', 'bass_line') if kind == 'motif' else ('bass_line',) if kind == 'responsive_line' else ()
-    return RegisteredGenerator(Generator(compose, roles, validate, describe,
+    rhythmic_roles = getattr(compose, 'rhythmic_roles', ())
+    return RegisteredGenerator(Generator(compose, compose.supported_roles, validate, describe,
                                          compose.stage, compose.accept,
                                          getattr(compose, 'prepare_reference', None), rhythmic_roles,
                                          getattr(compose, 'accept_reference', None), initial,

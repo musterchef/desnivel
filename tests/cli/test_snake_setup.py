@@ -68,6 +68,26 @@ def test_setup_rejects_playback_and_recording_without_opening_anything(playing,b
     assert calls==[]
 
 
+def test_separate_snake_server_uses_session_role_lock():
+    from desnivel.adapters.voice_device import DeviceVoice, VoiceDeviceBridge
+    roles = []
+    voice = DeviceVoice(role_state=lambda: {'supported_roles': ['melody', 'bass_line']},
+                        apply_role=roles.append)
+    bridge = VoiceDeviceBridge({'snake': voice}, lambda *args: None)
+    session = SimpleNamespace(components={'snake': {}}, port=9007, bridge=bridge)
+    guide = SnakeSetup('presets/snake.json', {}, 9006, create_session=lambda *args: session)
+    locked = [False]
+    guide.can_change_role = lambda: not locked[0]
+    guide.begin(playing=False)
+    identity = dict(version=1, voice='snake', instance='snake', reply_port=9201)
+    bridge.handle(dict(identity, serial=1, action='hello'))
+    bridge.handle(dict(identity, serial=2, action='role', role='melody'))
+    locked[0] = True
+    with pytest.raises(ValueError, match='prima del play'):
+        bridge.handle(dict(identity, serial=3, action='role', role='bass_line'))
+    assert roles == ['melody']
+
+
 @pytest.mark.parametrize('complete',[False,True])
 def test_normal_ensemble_guides_setup_and_stops_an_unexpected_play_without_advancing(tmp_path,monkeypatch,complete):
     import json

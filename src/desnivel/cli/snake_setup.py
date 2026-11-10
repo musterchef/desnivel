@@ -21,6 +21,7 @@ class SnakeSetup:
         self.next_check = None
         self.check_requested = False
         self.instructions = []
+        self.can_change_role = None
 
     @property
     def waiting(self):
@@ -34,6 +35,8 @@ class SnakeSetup:
             return
         if self.session is None:
             self.session = self.create_session(self.config_path, self.sources, self.main_port)
+            if self.can_change_role is not None:
+                self.session.bridge.can_change_role = self.can_change_role
         self.instructions = [
             'In Live crea una traccia MIDI: Snake con Length → Desnivel_Snake_Control → strumento.',
             *[f'Nel controllo imposta voce {name}; Receive {RECEIVE_PORT+index}, Python {self.session.port}.'

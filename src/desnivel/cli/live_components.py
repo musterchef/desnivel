@@ -50,6 +50,9 @@ class LiveComponents:
             self.guide = SnakeSetup(self.config_path.parent/'snake.json', runtime.voice_descriptions, self.port)
         else:
             self.guide.sources = runtime.voice_descriptions
+        self.guide.can_change_role = runtime.can_change_role
+        if self.guide.session is not None:
+            self.guide.session.bridge.can_change_role = self.guide.can_change_role
         if self.session:
             self.session.attach_bridge(runtime.bridge)
             for name in self.voices:

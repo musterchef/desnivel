@@ -137,6 +137,7 @@ def render_details(state):
         rows.append(f"COMPONENTE {name}: {'collegato' if component['connected'] else 'SCOLLEGATO'} | {component['status']}")
         if component.get('source_status'):
             rows.append(f"SORGENTE {name}: {component['role']} | {component['source_status']}")
+    rows.extend(_role_migrations(state))
     if state['error']:
         rows.append('ERRORE: ' + state['error'])
     if state.get('control_error'):
@@ -158,12 +159,18 @@ def render_details(state):
     return '\n'.join(rows)
 
 
+def _role_migrations(state):
+    return [f"RUOLO: {change['voice']} · {change['section']}: {change['previous']} → {change['role']}"
+            for change in state.get('role_migrations', [])]
+
+
 def _errors(state):
     rows = []
     if state.get('error'):
         rows.append('ERRORE: '+state['error'])
     if state.get('control_error'):
         rows.append('COMANDO: '+state['control_error'])
+    rows.extend(_role_migrations(state))
     return rows
 
 

@@ -145,6 +145,40 @@ def test_configuration_is_copied_and_request_parameters_cannot_be_replaced():
         calls[0][1].parameters['velocity'] = 1
 
 
+def test_role_changes_between_sections_use_first_role_and_are_reported():
+    data = config()
+    data['sections'][1]['assignments']['a']['role'] = 'texture'
+    seen = []
+    def generate(request):
+        seen.append((request.role, request.parameters['velocity']))
+        return Phrase(request.length_beats, ())
+    generators = {
+        'source': Generator(generate, ('melody', 'texture')),
+        'accompaniment': Generator(lambda request: Phrase(request.length_beats, ()), ('bass_line',)),
+    }
+    with pytest.warns(UserWarning, match='a.*development.*texture.*melody'):
+        session = EnsembleSession(data, generators, {'out_a': lambda *args: None, 'out_b': lambda *args: None})
+    assert session.role_migrations == [dict(voice='a', section='development', previous='texture', role='melody')]
+    session.plan(0, 0, 4)
+    session.plan(.5, 4, 4)
+    assert seen == [('melody', 70), ('melody', 100)]
+    assert data['sections'][1]['assignments']['a']['role'] == 'texture'
+
+
+def test_role_migration_rejects_parameters_invalid_for_first_role():
+    data = config()
+    data['sections'][1]['assignments']['a'] = {'role': 'texture', 'parameters': {'texture_only': 1}}
+    def validate(role, parameters):
+        if role == 'melody' and 'texture_only' in parameters:
+            raise ValueError('texture_only non disponibile')
+    generators = {
+        'source': Generator(lambda request: Phrase(request.length_beats, ()), ('melody', 'texture'), validate),
+        'accompaniment': Generator(lambda request: Phrase(request.length_beats, ()), ('bass_line',)),
+    }
+    with pytest.raises(ValueError, match='a/melody.*development.*texture_only'):
+        EnsembleSession(data, generators, {'out_a': lambda *args: None, 'out_b': lambda *args: None})
+
+
 def test_load_json_file_and_deliver_phrase(tmp_path):
     path = tmp_path / 'ensemble.json'
     data = config()

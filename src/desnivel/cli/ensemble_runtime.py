@@ -63,6 +63,7 @@ class EnsembleRuntime:
             raise ValueError('scegliere la voce del trasporto')
         self.elapsed = 0.
         self.playing = False
+        self.roles_locked = False
         self.beat = 0.
         self.bpm = None
         self.epoch = None
@@ -114,7 +115,9 @@ class EnsembleRuntime:
                 raise ValueError('ogni voce richiede una destinazione distinta')
             bridge.voices[name] = DeviceVoice()
             destinations[destination] = bridge.destination(name)
-        self.session = EnsembleSession(session_config, {name: spec.generator for name, spec in self.registry.items()}, destinations)
+        self.session = EnsembleSession(session_config, {name: spec.generator for name, spec in self.registry.items()},
+                                       destinations, can_change_role=self.can_change_role)
+        bridge.can_change_role = self.can_change_role
         if self.session.coordinator.rhythm_source is None and any(
                 spec.values.get('groove_follow', 0) for spec in self.registry.values()):
             raise ValueError('groove_follow richiede rhythm_voice nella configurazione')
@@ -131,6 +134,9 @@ class EnsembleRuntime:
                 migrate_preset=registered.migrate_preset)
             bridge.voices[name].read_weather = lambda name=name: self.weather_status(name)
         self.state = 'waiting_for_transport' if bridge.voices else 'empty'
+
+    def can_change_role(self):
+        return not self.playing and not self.roles_locked and self._restart_epoch is None
 
     def toggle_context(self, name):
         """Cambia il contributo alle finestre future, conservando i piani già inviati."""
@@ -214,6 +220,8 @@ class EnsembleRuntime:
             self.reset(preserve_development=self.instance == message['instance'] and beat >= self.beat)
         self.instance, self.transport_serial = message['instance'], message['serial']
         self.beat, self.playing, self.epoch = beat, bool(playing), epoch
+        if self.playing:
+            self.roles_locked = True
         self.bpm = bpm
 
     def control(self, action):
@@ -231,6 +239,7 @@ class EnsembleRuntime:
             self.paused = False
             self._restart_epoch = self.epoch
             self.playing = False
+            self.roles_locked = False
             self.beat = 0.
             self.restart_count += 1
             self.state = 'stopped'
@@ -362,6 +371,7 @@ class EnsembleRuntime:
                               'adjustments': self.timeline.timeline.to_dict()['adjustments']}
                              if self.timeline else None),
                 'version': 1, 'state': self.state, 'error': self.error,
+                'role_migrations': deepcopy(self.session.role_migrations),
                 'adaptation_enabled': self.adaptation_enabled,
                 'controls': {'paused': self.paused, 'restart_count': self.restart_count,
                              'contexts': {source.data['source']: {'enabled': enabled}

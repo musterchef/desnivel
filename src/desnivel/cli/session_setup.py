@@ -1,11 +1,63 @@
 """Configurazione guidata delle voci e delle destinazioni Live, a trasporto fermo."""
+from __future__ import annotations
+
 from copy import deepcopy
+from dataclasses import dataclass
+from functools import lru_cache
 import json
 from pathlib import Path
 import shlex
 from uuid import uuid4
 
+from desnivel.cli.generators import build_generator
 from desnivel.cli.session_config import save_configuration
+from desnivel.music.sequence.settings import ROLES as SNAKE_ROLES
+
+
+@dataclass(frozen=True)
+class GuidedChoice:
+    role: str
+    generator: str
+    label: str
+    source_step: str | None = None
+    settings: tuple[tuple[str, int | float | str], ...] = ()
+
+
+GUIDED_CHOICES = (
+    GuidedChoice('melody', 'motif', 'sviluppo di un motivo'),
+    GuidedChoice('bass_line', 'motif', 'autonomo'),
+    GuidedChoice('bass_line', 'responsive_line', 'in relazione a una voce', 'source'),
+    GuidedChoice('sustained_texture', 'sustained_texture', 'segue l’armonia della sezione',
+                 settings=(('follow_source', 0),)),
+    GuidedChoice('sustained_texture', 'sustained_texture', 'segue una voce', 'texture_source',
+                 (('follow_source', 1),)),
+    GuidedChoice('percussion', 'percussion_pattern', 'pattern autonomo'),
+    GuidedChoice('percussion', 'percussion_phrase', 'in relazione ad altre voci', 'support'),
+)
+
+
+@lru_cache(maxsize=1)
+def _guided_generator_definitions():
+    base = Path(__file__).resolve().parents[3]
+    template = json.loads((base/'presets/organico.json').read_text())
+    definitions = {spec['type']: deepcopy(spec) for spec in template['generators'].values()}
+    from desnivel.adapters.percussion import PAD_NOTES
+    from desnivel.music.percussion.catalog import reference_material
+    definitions['percussion_pattern'] = dict(
+        type='percussion_pattern', lanes=dict(PAD_NOTES),
+        patterns=[reference_material('regular_pulse_eighths').pattern()])
+    return definitions
+
+
+def _guided_supported_roles():
+    """Ruoli con almeno una scelta guidata dichiarata."""
+    roles = tuple(dict.fromkeys(choice.role for choice in GUIDED_CHOICES))
+    return tuple((*[role for role in SNAKE_ROLES if role in roles],
+                  *[role for role in roles if role not in SNAKE_ROLES]))
+
+
+def _guided_behavior_options(role):
+    return [(choice, choice.label) for choice in GUIDED_CHOICES if choice.role == role]
 
 
 class SessionSetup:
@@ -161,26 +213,20 @@ class SessionSetup:
             if not name or len(name) > 100 or not name.isprintable():
                 raise ValueError('nome della voce richiesto, massimo 100 caratteri')
             self.pending['name'] = name
-            roles = ['melody', 'bass_line', 'sustained_texture']
-            if self.pending['device']['device_kind'] != 'snake':
-                roles.append('percussion')
+            roles = (SNAKE_ROLES if self.pending['device']['device_kind'] == 'snake'
+                     else _guided_supported_roles())
             self._question('voice', 'Quale voce musicale vuoi aggiungere?', roles)
         elif self.step == 'voice':
             self.pending['role'] = self._choice(text)
             if self.pending['device']['device_kind'] == 'snake':
                 options = [('autonomous', 'autonomo'), ('coordinated', 'in relazione a una voce')]
             else:
-                options = {
-                    'melody': [('motif', 'sviluppo di un motivo')],
-                    'bass_line': [('motif', 'autonomo'), ('responsive_line', 'in relazione a una voce')],
-                    'sustained_texture': [('sustained_texture', 'segue l’armonia della sezione'),
-                                          ('texture_follow', 'segue una voce')],
-                    'percussion': [('percussion_pattern', 'pattern autonomo'),
-                                   ('percussion_phrase', 'in relazione ad altre voci')],
-                }[self.pending['role']]
+                options = _guided_behavior_options(self.pending['role'])
             if not self.config['voices']:
-                options = [option for option in options if option[0] not in (
-                    'responsive_line', 'texture_follow', 'percussion_phrase', 'coordinated')]
+                if self.pending['device']['device_kind'] == 'snake':
+                    options = [option for option in options if option[0] != 'coordinated']
+                else:
+                    options = [option for option in options if not option[0].source_step]
             if len(options) == 1:
                 self._select_behavior(options[0][0])
             else:
@@ -192,7 +238,6 @@ class SessionSetup:
             self._add()
         elif self.step == 'texture_source':
             self.pending['optional_dependencies'] = [self._choice(text)]
-            self.pending['definition'].setdefault('settings', {})['follow_source'] = 1
             self._add()
         elif self.step == 'support':
             self.pending['definition']['interaction']['support_source'] = self._choice(text)
@@ -208,7 +253,9 @@ class SessionSetup:
 
     def _select_behavior(self, behavior):
         voices = list(self.config['voices'])
-        if behavior in ('responsive_line', 'texture_follow', 'percussion_phrase', 'coordinated') and not voices:
+        guided = isinstance(behavior, GuidedChoice)
+        source_step = behavior.source_step if guided else None
+        if (behavior == 'coordinated' or source_step) and not voices:
             raise ValueError('questo comportamento richiede una voce sorgente già presente')
         if self.pending['device']['device_kind'] == 'snake':
             self.pending['mode'] = behavior
@@ -218,24 +265,20 @@ class SessionSetup:
                 self.pending['source'] = 'none'
                 self._add()
             return
-        kind = 'sustained_texture' if behavior == 'texture_follow' else behavior
-        if kind == 'percussion_pattern':
-            from desnivel.adapters.percussion import PAD_NOTES
-            from desnivel.music.percussion.catalog import reference_material
-            definition = dict(type=kind, lanes=dict(PAD_NOTES),
-                              patterns=[reference_material('regular_pulse_eighths').pattern()])
-        else:
-            template = json.loads((Path(__file__).resolve().parents[3]/'presets/organico.json').read_text())
-            definition = next(deepcopy(s) for s in template['generators'].values() if s['type'] == kind)
+        definitions = _guided_generator_definitions()
+        kind = behavior.generator
+        definition = deepcopy(definitions[kind])
+        if behavior.settings:
+            definition.setdefault('settings', {}).update(dict(behavior.settings))
         # Il seguito del groove richiede una sorgente ritmica scelta esplicitamente.
         if 'groove_follow' in definition.get('settings', {}):
             definition['settings']['groove_follow'] = 0.
         self.pending['definition'] = definition
-        if behavior == 'responsive_line':
+        if source_step == 'source':
             self._question('source', 'Scegli la voce sorgente.', voices)
-        elif behavior == 'texture_follow':
+        elif source_step == 'texture_source':
             self._question('texture_source', 'Quale voce deve seguire la nota sostenuta?', voices)
-        elif behavior == 'percussion_phrase':
+        elif source_step == 'support':
             self._question('support', 'Scegli la sorgente di supporto ritmico.', voices)
         else:
             self._add()
@@ -267,10 +310,45 @@ class SessionSetup:
         self._commit(candidate)
         self.notice = f"{self._voices()[name]['name']} associata. Puoi associare un’altra traccia o salvare la sessione."
 
+    def _rematch_bindings(self):
+        """Riassocia le voci a device con lo stesso nome quando l'identità è cambiata."""
+        bindings = self.config.get('live_bindings', {})
+        if not bindings:
+            return
+        available = self.devices.available()
+        present = {d['device_id'] for d in available}
+        bound = set(bindings.values())
+        names = self._voices()
+        changed = False
+        for voice, device_id in list(bindings.items()):
+            if device_id in present:
+                continue
+            voice_name = names.get(voice, {}).get('name')
+            if not voice_name:
+                continue
+            expected_kind = 'snake' if voice in self.config.get('snake', {}).get('components', {}) else 'voice'
+            match = next((d for d in available if d['track']['name'] == voice_name
+                          and not d['error'] and d['device_id'] not in bound
+                          and d['device_kind'] == expected_kind), None)
+            if match:
+                bindings[voice] = match['device_id']
+                bound.add(match['device_id'])
+                changed = True
+        if changed:
+            try:
+                self.can_edit()
+                candidate = deepcopy(self.config)
+                candidate['live_bindings'] = bindings
+                self.apply(candidate)
+                self.config = candidate
+            except ValueError:
+                self.config['live_bindings'] = bindings
+
     def tick(self, now):
         if now < self.next_bind:
             return
         self.next_bind = now+1.
+        self._rematch_bindings()
         for voice, device_id in self.config.get('live_bindings', {}).items():
             try:
                 self.devices.bind(device_id, voice, self.port)

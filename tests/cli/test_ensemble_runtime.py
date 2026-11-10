@@ -1,4 +1,5 @@
 import json
+from copy import deepcopy
 from pathlib import Path
 
 import numpy as np
@@ -40,6 +41,57 @@ def setup():
         bridge.handle(msg)
         runtime.on_message(bridge, msg)
     return runtime, bridge, now, sent, receive
+
+
+def test_manual_organico_keeps_melody_and_texture_on_their_voices():
+    config = transport_config()
+    track = Track('test', np.array([0., 10.]), {'cum_dist_m': np.array([0., 100.])})
+    runtime = EnsembleRuntime(track, config, VoiceDeviceBridge({}, lambda *args: None))
+    for section in config['sections']:
+        progress = section['from_progress']
+        assert runtime.session.role_state('voice_01', progress)['role'] == 'melody'
+        assert runtime.session.role_state('voice_03', progress)['role'] == 'sustained_texture'
+    phrases = runtime.session.plan(config['sections'][-1]['from_progress'], 0, 4)
+    decisions = runtime.session.coordinator.last_plan['voices']
+    assert decisions['voice_01']['role'] == 'melody'
+    assert decisions['voice_03']['role'] == 'sustained_texture'
+    assert decisions['voice_03']['composition']['method'] == 'sustained_texture'
+    assert phrases['voice_01'].notes
+    assert len(phrases['voice_03'].notes) == 1
+
+
+def test_role_selection_is_locked_after_play_until_restart():
+    runtime, bridge, _, _, receive = setup()
+    receive(playing=0)
+    identity = dict(version=1, voice='voice_01', instance='voice_01', reply_port=9101)
+    runtime.session.set_role('voice_01', 'bass_line')
+    assert runtime.session.role_state('voice_01', 0)['role'] == 'bass_line'
+    receive(playing=1)
+    with pytest.raises(ValueError, match='prima del play'):
+        bridge.handle(dict(identity, serial=3, action='role', role='melody'))
+    receive(beat=1, playing=0)
+    with pytest.raises(ValueError, match='prima del play'):
+        runtime.session.set_role('voice_01', 'melody')
+    runtime.control('restart')
+    receive(beat=0, playing=0, epoch=1)
+    runtime.session.set_role('voice_01', 'melody')
+    assert runtime.session.role_state('voice_01', 0)['role'] == 'melody'
+
+
+def test_role_migration_is_reported_in_runtime_snapshot():
+    config = transport_config()
+    original = deepcopy(config)
+    config['sections'][-1]['assignments']['voice_01']['role'] = 'sustained_texture'
+    track = Track('test', np.array([0., 10.]), {'cum_dist_m': np.array([0., 100.])})
+    with pytest.warns(UserWarning, match='voice_01.*closing.*sustained_texture.*melody'):
+        runtime = EnsembleRuntime(track, config, VoiceDeviceBridge({}, lambda *args: None))
+    changes = runtime.snapshot()['role_migrations']
+    assert changes == [dict(voice='voice_01', section='closing', previous='sustained_texture', role='melody')]
+    assert runtime.session.role_state('voice_01', .9)['role'] == 'melody'
+    assert original['sections'][-1]['assignments']['voice_01']['role'] == 'melody'
+    assert config['sections'][-1]['assignments']['voice_01']['role'] == 'sustained_texture'
+    from desnivel.cli.session_view import render_session
+    assert 'voice_01 · closing: sustained_texture → melody' in render_session(runtime.snapshot())
 
 
 def test_planned_linear_context_uses_live_tempo_without_changing_parameters():
@@ -115,12 +167,9 @@ def test_waiting_then_continuous_plans_sections_roles_and_status():
     assert status['voices']['voice_02']['dependencies'] == ['voice_01']
     assert status['voices']['voice_01']['supported_roles'] == ['melody', 'sustained_texture', 'bass_line']
     json.dumps(status, allow_nan=False)
-    # Override valido anche durante i successivi cambi di sezione.
-    runtime.session.set_role('voice_01', 'sustained_texture')
-    now[0] = 2
-    receive(beat=8)
-    runtime.tick()
-    assert bridge.last_plans['voice_01']['notes'] == 1
+    # Il ruolo non può cambiare dopo l'inizio della riproduzione.
+    with pytest.raises(ValueError, match='prima del play'):
+        runtime.session.set_role('voice_01', 'sustained_texture')
 
 
 def test_stop_pauses_trip_and_seek_replans_without_rewinding_trip():
@@ -188,7 +237,7 @@ def test_invalid_controls_do_not_mutate_manual_values():
 
 def test_control_applicability_tracks_section_role_and_manual_mode():
     runtime, bridge, _, _, receive = setup()
-    receive()
+    receive(playing=0)
     controls = bridge.status()['voice_01']['controls']
     assert 'inactive_reason' not in controls['activity']
     runtime.session.set_role('voice_01', 'sustained_texture')
@@ -236,8 +285,9 @@ def test_inactive_reason_and_decisions_match_section_and_executed_plan():
     assert plan['voices']['voice_02']['dependencies'] == ['voice_01']
     assert len(plan['voices']['voice_02']['notes']) == bridge.last_plans['voice_02']['notes']
     assert status['decisions']['director']['assignments']['voice_02']['source'] == 'section'
-    runtime.session.set_role('voice_01', 'sustained_texture')
-    assert runtime.snapshot()['decisions']['director']['assignments']['voice_01']['source'] == 'manual'
+    with pytest.raises(ValueError, match='prima del play'):
+        runtime.session.set_role('voice_01', 'sustained_texture')
+    assert runtime.snapshot()['decisions']['director']['assignments']['voice_01']['source'] == 'section'
 
 
 def allocated_setup():

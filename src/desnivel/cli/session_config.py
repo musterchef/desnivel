@@ -67,6 +67,16 @@ def reconfigure_runtime(runtime, config, library, *, external_voices=None):
     candidate = EnsembleRuntime(runtime.track, config, bridge, runtime.speed, runtime.clock,
                                 timing=runtime.timing, adaptive=runtime.adaptation_enabled,
                                 context_sources=runtime.context_sources, external_voices=external_voices)
+    if runtime.roles_locked:
+        old_roles = runtime.session.configured_roles
+        if any(name not in old_roles or old_roles[name] != role
+               for name, role in candidate.session.configured_roles.items()):
+            raise ValueError('ruolo modificabile solo prima del play: riavvia la sessione')
+        for name, voice in (external_voices or {}).items():
+            old = runtime.bridge.voices.get(name)
+            if (old is None or old.role_state is None or voice.role_state is None
+                    or old.role_state()['role'] != voice.role_state()['role']):
+                raise ValueError('ruolo modificabile solo prima del play: riavvia la sessione')
     connect_preset_library(library, bridge.voices, allow_missing=True)
     for name in candidate.registry.keys() & runtime.registry.keys():
         candidate.session.set_parameters(name, runtime.session.manual_parameters(name))
@@ -77,7 +87,7 @@ def reconfigure_runtime(runtime, config, library, *, external_voices=None):
         candidate.session.plan(section['from_progress'], index*candidate.window, candidate.window)
     candidate.reset()
     for key in ('elapsed', 'beat', 'bpm', 'epoch', 'instance', 'transport_serial', 'paused',
-                'restart_count', '_restart_epoch'):
+                'restart_count', '_restart_epoch', 'roles_locked'):
         setattr(candidate, key, getattr(runtime, key))
     if candidate.transport_voice != runtime.transport_voice:
         candidate.instance, candidate.transport_serial = None, -1
@@ -105,5 +115,3 @@ def save_configuration(path, config):
             temporary.replace(path)
         finally:
             temporary.unlink(missing_ok=True)
-
-
