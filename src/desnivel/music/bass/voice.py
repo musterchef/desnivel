@@ -9,7 +9,13 @@ from desnivel.music.rhythm import shape_rhythm, rhythm_influences
 from .adaptation import targets
 
 
+ROLES = ('bass_line',)
+
+
 class BassVoice:
+    supported_roles = ROLES
+    rhythmic_roles = ROLES
+
     def adapt(self, request):
         return targets(request, self.validate(request.role, {**request.parameters, **request.manual}), self.last_decision)
 
@@ -23,7 +29,7 @@ class BassVoice:
         self.last_decision = None
 
     def validate(self, role, parameters):
-        if role != 'bass_line':
+        if role not in self.supported_roles:
             raise ValueError('ruolo non supportato dal generatore di accompagnamento')
         if 'strategy' in parameters:
             raise ValueError('strategy seleziona i valori iniziali: usarlo soltanto in settings')

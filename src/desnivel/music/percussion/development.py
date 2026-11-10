@@ -21,6 +21,8 @@ OPERATIONS = {'statement', 'subtract', 'displace', 'accent', 'silence'}
 
 
 class PercussionPhraseGenerator:
+    supported_roles = ROLES
+
     def adapt(self, request):
         style = request.setting('style')
         cycle = STYLE_BY_ID[style].cycle_beats if style != 'none' else self.standard[1] if self.standard else self.cycle
@@ -91,7 +93,7 @@ class PercussionPhraseGenerator:
         return details
 
     def validate(self, role, parameters):
-        if role not in ROLES:
+        if role not in self.supported_roles:
             raise ValueError('ruolo non supportato dal generatore percussivo')
         values = {**self.settings, **parameters}
         if set(values) != set(DEFAULTS):

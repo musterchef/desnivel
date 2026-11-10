@@ -13,6 +13,8 @@ ROLES = ('percussion',)
 
 
 class PercussionGenerator:
+    supported_roles = ROLES
+
     def __init__(self, lanes, patterns, settings=None):
         if settings is not None and not isinstance(settings, dict):
             raise ValueError('settings deve essere una mappa di parametri')
@@ -56,7 +58,7 @@ class PercussionGenerator:
         self.last_decision = None
 
     def validate(self, role, parameters):
-        if role not in ROLES:
+        if role not in self.supported_roles:
             raise ValueError('ruolo non supportato dal generatore percussivo')
         values = {**self.settings, **parameters}
         if set(values) != set(DEFAULTS):

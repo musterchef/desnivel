@@ -13,6 +13,7 @@ DEFAULTS = dict(octave=0, velocity=85, follow_source=0)
 
 class TextureGenerator:
     adapt = staticmethod(targets)
+    supported_roles = ROLES
 
     def __init__(self, degree=0, settings=None):
         if type(degree) is not int or degree < 0:
@@ -23,7 +24,7 @@ class TextureGenerator:
         self.reset()
 
     def validate(self, role, parameters):
-        if role not in ROLES:
+        if role not in self.supported_roles:
             raise ValueError('ruolo non supportato dalla tessitura sostenuta')
         values = {**self.settings, **parameters}
         if set(values) != set(DEFAULTS):

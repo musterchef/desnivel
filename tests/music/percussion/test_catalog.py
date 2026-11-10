@@ -40,11 +40,11 @@ PERCUSSION_BEFORE = {
     ('dialogo', 'breakbeat_house', 1): 'fbca764a322d7f9fd074406c7ffdf0a7b5a4d12cd7cba366744efe085ff6c2bc',
 }
 
-SESSIONS_BEFORE = {
-    ('organico', 'none'): 'f22d64c342d5874d3e26a9974a0bd753e4ff5c070fa130f3b0d592ddb3431c6f',
-    ('organico', 'house_classic'): 'a9b59c883446e936b386181c8a5c1f0ec784d0c704473067dab74a5bda755f2e',
-    ('organico', 'boom_bap_90s'): '6de83afad643df351f113a8cf8a501e0246490de73ddac841a3a1286e8230fe0',
-    ('organico', 'breakbeat_house'): 'd29482d738e2aa7e1bda92258bcffcc2a0bd5aa9f47d7fa1eec3e31eaadeabc7',
+SESSIONS_EXPECTED = {
+    ('organico', 'none'): 'a9f9097e555e66be35170c5a6e465aeb99212f73bdd1ae1a1791f799978299e6',
+    ('organico', 'house_classic'): '5bfb9a10813ca8b015fe81ae319a92ea17251ec806fb07ec5ea17ce34d743d6e',
+    ('organico', 'boom_bap_90s'): '674ae56c7951a55a77ed0df5fb45717c8f8277f3b97572e671b3a76cc3f75f33',
+    ('organico', 'breakbeat_house'): '25b363a7ddbaf3a0580a9225b4e03b3b4457ec57f7851e00a65ccd90d9034d98',
     ('dialogo', 'none'): 'cf0b938334d4fef8df0adff396e4ef27052670f85893ed5f08f578a6a5200f47',
     ('dialogo', 'house_classic'): '3ae64619dd018cc16f87ef048cc96b67ebf194a3207be1e7549a4cea5d5e9722',
     ('dialogo', 'boom_bap_90s'): 'a8d6c9e4c13b9445e0b7501ba8d32aeb6b8fcb7da8ddcff8c8db7a11673e864f',
@@ -103,9 +103,9 @@ def test_centralized_catalog_preserves_notes_references_and_gestures(name, style
     assert capture(configuration(name)['generators']['percussion'], style, variation) == PERCUSSION_BEFORE[name,style,variation]
 
 
-@pytest.mark.parametrize('name,style', SESSIONS_BEFORE)
-def test_centralization_preserves_the_whole_ensemble_dialogue(name, style):
-    assert capture_session(configuration(name), style) == SESSIONS_BEFORE[name,style]
+@pytest.mark.parametrize('name,style', SESSIONS_EXPECTED)
+def test_whole_ensemble_dialogue_for_current_arrangement(name, style):
+    assert capture_session(configuration(name), style) == SESSIONS_EXPECTED[name,style]
 
 
 def test_all_materials_have_known_roles_and_unique_explicit_identifiers():

@@ -19,6 +19,8 @@ DEFAULTS = dict(octave=0, step_beats=1.0, articulation=.8, velocity=85,
 
 class MotifGenerator:
     adapt = staticmethod(targets)
+    supported_roles = ROLES
+    rhythmic_roles = ('melody', 'bass_line')
 
     def __init__(self, degrees, settings=None):
         self.degrees = tuple(degrees)
@@ -32,7 +34,7 @@ class MotifGenerator:
         self._texture = TextureGenerator(self.degrees[0])
 
     def validate(self, role, parameters):
-        if role not in ROLES:
+        if role not in self.supported_roles:
             raise ValueError('ruolo non supportato dal generatore di motivo')
         values = {**self.settings, **parameters}
         if set(values) != set(DEFAULTS):

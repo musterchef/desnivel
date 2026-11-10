@@ -3,6 +3,7 @@ import pytest
 from desnivel.music.coordinator import PlanningRequest
 from desnivel.music.director import MusicalContext
 from desnivel.music.melodic.generator import MotifGenerator
+from desnivel.music.texture.generator import TextureGenerator
 
 
 def request(role='melody', start=0, **parameters):
@@ -17,6 +18,14 @@ def test_melody_continues_motif_and_texture_sustains_one_note():
     assert len(held.notes) == 1 and held.notes[0].duration == 4
     low = generator(request('bass_line', octave=-2))
     assert [n.pitch for n in low.notes] == [36, 40, 43, 38]
+
+
+def test_motif_sustained_role_matches_texture_generator_for_equivalent_inputs():
+    motif = MotifGenerator([2, 4, 1])
+    texture = TextureGenerator(2)
+    for start in (0, 4, 8):
+        req = request('sustained_texture', start=start, octave=1, velocity=70)
+        assert motif(req) == texture(req)
 
 
 def test_no_silent_unknown_controls_or_out_of_range_notes():

@@ -7,6 +7,7 @@ import math
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Callable, Mapping
+import warnings
 
 from desnivel.music.arrangement import Assignment
 from desnivel.music.coordinator import MusicCoordinator, Voice, PlanningRequest
@@ -38,7 +39,7 @@ class EnsembleSession:
     """
 
     def __init__(self, config: dict, generators: Mapping[str, Generator],
-                 destinations: Mapping[str, Callable[[float, Phrase], None]]):
+                 destinations: Mapping[str, Callable[[float, Phrase], None]], *, can_change_role=None):
         config = deepcopy(config)
         if config['selection_mode'] != 'manual':
             raise ValueError('selection_mode deve essere manual')
@@ -54,6 +55,18 @@ class EnsembleSession:
                                  generator.stage, generator.accept, generator.prepare_reference,
                                  generator.rhythmic_roles, generator.accept_reference, generator.adapt, generator.validate)
             self._destinations[name] = destinations[spec['destination']]
+        self._can_change_role = can_change_role
+        first_roles = {}
+        self.role_migrations = []
+        for section in config['sections']:
+            for name, spec in section.get('assignments', {}).items():
+                if name in voices and spec['role'] not in voices[name].supported_roles:
+                    raise ValueError(f"ruolo non supportato: {name}/{spec['role']}")
+                first = first_roles.setdefault(name, spec['role'])
+                if spec['role'] != first:
+                    self.role_migrations.append(dict(voice=name, section=section['name'],
+                                                     previous=spec['role'], role=first))
+                    spec['role'] = first
         self.director = MusicDirector(config['sections'])
         for voice in voices.values():
             optional = voice.optional_dependencies
@@ -70,7 +83,10 @@ class EnsembleSession:
                 if assignment.role not in voices[name].supported_roles:
                     raise ValueError(f'ruolo non supportato: {name}/{assignment.role}')
                 if self._generators[name].validate:
-                    self._generators[name].validate(assignment.role, assignment.parameters)
+                    try:
+                        self._generators[name].validate(assignment.role, assignment.parameters)
+                    except ValueError as error:
+                        raise ValueError(f"{name}/{assignment.role} nella sezione {section['name']}: {error}") from error
             pending, available = set(assignments), set()
             while pending:
                 ready = {name for name in pending if (set(voices[name].dependencies)
@@ -90,6 +106,11 @@ class EnsembleSession:
         self._parameter_progress = 0.
         self._presence_multipliers = {}
         self._supported_roles = {name: spec.supported_roles for name, spec in voices.items()}
+        self.configured_roles = dict(first_roles)
+        for change in self.role_migrations:
+            warnings.warn(f"ruolo della voce {change['voice']} nella sezione {change['section']}: "
+                          f"{change['previous']} sostituito con il primo ruolo {change['role']}",
+                          UserWarning, stacklevel=2)
 
     @classmethod
     def from_file(cls, path, generators, destinations):
@@ -117,6 +138,8 @@ class EnsembleSession:
 
     def set_role(self, voice: str, role: str | None):
         """Valida la scelta manuale prima di comunicarla al Director."""
+        if self._can_change_role is not None and not self._can_change_role():
+            raise ValueError('ruolo modificabile solo prima del play: riavvia la sessione')
         if voice not in self._supported_roles:
             raise ValueError('voce non registrata')
         if role is not None and role not in self._supported_roles[voice]:
@@ -232,5 +255,3 @@ class EnsembleSession:
                 raise ValueError(f'destinazione non registrata per {name}')
         for name, phrase in phrases.items():
             self._destinations[name](start, phrase)
-
-
