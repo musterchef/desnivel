@@ -139,7 +139,7 @@ def test_device_controls_reach_the_shared_python_composition():
     assert session.plan(0, 8, 4)['part_a'].notes[0].velocity == 80
 
 
-def test_manual_role_survives_sections_and_follow_section_restores_current_assignment():
+def test_manual_role_survives_sections_and_follow_section_restores_configured_role():
     from desnivel.music.session import EnsembleSession, Generator
     calls, sent, progress = [], [], [0]
     def generate(request):
@@ -152,7 +152,7 @@ def test_manual_role_survives_sections_and_follow_section_restores_current_assig
             {'name': 'opening', 'from_progress': 0, 'root': 60, 'scale': 'major',
              'assignments': {'part_a': {'role': 'melody'}}},
             {'name': 'middle', 'from_progress': .3, 'root': 62, 'scale': 'minor',
-             'assignments': {'part_a': {'role': 'sustained_texture'}}},
+             'assignments': {'part_a': {'role': 'melody'}}},
             {'name': 'rest', 'from_progress': .6, 'root': 62, 'scale': 'minor', 'assignments': {}},
             {'name': 'return', 'from_progress': .8, 'root': 60, 'scale': 'major',
              'assignments': {'part_a': {'role': 'melody'}}},
@@ -182,9 +182,9 @@ def test_manual_role_survives_sections_and_follow_section_restores_current_assig
     assert calls[-1].role == 'melody'
     progress[0] = .3
     state = bridge.handle(message(6))
-    assert state['role'] == 'sustained_texture' and state['role_mode'] == 'section'
+    assert state['role'] == 'melody' and state['role_mode'] == 'section'
     session.plan(.3, 16, 4)
-    assert calls[-1].role == 'sustained_texture'
+    assert calls[-1].role == 'melody'
     # I seriali superati non possono ripristinare una vecchia scelta manuale.
     bridge.handle(message(2, 'role', role='melody'))
     assert session.role_state('part_a', .3)['role_mode'] == 'section'

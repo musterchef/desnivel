@@ -13,13 +13,14 @@ var deviceAdapter=null;
 var presetDraft='';
 var wireParts={}, wireOrder=[];
 var wireStream=Math.floor(Math.random()*0x7fffffff), wireSerial=0;
-var endpointId='', liveDeviceId=0;
+var endpointId='', liveDeviceId=0, endpointRestored=false;
 function endpoint(){
     var values=arrayfromargs(arguments);
     if(values[0]==='symbol')values.shift();
     var value=values.join(' ');
     // Live può ripristinare 0 prima del valore persistito: non è un'identità.
     if(/^endpoint_[0-9]+_[0-9]+$/.test(value))endpointId=value;
+    endpointRestored=true;
 }
 function announce(){
     if(typeof LiveAPI==='undefined')return;
@@ -33,6 +34,11 @@ function announce(){
             if(replyPort===9101 || replyPort===9201)ui('receive_port').message(10000+liveDeviceId%50000);
         }
         if(!endpointId){
+            // Aspettare il restauro del pattr prima di generare un nuovo ID:
+            // il pattr invia il valore persistito dopo il caricamento, ma può
+            // arrivare dopo il primo heartbeat.  Se non ha ancora risposto,
+            // saltare questo annuncio e riprovare al prossimo.
+            if(!endpointRestored)return;
             endpointId='endpoint_'+new Date().getTime()+'_'+Math.floor(Math.random()*1000000000);
             ui('endpoint_identity').setvalueof(endpointId);
         }

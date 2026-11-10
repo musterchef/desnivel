@@ -132,6 +132,7 @@ class VoiceDeviceBridge:
         self.serial = 0
         self.last_plans = {}
         self.bindings = {}
+        self.can_change_role = None
 
     def set_bindings(self, bindings):
         if (not isinstance(bindings, dict) or bindings.keys()-self.voices.keys()
@@ -204,6 +205,8 @@ class VoiceDeviceBridge:
                 if not message['value']:
                     spec.preset = None
             elif action == 'role':
+                if self.can_change_role is not None and not self.can_change_role():
+                    raise ValueError('ruolo modificabile solo prima del play: riavvia la sessione')
                 if spec.apply_role is None or spec.role_state is None:
                     raise ValueError('selezione del ruolo non disponibile')
                 role = message['role']

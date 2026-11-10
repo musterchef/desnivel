@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import random
 
-from desnivel.music.patterns import SCALES, Pattern, scale_notes as musical_scale_notes
+from desnivel.music.patterns import SCALES, scale_notes as musical_scale_notes
 
 ADDRESS = "/desnivel/v1/control/snake/set"
 STEPS = 16
@@ -73,24 +73,3 @@ def note_messages(notes: list[int]) -> list[tuple[str, float]]:
     return [(SCALES_PARAM, float(SCALE_CHROMATIC))] + [
         (param_name("Note", i + 1), float(n)) for i, n in enumerate(notes)
     ]
-
-
-def pattern_messages(pattern: Pattern) -> list[tuple[str, float]]:
-    """Traduzione del pattern; rifiuta note non rappresentabili da Snake.
-
-    Offset di ottava tra parametro e MIDI emesso ancora da verificare.
-    """
-    if any(not NOTE_MIN <= n <= NOTE_MAX for n in pattern.notes):
-        raise ValueError("Snake supporta valori nota da 0 a 83")
-    return note_messages(list(pattern.notes)) + gate_messages(list(pattern.gates))
-
-
-def section_pattern_messages(changes, rng):
-    """Shape Gates casuale una volta per sezione, compresa la prima."""
-    previous_section = None
-    for change in changes:
-        messages = pattern_messages(change.pattern)
-        if change.section_index is not None and change.section_index != previous_section:
-            messages.append(("gate_shape", float(rng.randint(0, 13))))
-            previous_section = change.section_index
-        yield change, messages
