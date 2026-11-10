@@ -18,12 +18,10 @@ dev = ["pytest>=7", "python-osc>=1.8"]
 
 [project.scripts]
 desnivel-stream-metrics = "desnivel.cli.stream_metrics:main"
-desnivel-trip-music = "desnivel.cli.trip_music:main"
 desnivel-live-bass = "desnivel.cli.live_bass:main"
 desnivel-voice-device = "desnivel.cli.voice_device:main"
 desnivel-connect-voices = "desnivel.cli.connect_voices:main"
 desnivel-ensemble = "desnivel.cli.ensemble:main"
-desnivel-analyze-bass = "desnivel.cli.analyze_bass:main"
 desnivel-analyze-trip = "desnivel.cli.analyze_trip:main"
 desnivel-capture-snake = "desnivel.cli.capture_snake:main"
 

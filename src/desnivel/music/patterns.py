@@ -2,9 +2,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-import math
-
-from desnivel.trip.metrics import MetricName, MetricSample
 
 #: Intervalli in semitoni dalla tonica.
 SCALES: dict[str, tuple[int, ...]] = {
@@ -42,51 +39,3 @@ class Pattern:
             raise ValueError("le note devono essere semitoni interi")
         if any(g not in (0, 1) for g in self.gates):
             raise ValueError("gate ammessi: 0 e 1")
-
-
-@dataclass(frozen=True)
-class PatternChange:
-    elapsed_s: float
-    state: str
-    pattern: Pattern
-    section_index: int | None = None
-
-
-@dataclass
-class ThresholdRule:
-    metric: MetricName
-    threshold: float
-    hysteresis: float
-    low: Pattern
-    high: Pattern
-    state: str | None = None
-
-    def __post_init__(self):
-        if not math.isfinite(self.threshold) or not math.isfinite(self.hysteresis) or self.hysteresis < 0:
-            raise ValueError("soglia finita e isteresi non negativa richieste")
-
-    def update(self, sample: MetricSample) -> PatternChange | None:
-        if sample.name != self.metric or not math.isfinite(sample.value):
-            return None
-        state = self.state
-        if state is None:
-            state = "high" if sample.value >= self.threshold else "low"
-        elif state == "low" and sample.value >= self.threshold + self.hysteresis:
-            state = "high"
-        elif state == "high" and sample.value < self.threshold - self.hysteresis:
-            state = "low"
-        if state == self.state:
-            return None
-        self.state = state
-        return PatternChange(sample.elapsed_s, state, self.high if state == "high" else self.low)
-
-
-def rule_from_dict(data: dict) -> ThresholdRule:
-    def pattern(spec):
-        degrees = spec["degrees"]
-        if not degrees or any(type(d) is not int or d < 0 for d in degrees):
-            raise ValueError("gradi richiesti: interi >= 0")
-        notes = scale_notes(spec["scale"], spec["root"], max(degrees) + 1)
-        return Pattern(tuple(notes[d] for d in degrees), tuple(spec["gates"]))
-    return ThresholdRule(MetricName(data["metric"]), float(data["threshold"]),
-                         float(data["hysteresis"]), pattern(data["low"]), pattern(data["high"]))
