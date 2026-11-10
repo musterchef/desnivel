@@ -43,7 +43,7 @@ interpreti ai dati e ai generatori.
 
 ### 3. Modelli musicali condivisi
 La generazione musicale si basa su due strutture dati fondamentali:
-- **`Pattern`**: sequenza di passi, ciascuno con una nota e un gate. `PatternChange` indica quando applicarla durante il viaggio.
+- **`Pattern`**: sequenza di passi, ciascuno con una nota e un gate.
 - **`Phrase`**: insieme polifonico di eventi sonori, in cui ogni nota specifica attacco relativo (in beat), altezza MIDI (0–127), durata (in beat) e velocity (1–127).
 - **Piano di esecuzione**: messaggio preparato da `adapters/snake_live.py` per il player Live. Contiene la frase da eseguire, il beat di inizio e gli identificativi di sessione, messaggio e revisione.
 
@@ -53,7 +53,7 @@ La generazione musicale si basa su due strutture dati fondamentali:
 
 I due ruoli sono implementati in classi distinte nel package `music`: il Director seleziona il contesto compositivo, il Coordinator pianifica le voci a partire dalle frasi disponibili.
 
-- **`MusicDirector`** (`music/director.py`): riceve le sezioni configurate e seleziona, dalla progressione del viaggio, un `MusicalContext` con indice e nome della sezione, tonica e scala. `journey.compose` usa questo contesto per generare i pattern; motivo, gate e trasformazioni dei gradi restano nella composizione della voce.
+- **`MusicDirector`** (`music/director.py`): riceve le sezioni configurate e seleziona, dalla progressione del viaggio, un `MusicalContext` con indice e nome della sezione, tonica e scala. Le voci usano questo contesto per generare i propri materiali; motivo, gate e trasformazioni dei gradi restano nella composizione della voce.
 - **`MusicCoordinator`** (`music/coordinator.py`): riceve generatori identificati per voce e le rispettive dipendenze. Verifica dipendenze mancanti o cicliche prima della generazione, ordina le chiamate e raccoglie le frasi. Ogni generatore riceve un `PlanningRequest` con intervallo in beat, eventuale contesto comune e frasi delle sole dipendenze dichiarate. Il chiamante può fornire frasi sorgente già pianificate.
 - **Moduli delle voci** (`music/<voce>/`): contengono regole compositive, controlli e stato specifici della voce. Il planner presente in `music/bass/` conserva continuità e transizioni dei controlli per quel generatore.
 - **Adattatori**: traducono stato delle sorgenti e risultati musicali nei formati di destinazione; gestiscono identificativi, revisioni, trasporto e conferme dei dispositivi. Il collegamento di generatori e Coordinator è governato dai comandi in `cli`.

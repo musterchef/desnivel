@@ -30,5 +30,5 @@ I seguenti file sono stati unificati nella documentazione corrente per eliminare
 - `CONTRATTO-DATI-VIAGGIO.md`: contratto metriche GPX, ora in [DATI-VIAGGIO.md](../DATI-VIAGGIO.md).
 - `INTEGRAZIONE-SNAKE.md` ed `EXPORT-SNAKE.md`: sequencer melodico e telemetria, ora in [SNAKE.md](../SNAKE.md).
 - `SCELTE-BASSO.md`, `CONTROLLI-BASSO.md` e `PLAYER-M4L.md`: regole compositive, controlli OSC e device M4L, ora in [BASSO.md](../BASSO.md).
-- `TEST-PRESET-MUSICALI.md` e `TEST-VIAGGIO-SNAKE.md`: percorsi modali e ascolto delle tappe, ora in [TAPPE-E-PRESET.md](../TAPPE-E-PRESET.md).
+- `TEST-PRESET-MUSICALI.md` e `TEST-VIAGGIO-SNAKE.md`: percorsi modali e ascolto delle tappe, rimossi dal codice e recuperabili dalla cronologia git.
 - `TODO-ARCHITECTURE.md`: sostituito da [ARCHITETTURA.md](../ARCHITETTURA.md).

@@ -37,7 +37,6 @@ Guida alla documentazione di **Desnivel**, organizzata per aree tematiche.
 | [Generazione melodica](MELODIA.md) | Motivo, sviluppo delle frasi, controlli e riproducibilità. |
 | [Tessitura sostenuta](TESSITURA.md) | Sostegno monofonico indipendente o coordinato con una frase sorgente, switch e integrazione nella sessione. |
 | [Generatore del basso](BASSO.md) | Banco di prova per l'accompagnamento: logica di contrappunto e dialogo con la melodia, controlli live e player. |
-| [Tappe e percorsi modali](TAPPE-E-PRESET.md) | Caratterizzazione modale delle tappe (Levanto, Firenze, Sabaudia, Peschici) e ascolto. |
 
 ---
 

@@ -62,7 +62,7 @@ In [`music/director.py`](../src/desnivel/music/director.py), `MusicDirector.cont
 
 ## Materiale musicale
 
-In [`music/patterns.py`](../src/desnivel/music/patterns.py), `Pattern` contiene note e gate. `PatternChange` associa il pattern a un istante del viaggio in secondi, a una descrizione dello stato e a un eventuale indice di sezione.
+In [`music/patterns.py`](../src/desnivel/music/patterns.py), `Pattern` contiene note e gate.
 
 In [`music/phrases.py`](../src/desnivel/music/phrases.py), `Phrase` contiene una durata in beat e una tupla di `Note`. Ogni nota specifica attacco relativo, altezza MIDI, durata e velocity. Un beat corrisponde a una semiminima; tutte le note devono terminare entro la frase.
 
@@ -72,18 +72,20 @@ In [`music/phrases.py`](../src/desnivel/music/phrases.py), `Phrase` contiene una
 
 Il Coordinator, quando riceve le assegnazioni, pianifica solo le voci elencate e verifica il supporto del ruolo prima di invocare i generatori. Passa ruolo e parametri senza interpretarli; le regole compositive sono responsabilità del generatore. Le chiamate senza assegnazioni mantengono la pianificazione di tutte le voci registrate.
 
-[`cli/ensemble.py`](../src/desnivel/cli/ensemble.py) contiene `EnsembleSession`, che collega una configurazione manuale a generatori Python e funzioni di destinazione registrati dal chiamante. `from_file` legge la configurazione JSON. La configurazione contiene:
+[`music/session.py`](../src/desnivel/music/session.py) contiene `EnsembleSession`, che collega una configurazione manuale a generatori Python e funzioni di destinazione registrati dal chiamante. `from_file` legge la configurazione JSON. La configurazione contiene:
 
 - `selection_mode`: `manual`.
 - `voices`: mappa degli identificativi delle voci; ogni voce indica `generator`, `destination` ed eventuali `dependencies`.
 - `sections`: sezioni con `name`, `from_progress`, `root`, `scale` e `assignments`. Ogni assegnazione indica `role` ed eventuali `parameters`.
 
-La sessione verifica ruoli e dipendenze di tutte le sezioni al caricamento. `plan(progress, start, length_beats)` produce le frasi senza inviarle; `send(start, phrases)` le consegna alle destinazioni associate. Ogni funzione di destinazione riceve beat iniziale e frase e gestisce il proprio adattamento e trasporto.
+La sessione mantiene per ogni voce il ruolo della sua prima assegnazione. Se una configurazione assegna ruoli diversi nelle sezioni successive, usa il primo ruolo e segnala voce, sezione e ruolo sostituito; il file originale non viene modificato. I parametri e le dipendenze delle sezioni sono verificati con il ruolo effettivo: parametri incompatibili producono un errore.
+
+`plan(progress, start, length_beats)` produce le frasi senza inviarle; `send(start, phrases)` le consegna alle destinazioni associate. Ogni funzione di destinazione riceve beat iniziale e frase e gestisce il proprio adattamento e trasporto.
 
 Il chiamante fornisce progressione della tappa e posizione musicale. Questa interfaccia Python non carica preset sonori negli strumenti e non crea controlli Max for Live.
 
 ## Scelta manuale del ruolo
 
-`EnsembleSession.set_role(voice, role)` verifica il supporto del ruolo da parte del generatore e comunica la scelta al Director. Passando `None` si ripristina il ruolo della sezione corrente. `MusicDirector.assignments_at` applica le scelte manuali soltanto alle voci attive nella sezione; `section_assignments_at` espone le assegnazioni originali.
+`EnsembleSession.set_role(voice, role)` verifica il supporto del ruolo da parte del generatore e comunica la scelta al Director. Passando `None` si ripristina il ruolo configurato. `MusicDirector.assignments_at` applica le scelte manuali soltanto alle voci attive nella sezione; `section_assignments_at` espone le assegnazioni normalizzate.
 
-`EnsembleSession.role_state(voice, progress)` restituisce ruoli supportati, modalità, ruolo di sezione, ruolo effettivo e attivazione. La scelta manuale persiste tra sezioni nella stessa sessione e non modifica la configurazione JSON. I parametri della parte restano separati dal ruolo.
+`EnsembleSession.role_state(voice, progress)` restituisce ruoli supportati, modalità, ruolo configurato, ruolo effettivo e attivazione. Nella sessione Live la scelta è consentita prima del primo Play; dopo il Play resta bloccata anche in pausa, fino al riavvio a zero. La scelta non modifica la configurazione JSON. I parametri della parte restano separati dal ruolo.

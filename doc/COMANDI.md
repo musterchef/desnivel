@@ -115,7 +115,7 @@ Anche questi launcher in `comandi/` usano l'ambiente virtuale `.venv`:
 - **`05 - Acquisisci Export Snake.command`**: registra gli stati esportati da Snake in un file JSONL temporaneo.
 - **`04 - Snake - sequenza di riferimento.command`**: imposta una sequenza neutra di partenza su Snake.
 
-Per il banco Snake e il basso collegato, consultare [Tappe e preset](TAPPE-E-PRESET.md).
+Per il banco Snake e il basso collegato, consultare [Snake](SNAKE.md) e [Basso](BASSO.md).
 
 ---
 

@@ -440,7 +440,10 @@ Per una voce attiva i parametri vengono risolti in questo ordine:
 
 Le scelte manuali di ruolo hanno precedenza sul ruolo della sezione, ma
 non attivano una voce esclusa dall'organico. `Follow section` ripristina il
-ruolo assegnato; non cancella i parametri manuali.
+ruolo assegnato; non cancella i parametri manuali. Il ruolo si sceglie prima
+del Play; dopo l'avvio è bloccato fino al riavvio a zero, anche se Live viene
+fermato. In configurazioni con ruoli diversi per una voce fra sezioni, la
+sessione usa il primo ruolo e segnala le assegnazioni sostituite.
 
 Il comando **Preset** applica tutti i controlli iniziali completati con i
 valori del preset, rendendoli manuali nelle sezioni successive.

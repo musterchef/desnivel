@@ -25,8 +25,8 @@ di scegliere `01`–`12`, la variante locale `07bis` o un file con `99`: [avvio 
 
 L’organico di esempio usa quattro voci. Snake può partecipare alla sessione
 guidata e resta disponibile come banco separato; il player dedicato del basso
-è un ulteriore banco di prova. Sono descritti in [Snake](SNAKE.md),
-[Basso](BASSO.md) e [Tappe e preset](TAPPE-E-PRESET.md).
+è un ulteriore banco di prova. Sono descritti in [Snake](SNAKE.md) e
+[Basso](BASSO.md).
 
 ## Limiti e lavoro aperto
 

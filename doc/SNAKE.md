@@ -2,8 +2,7 @@
 
 Snake può essere controllato come componente della sessione multivoce,
 con un ruolo e una modalità di relazione scelti dall'utente. Continua a
-produrre il MIDI attraverso i propri banchi e percorsi. Il banco melodico
-`trip_music` e l'esportazione verso il basso restano disponibili separatamente.
+produrre il MIDI attraverso i propri banchi e percorsi.
 
 ## Componente multiruolo
 
@@ -41,7 +40,8 @@ player Python. Alla pausa silenzia i gate; disconnessione e Panic
 interrompono anche le note trattenute dal componente.
 
 Il menu del ruolo usa gli identificativi musicali esistenti; `ruolo configurato`
-ripristina il ruolo iniziale del componente:
+ripristina il ruolo iniziale del componente. La scelta avviene prima del Play
+e resta bloccata fino al riavvio a zero, anche in pausa:
 
 | Ruolo | Funzione musicale |
 |---|---|
@@ -330,4 +330,3 @@ python -m desnivel.cli.capture_snake --seconds 180 --label "sessione_studio"
 Per acquisire anche i piani del basso usare `python -m desnivel.cli.live_bass --capture`. Non avviare `capture_snake` e `live_bass` insieme: usano entrambi la porta 9003.
 
 I dati vengono salvati in una directory temporanea esterna alla repository, preservando la cronologia degli eventi e dei beat.
-

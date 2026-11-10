@@ -74,7 +74,7 @@ voci usano lo stesso dispositivo; i menu vengono forniti da Python.
 
 ## Replay e pianificazione
 
-In modalità `--timing linear` (predefinita), il viaggio avanza in secondi, moltiplicati per `--speed`, quando la sessione sta suonando. La distanza cumulativa interpolata del GPX determina la progressione usata per selezionare le sezioni. Il GPX controlla il contesto e l'organico delle sezioni; questo comando non applica la mappatura velocità/sforzo ai gate di `journey.compose`.
+In modalità `--timing linear` (predefinita), il viaggio avanza in secondi, moltiplicati per `--speed`, quando la sessione sta suonando. La distanza cumulativa interpolata del GPX determina la progressione usata per selezionare le sezioni. Il GPX controlla il contesto e l'organico delle sezioni.
 
 Con `--timing allocated` il runtime usa la timeline in beat configurata in
 `organico.json`, richiede una direzione configurata o esplicita e non accetta `--speed`. Le macrosezioni
@@ -139,7 +139,7 @@ i file per responsabilità e comando che li utilizza.
 
 Ogni voce riceve una propria istanza del generatore, anche quando più voci fanno riferimento alla stessa definizione. Le implementazioni concrete vengono collegate da `cli/generators.py`; Director e Coordinator lavorano con le interfacce musicali comuni.
 
-I preset dei generatori sono insiemi di parametri. Le modifiche manuali persistono tra sezioni. Il menu **Role** permette di seguire la sezione o mantenere un ruolo manuale tra quelli supportati dal generatore. Il ruolo manuale non attiva una voce esclusa dall'organico.
+I preset dei generatori sono insiemi di parametri. Le modifiche manuali persistono tra sezioni. Il menu **Role** permette di usare il ruolo configurato o sceglierne un altro fra quelli supportati dal generatore, prima del Play. Dopo il Play la scelta resta bloccata, anche in pausa, fino al riavvio a zero. Il ruolo non attiva una voce esclusa dall'organico. Se le sezioni configurano ruoli diversi per una voce, la sessione usa il primo ruolo e segnala le assegnazioni sostituite.
 
 ### Direzione dalle macrosezioni
 
