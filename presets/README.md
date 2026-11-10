@@ -52,23 +52,8 @@ in [Snake](../doc/SNAKE.md#componente-multiruolo).
 
 | File o cartella | Funzione | Riferimento |
 |---|---|---|
-| `movimento.json`, `sforzo.json`, `misto.json` | Pesi di velocità e stima di sforzo nella composizione `journey.compose` | [Tappe e preset](../doc/TAPPE-E-PRESET.md) |
-| `tappe/*.json` | Motivo, sezioni armoniche e parametri temporali per `trip_music --stage-music` | [Tappe e preset](../doc/TAPPE-E-PRESET.md) |
-| `quota.json` | Regola a soglia altimetrica per `trip_music --rules` | [Tappe e preset](../doc/TAPPE-E-PRESET.md) |
 | `phrases/*.json` | Frasi MIDI esplicite per le prove da file | [Dispositivo di voce](../doc/VOCE-M4L.md) |
 
 Questi file sono usati da comandi distinti dalla sessione `ensemble`.
-I JSON in `doc/proposte/` sono bozze di progettazione, non configurazioni
-caricate dalla sessione.
-
-## Criteri di organizzazione
-
-- Mantenere i dati della stessa sessione nei rispettivi file di organico e
-  direzione; usare i preset interni per le varianti di parametri di una voce.
-- Per le varianti della stessa sessione usare controlli e preset utente;
-  conservare un solo organico operativo e riferimenti al catalogo musicale.
-- Conservare le frasi esplicite in `phrases/` e le configurazioni di tappa
-  del relativo comando in `tappe/`.
-- Salvare analisi e report generati in `output/`, separati dai preset.
-- Accompagnare ogni nuova struttura JSON con significato dei campi,
-  unità, limiti e componente che la legge.
+L'unico punto d'ingresso operativo è il launcher `comandi/09 - Sessione multitappa.command`,
+che usa la sessione salvata, il GPX della tappa e `direction`.

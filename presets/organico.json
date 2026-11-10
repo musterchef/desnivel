@@ -177,7 +177,7 @@
       "scale": "minor",
       "assignments": {
         "voice_01": {
-          "role": "sustained_texture"
+          "role": "melody"
         },
         "voice_02": {
           "role": "bass_line"
