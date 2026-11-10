@@ -3,7 +3,7 @@
 Stato: specifica richiesta il 19 ottobre 2026. Allocatore, oggetto Timeline,
 manager della posizione, anteprima nel report e modalità di esecuzione
 `ensemble --timing allocated` implementati e descritti in
-[Timeline musicale](../TIMELINE.md). Le risposte musicali ai preavvisi
+[Timeline musicale](../../../../TIMELINE.md). Le risposte musicali ai preavvisi
 restano da implementare. La configurazione operativa usa una scala comune
 di 12 beat/km per la durata totale; il totale esplicito resta un’opzione
 dell’allocatore.

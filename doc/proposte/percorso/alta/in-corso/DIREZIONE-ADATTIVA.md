@@ -4,9 +4,9 @@ Stato: contesto locale, osservazione, risolutore, politiche delle quattro
 voci e rilascio graduale implementati. Il compositore percussivo a regole
 rimane da implementare; i coefficienti richiedono taratura all'ascolto.
 
-Il [device attuale](../VOCE-M4L.md) mostra auto/manual per parametro,
+Il [device attuale](../../../../VOCE-M4L.md) mostra auto/manual per parametro,
 valore applicato e obiettivo. Le formule e i tempi effettivi sono in
-[Direzione musicale](../DIREZIONE-MUSICALE.md#adattamento-dei-parametri).
+[Direzione musicale](../../../../DIREZIONE-MUSICALE.md#adattamento-dei-parametri).
 
 ## Responsabilità
 
@@ -18,7 +18,7 @@ Il Coordinator organizza le strategie attraverso interfacce generiche,
 ordina le dipendenze e accetta insieme parametri, frasi e stati successivi.
 Le regole specifiche e la selezione dei parametri adattabili appartengono
 ai moduli delle voci. La traduzione delle misure del viaggio rimane
-separata, secondo il [piano del contesto locale](SEZIONI-GUIDATE-DAL-VIAGGIO.md).
+separata, secondo il [piano del contesto locale](../../media/in-corso/SEZIONI-GUIDATE-DAL-VIAGGIO.md).
 Il device mostra lo stato e raccoglie le scelte manuali.
 
 | Voce | Responsabilità della strategia |
@@ -114,7 +114,7 @@ Verificare prima dell'integrazione:
 - nessun avanzamento dopo un errore o una richiesta ripetuta.
 
 Per le drums, l'adattamento accompagna il
-[compositore a regole](STILI-PERCUSSIVI.md). Il solo aggiornamento dei
+[compositore a regole](../../../musica/media/in-corso/STILI-PERCUSSIVI.md). Il solo aggiornamento dei
 parametri del motore attuale continua a trasformare materiale precomposto.
 Le risposte che richiedono materiale passato durante il silenzio della
 sorgente richiedono anche il relativo supporto compositivo e di memoria.
@@ -127,8 +127,8 @@ confronto d'ascolto ancora da completare.
 
 ### 1. Contesto locale e osservazione musicale
 
-Implementazione disponibile: [contesto delle finestre](../DIREZIONE-MUSICALE.md#contesto-locale-delle-finestre)
-e [osservazione condivisa](../DIALOGO-MUSICALE.md#osservazione-musicale-condivisa).
+Implementazione disponibile: [contesto delle finestre](../../../../DIREZIONE-MUSICALE.md#contesto-locale-delle-finestre)
+e [osservazione condivisa](../../../../DIALOGO-MUSICALE.md#osservazione-musicale-condivisa).
 I valori sono ispezionabili nello stato e alimentano le politiche adattive.
 
 - Riutilizzare le finestre di pendenza smussata di `trip/analysis.py`,

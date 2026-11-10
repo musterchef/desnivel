@@ -1,14 +1,14 @@
 # Coordinamento ritmico delle voci
 
 Stato: direzione musicale confermata; primo blocco operativo descritto in
-[Dialogo ritmico](../DIALOGO-MUSICALE.md). Sono implementati riferimento,
+[Dialogo ritmico](../../../../DIALOGO-MUSICALE.md). Sono implementati riferimento,
 adesione, struttura percussiva e scambio ritmico storico. La
-[selezione dello stile](../STILI-PERCUSSIVI.md) è operativa; influenze
+[selezione dello stile](../../media/in-corso/STILI-PERCUSSIVI.md) è operativa; influenze
 multiple e ulteriori relazioni restano da implementare.
 Le drums definiscono il riferimento
 ritmico; basso e melodia hanno adesione regolabile. Questo documento
 definisce la specializzazione ritmica dei
-[contratti per le relazioni musicali](RELAZIONI-MUSICALI.md). Tempo, gesti,
+[contratti per le relazioni musicali](../../media/in-corso/RELAZIONI-MUSICALI.md). Tempo, gesti,
 memoria, causalità e accettazione dei piani seguono quei contratti.
 
 ## Responsabilità
@@ -152,6 +152,6 @@ della parte percussiva; non diventa l'adesione ritmica delle altre voci.
 - Controlli inattivi, sorgenti utilizzate e sostituzione armonica nei silenzi visibili nello stato.
 - Configurazioni e preset migrati esplicitamente, senza reinterpretazioni silenziose.
 
-Il [design degli stili percussivi](STILI-PERCUSSIVI.md) specifica i profili
+Il [design degli stili percussivi](../../media/in-corso/STILI-PERCUSSIVI.md) specifica i profili
 di genere e le influenze multiple. La loro selezione non sostituisce i
 controlli di adesione delle singole voci.

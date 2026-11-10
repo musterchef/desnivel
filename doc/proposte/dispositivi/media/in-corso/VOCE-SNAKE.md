@@ -3,7 +3,7 @@
 Stato: controllo multiruolo e lettura come sorgente del Coordinator
 implementati. La previsione comprende banchi, fasi e note MIDI sostenute;
 i cambi automatici dei banchi attendono le finestre già accettate.
-Comportamento attuale in [Snake](../SNAKE.md).
+Comportamento attuale in [Snake](../../../../SNAKE.md).
 
 ## Comportamento richiesto
 
@@ -15,7 +15,7 @@ non deve dipendere dal primo Snake trovato nel Live Set.
 L'utente sceglie separatamente:
 
 - **Ruolo musicale:** parte principale, accompagnamento o sottofondo;
-  comportamenti iniziali definiti in [Snake](../SNAKE.md#componente-multiruolo).
+  comportamenti iniziali definiti in [Snake](../../../../SNAKE.md#componente-multiruolo).
 - **Relazione con l'insieme:** autonomo, guidato dal viaggio e dal proprio
   materiale; coordinato, con una sorgente musicale scelta esplicitamente.
 
@@ -43,7 +43,7 @@ per la stessa funzione.
 - Il collegamento in uscita usa la previsione ricavata dallo stato di Snake,
   distinta dal materiale richiesto da Python e dalla storia musicale accettata.
 - L'attuale previsione supporta swing zero, Shift 1, direzioni avanti e
-  indietro e le velocità elencate in [Snake](../SNAKE.md). Le condizioni
+  indietro e le velocità elencate in [Snake](../../../../SNAKE.md). Le condizioni
   non prevedibili devono essere segnalate, senza inventare note sorgente.
 - Il componente deve distinguere il materiale impostato, la sequenza
   prevista e le modifiche manuali. La previsione non è una misura audio.

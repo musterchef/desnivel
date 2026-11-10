@@ -1,6 +1,6 @@
 # Proposta: ruoli musicali e organico
 
-Materiale di progettazione da discutere e implementare. Le definizioni di questo documento non descrivono funzionalità disponibili. Lo stato del codice è descritto in [Voci e contesto musicale](../RUOLI-MUSICALI.md).
+Materiale di progettazione da discutere e implementare. Le definizioni di questo documento non descrivono funzionalità disponibili. Lo stato del codice è descritto in [Voci e contesto musicale](../../../../RUOLI-MUSICALI.md).
 
 ## Impostazione condivisa
 

@@ -8,7 +8,7 @@ Proposta da revisionare insieme. I JSON di questa cartella non sono caricati dal
 - [catalogo-strumenti.json](catalogo-strumenti.json): tipi di strumenti e profili sonori concreti ancora da scegliere.
 - [organico-sezioni.json](organico-sezioni.json): esempio di voci e assegnazioni manuali per tre sezioni di una tappa.
 
-Le definizioni estese dei ruoli e le questioni aperte sono conservate nella [proposta sui ruoli musicali](RUOLI-MUSICALI.md).
+Le definizioni estese dei ruoli e le questioni aperte sono conservate nella [proposta sui ruoli musicali](../../media/in-attesa/RUOLI-MUSICALI.md).
 
 ## Strumento, suono e voce
 

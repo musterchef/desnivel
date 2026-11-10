@@ -2,8 +2,8 @@
 
 Stato: contratto approvato. Centralizzazione e consolidamento della
 configurazione implementati; generazione a regole ancora da implementare. Il comportamento disponibile è descritto in
-[Stili percussivi](../STILI-PERCUSSIVI.md). Il design precedente, comprese
-fonti e proposte conservate, è in [archivio](../archivio/STILI-PERCUSSIVI.md).
+[Stili percussivi](../../../../STILI-PERCUSSIVI.md). Il design precedente, comprese
+fonti e proposte conservate, è in [archivio](../../../../archivio/STILI-PERCUSSIVI.md).
 
 ## Obiettivo
 
@@ -149,12 +149,12 @@ La sessione usa l'intensità locale per `velocity_ratio`; cambiamento
 persistente e spazio lasciato da melodia e basso orientano `variation`.
 Queste politiche sono implementate sul motore attuale. Formule,
 normalizzazioni e transizioni sono in
-[Direzione musicale](../DIREZIONE-MUSICALE.md#adattamento-dei-parametri).
+[Direzione musicale](../../../../DIREZIONE-MUSICALE.md#adattamento-dei-parametri).
 
 Il Coordinator applica le politiche registrate dal modulo percussivo
 prima di preparare la guida. Gli assetti forniscono le basi; un valore
 manuale prevale soltanto sul proprio parametro. Il rilascio graduale e
-lo stato visibile seguono la [direzione adattiva](DIREZIONE-ADATTIVA.md).
+lo stato visibile seguono la [direzione adattiva](../../../percorso/alta/in-corso/DIREZIONE-ADATTIVA.md).
 Lo stile resta una scelta esplicita.
 
 Il compositore a regole dovrà consumare gli stessi valori risolti,

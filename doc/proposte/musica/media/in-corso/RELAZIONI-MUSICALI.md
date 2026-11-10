@@ -4,7 +4,7 @@ Stato: specifica generale con implementazione parziale. Il primo blocco
 operativo comprende riferimento ritmico, gesti completi, memoria limitata,
 relazioni storiche sul ritmo e preparazione separata dall'accettazione.
 Campi e comportamenti effettivi sono documentati in
-[Dialogo ritmico](../DIALOGO-MUSICALE.md). Trasformazioni generali,
+[Dialogo ritmico](../../../../DIALOGO-MUSICALE.md). Trasformazioni generali,
 collocazioni, vincoli obbligatori e altri aspetti musicali restano proposti.
 Consolida il
 coordinamento ritmico e il dialogo fra voci. La direzione musicale
@@ -285,10 +285,10 @@ coordinate o pendenze al Coordinator come istruzioni compositive.
 Ogni decisione usa il tratto del percorso associato all'intervallo musicale
 da pianificare, non la posizione attualmente mostrata dal player. La
 corrispondenza fra percorso e musica è un requisito separato, descritto
-nel [piano del contesto locale](SEZIONI-GUIDATE-DAL-VIAGGIO.md).
+nel [piano del contesto locale](../../../percorso/media/in-corso/SEZIONI-GUIDATE-DAL-VIAGGIO.md).
 
 Precedenza e rilascio manuale seguono il
-[contratto approvato della direzione adattiva](DIREZIONE-ADATTIVA.md),
+[contratto approvato della direzione adattiva](../../../percorso/alta/in-corso/DIREZIONE-ADATTIVA.md),
 implementato per il controllo manuale: l'assetto fornisce la base, le strategie proposte adattano
 i controlli dichiarati rispettando i vincoli espliciti, il flag `manual`
 mantiene manuale soltanto il parametro interessato. Le relazioni risolte non

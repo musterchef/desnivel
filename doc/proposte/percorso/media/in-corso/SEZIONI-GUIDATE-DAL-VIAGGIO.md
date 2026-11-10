@@ -16,10 +16,10 @@ La struttura concordata separa:
 3. Esecuzione: Director e Coordinator applicano le assegnazioni e coordinano
    le voci attraverso le interfacce musicali generiche.
 
-L'[analisi disponibile](../ANALISI-PERCORSO.md) classifica il profilo per
+L'[analisi disponibile](../../../../ANALISI-PERCORSO.md) classifica il profilo per
 pendenza e persistenza. Un passaggio separato raggruppa le zone adiacenti
 secondo famiglie configurabili; il report mostra macrosezioni e dettaglio.
-Il [collegamento alla sessione musicale](../SESSIONE-MULTIVOCE.md) assegna un
+Il [collegamento alla sessione musicale](../../../../SESSIONE-MULTIVOCE.md) assegna un
 assetto configurato a ciascuna famiglia. L'eventuale assorbimento di brevi interruzioni, il riconoscimento di
 scollinamenti e altri eventi restano da definire.
 
@@ -30,15 +30,15 @@ propone comportamenti differenti per le famiglie; tali scelte sono modificabili.
 La direzione concordata distingue un assetto musicale della macrosezione
 (voci, ruoli e impostazioni di base) dalle variazioni interne associate alle
 fasce originali. Il primo livello è operativo. Le regole approvate di
-[direzione adattiva](DIREZIONE-ADATTIVA.md) definiscono responsabilità,
+[direzione adattiva](../../alta/in-corso/DIREZIONE-ADATTIVA.md) definiscono responsabilità,
 controllo manuale e ritorno all'automazione. Le mappature e le transizioni
-implementate sono descritte in [Direzione musicale](../DIREZIONE-MUSICALE.md#adattamento-dei-parametri).
+implementate sono descritte in [Direzione musicale](../../../../DIREZIONE-MUSICALE.md#adattamento-dei-parametri).
 Le ulteriori regole delle sezioni seguenti rimangono proposte.
 
 ## Pause interne e impegno altimetrico
 
 Stato: criteri concordati; disponibile soltanto la misura del contesto
-locale nel [report di analisi](../ANALISI-PERCORSO.md). La selezione delle
+locale nel [report di analisi](../../../../ANALISI-PERCORSO.md). La selezione delle
 pause, il nuovo raggruppamento e il punteggio altimetrico non sono implementati.
 
 Per una pianura tra due salite o tra due discese, il riferimento locale è
@@ -126,7 +126,7 @@ sezione sta terminando.
 
 Stato: piano esteso da revisionare. Il primo insieme di contesto locale
 e osservazione musicale è disponibile secondo la
-[direzione adattiva](DIREZIONE-ADATTIVA.md); le politiche adattive dei primi controlli sono implementate. Provenienza
+[direzione adattiva](../../alta/in-corso/DIREZIONE-ADATTIVA.md); le politiche adattive dei primi controlli sono implementate. Provenienza
 estesa e descrittori del movimento restano da realizzare.
 Il piano riguarda tutte le voci e conserva
 la separazione tra analisi neutra, interpretazione musicale e composizione.
@@ -251,7 +251,7 @@ Pendenza, velocità e persistenza restano dimensioni distinguibili; non
 confluiscono obbligatoriamente in un unico indice di energia.
 
 Applicare la precedenza fra assetto, adattamento e intervento manuale
-definita nel [contratto della direzione adattiva](DIREZIONE-ADATTIVA.md).
+definita nel [contratto della direzione adattiva](../../alta/in-corso/DIREZIONE-ADATTIVA.md).
 Il flag `manual` mantiene il singolo parametro; il rilascio lo restituisce
 all'automazione dal contesto corrente. Il flag, le politiche dei primi controlli e le transizioni graduali sono
 disponibili nella sessione guidata dal GPX.
@@ -320,7 +320,7 @@ mentre coerenza espressiva e piacere sonoro richiedono ascolto.
 ### Prima consegna: ispezione della velocità sorgente
 
 Stato: implementata l'ispezione descritta in
-[ANALISI-PERCORSO.md](../ANALISI-PERCORSO.md#ispezione-dei-punti-gpx-originali).
+[ANALISI-PERCORSO.md](../../../../ANALISI-PERCORSO.md#ispezione-dei-punti-gpx-originali).
 L'esclusione delle deviazioni locali è ora implementata come descritto
 nel documento di analisi; i descrittori locali condivisi restano da sviluppare.
 I riferimenti di verifica includono anche la tappa 2 per la discesa.

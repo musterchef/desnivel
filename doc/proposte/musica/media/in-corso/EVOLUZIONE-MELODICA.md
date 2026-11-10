@@ -1,7 +1,7 @@
 # Evoluzione del discorso melodico
 
 Stato: regole concordate e implementate nel modulo `music/melodic/`.
-Il comportamento operativo è descritto in [Generazione melodica](../MELODIA.md).
+Il comportamento operativo è descritto in [Generazione melodica](../../../../MELODIA.md).
 
 ## Decisioni adottate
 
@@ -26,9 +26,9 @@ tappa per scegliere una tavolozza armonica e ricavare un motivo dalla forma
 normalizzata. Le macrosezioni ne guidano l'evoluzione mantenendo classi di
 altezza comuni. Sono disponibili override generali e per tappa.
 Configurazione e algoritmo effettivi in
-[Direzione musicale dal percorso](../DIREZIONE-MUSICALE.md).
+[Direzione musicale dal percorso](../../../../DIREZIONE-MUSICALE.md).
 
 Le metriche geografiche restano fuori dal generatore melodico e dal
 Coordinator generico. Le variazioni dei controlli dal contesto locale sono
-descritte nella [direzione adattiva](../DIREZIONE-MUSICALE.md#adattamento-dei-parametri).
+descritte nella [direzione adattiva](../../../../DIREZIONE-MUSICALE.md#adattamento-dei-parametri).
 Progressioni di accordi e cadenze armoniche complete restano da definire.

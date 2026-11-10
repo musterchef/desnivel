@@ -17,7 +17,7 @@ Ambito: device Voice della sessione multivoce, configurazioni
 | Melodia, stato `_origin` | Assegnato senza letture nella composizione | Stato eliminato; reset verificato sulla memoria compositiva effettiva |
 
 Gli assetti sono confrontati dopo l'espansione dei preset in
-[`cli/generators.py`](../../src/desnivel/cli/generators.py), non soltanto
+[`cli/generators.py`](../../../../../src/desnivel/cli/generators.py), non soltanto
 leggendo le chiavi dichiarate nei JSON. Ogni preset carica tutti i valori
 iniziali più le proprie modifiche.
 
@@ -43,7 +43,7 @@ capacità dipende anche dall'ordine di selezione dei candidati. Il preset
 `rhythmic` conserva effetti distinti su sincopi e articolazione, ma il suo
 `density = 1.8` non garantisce più note di `1`.
 
-Riferimento: [`music/bass/generator.py`](../../src/desnivel/music/bass/generator.py),
+Riferimento: [`music/bass/generator.py`](../../../../../src/desnivel/music/bass/generator.py),
 funzione `_rhythm`.
 
 ## Distinzioni utili da conservare

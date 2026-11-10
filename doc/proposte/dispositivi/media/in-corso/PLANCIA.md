@@ -1,6 +1,6 @@
 # Proposta: plancia globale
 
-Stato: realizzazione parziale. La [dashboard della sessione](../SESSIONE-MULTIVOCE.md#mappa-del-viaggio)
+Stato: realizzazione parziale. La [dashboard della sessione](../../../../SESSIONE-MULTIVOCE.md#mappa-del-viaggio)
 mostra mappa, piani correnti e futuri, voci, parametri e meteo; offre controlli
 di trasporto e registrazione. Le sezioni seguenti conservano i requisiti
 della proposta e le decisioni ancora aperte.
