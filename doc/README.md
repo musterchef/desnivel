@@ -45,18 +45,18 @@ Guida alla documentazione di **Desnivel**, organizzata per aree tematiche.
 
 Materiale di progettazione separato dalla documentazione del sistema attuale.
 
-- [Revisione dei controlli](proposte/REVISIONE-CONTROLLI.md): consolidamenti applicati a preset e controlli; ulteriori interventi proposti.
-- [Direzione adattiva](proposte/DIREZIONE-ADATTIVA.md): politiche e transizioni implementate; compositore percussivo a regole ancora proposto.
-- [Ruoli musicali e organico](proposte/RUOLI-MUSICALI.md): impostazione condivisa, vocabolario proposto e decisioni aperte.
-- [Catalogo e assegnazioni per sezione](proposte/CATALOGO-E-SEZIONI.md): bozza JSON di vocabolario, strumenti e organico manuale.
-- [Plancia globale](proposte/PLANCIA.md): requisiti, dashboard disponibile e decisioni ancora aperte.
-- [Sezioni guidate dal viaggio](proposte/SEZIONI-GUIDATE-DAL-VIAGGIO.md): analisi e assetti implementati; ulteriori eventi e gestione degli intervalli incerti proposti.
-- [Mappatura temporale](proposte/MAPPATURA-TEMPORALE.md): stato dell'integrazione della timeline e proposta di preavvisi per le transizioni musicali.
-- [Contratto delle percussioni](proposte/STILI-PERCUSSIVI.md): centralizzazione del materiale, generazione a regole, dialogo e influenze stilistiche.
-- [Coordinamento ritmico](proposte/COORDINAMENTO-RITMICO.md): direzione architetturale e confini del primo blocco implementato.
-- [Contratti per le relazioni musicali](proposte/RELAZIONI-MUSICALI.md): specifica generale, stato dell'implementazione e relazioni ancora da realizzare.
-- [Evoluzione melodica](proposte/EVOLUZIONE-MELODICA.md): fraseggio e collegamento al percorso implementati; ulteriori sviluppi armonici aperti.
-- [Voce Snake](proposte/VOCE-SNAKE.md): controllo multiruolo e lettura come sorgente disponibili; accompagnamento nelle pause e aggiornamenti legati alla fase ancora proposti.
+- [Revisione dei controlli](proposte/controlli/media/in-corso/REVISIONE-CONTROLLI.md): consolidamenti applicati a preset e controlli; ulteriori interventi proposti.
+- [Direzione adattiva](proposte/percorso/alta/in-corso/DIREZIONE-ADATTIVA.md): politiche e transizioni implementate; compositore percussivo a regole ancora proposto.
+- [Ruoli musicali e organico](proposte/musica/media/in-attesa/RUOLI-MUSICALI.md): impostazione condivisa, vocabolario proposto e decisioni aperte.
+- [Catalogo e assegnazioni per sezione](proposte/musica/bassa/in-attesa/CATALOGO-E-SEZIONI.md): bozza JSON di vocabolario, strumenti e organico manuale.
+- [Plancia globale](proposte/dispositivi/media/in-corso/PLANCIA.md): requisiti, dashboard disponibile e decisioni ancora aperte.
+- [Sezioni guidate dal viaggio](proposte/percorso/media/in-corso/SEZIONI-GUIDATE-DAL-VIAGGIO.md): analisi e assetti implementati; ulteriori eventi e gestione degli intervalli incerti proposti.
+- [Mappatura temporale](proposte/percorso/alta/in-corso/MAPPATURA-TEMPORALE.md): stato dell'integrazione della timeline e proposta di preavvisi per le transizioni musicali.
+- [Contratto delle percussioni](proposte/musica/media/in-corso/STILI-PERCUSSIVI.md): centralizzazione del materiale, generazione a regole, dialogo e influenze stilistiche.
+- [Coordinamento ritmico](proposte/musica/bassa/in-corso/COORDINAMENTO-RITMICO.md): direzione architetturale e confini del primo blocco implementato.
+- [Contratti per le relazioni musicali](proposte/musica/media/in-corso/RELAZIONI-MUSICALI.md): specifica generale, stato dell'implementazione e relazioni ancora da realizzare.
+- [Evoluzione melodica](proposte/musica/media/in-corso/EVOLUZIONE-MELODICA.md): fraseggio e collegamento al percorso implementati; ulteriori sviluppi armonici aperti.
+- [Voce Snake](proposte/dispositivi/media/in-corso/VOCE-SNAKE.md): controllo multiruolo e lettura come sorgente disponibili; accompagnamento nelle pause e aggiornamenti legati alla fase ancora proposti.
 
 ---
 

@@ -207,4 +207,4 @@ Il terminale mostra i beat completati rispetto al totale.
 
 L'anticipo di invio lascia concludere le frasi della finestra uscente nei
 cambi ordinari. Non implementa chiusure armoniche o dissolvenze, descritte
-come proposta in [Mappatura temporale](proposte/MAPPATURA-TEMPORALE.md).
+come proposta in [Mappatura temporale](proposte/percorso/alta/in-corso/MAPPATURA-TEMPORALE.md).

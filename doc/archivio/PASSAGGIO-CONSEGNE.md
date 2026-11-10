@@ -184,8 +184,8 @@ Il lavoro successivo resta da concordare sul risultato d'ascolto:
   di ulteriori eventi del percorso, senza alterare il dettaglio originale.
 
 Le proposte conservate sono in
-[Sezioni guidate dal viaggio](../proposte/SEZIONI-GUIDATE-DAL-VIAGGIO.md),
-[Plancia](../proposte/PLANCIA.md) e
-[Ruoli musicali](../proposte/RUOLI-MUSICALI.md).
+[Sezioni guidate dal viaggio](../proposte/percorso/media/in-corso/SEZIONI-GUIDATE-DAL-VIAGGIO.md),
+[Plancia](../proposte/dispositivi/media/in-corso/PLANCIA.md) e
+[Ruoli musicali](../proposte/musica/media/in-attesa/RUOLI-MUSICALI.md).
 La plancia operativa attuale è testuale; il report del percorso è un HTML
 statico interattivo, non una dashboard musicale in tempo reale.

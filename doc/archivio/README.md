@@ -5,7 +5,7 @@ Documenti dei percorsi e delle decisioni precedenti. Conservati per consultazion
 - [PASSAGGIO-CONSEGNE.md](PASSAGGIO-CONSEGNE.md): riepilogo operativo del 19 ottobre 2026, precedente a direzione adattiva, dashboard e contesto ambientale.
 - [DECISIONE-ARCHITETTURA-AUDIO.md](DECISIONE-ARCHITETTURA-AUDIO.md): decisione del 2 ottobre 2026, sostituita dall’architettura musicale corrente.
 - [ROADMAP-PRECEDENTE.md](ROADMAP-PRECEDENTE.md): vecchie priorità e completamenti.
-- [STILI-PERCUSSIVI.md](STILI-PERCUSSIVI.md): design precedente del catalogo e delle influenze stilistiche; contratto proposto corrente in [proposte/STILI-PERCUSSIVI.md](../proposte/STILI-PERCUSSIVI.md).
+- [STILI-PERCUSSIVI.md](STILI-PERCUSSIVI.md): design precedente del catalogo e delle influenze stilistiche; contratto proposto corrente in [proposte/musica/media/in-corso/STILI-PERCUSSIVI.md](../proposte/musica/media/in-corso/STILI-PERCUSSIVI.md).
 - [INVENTARIO-PROTOTIPO.md](INVENTARIO-PROTOTIPO.md): canali e limiti della pipeline precedente.
 - [ARCHITETTURA-MUSICALE.md](ARCHITETTURA-MUSICALE.md): profilo compositivo continuo.
 - [COMANDI-PROTOTIPO.md](COMANDI-PROTOTIPO.md): comandi della pipeline musicale precedente.

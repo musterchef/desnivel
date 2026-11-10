@@ -1,5 +1,5 @@
 > Documento archiviato. Il contratto proposto corrente è in
-> [proposte/STILI-PERCUSSIVI.md](../proposte/STILI-PERCUSSIVI.md).
+> [proposte/musica/media/in-corso/STILI-PERCUSSIVI.md](../proposte/musica/media/in-corso/STILI-PERCUSSIVI.md).
 
 # Stili percussivi
 
@@ -11,7 +11,7 @@ unico `variation` documentato nel sistema corrente.
 Questo documento conserva il design del catalogo e la proposta ancora
 non implementata della combinazione di influenze da 0 a 1.
 Memoria dei gesti, relazioni fra voci e accettazione dei piani sono definite
-nei [contratti per le relazioni musicali](../proposte/RELAZIONI-MUSICALI.md).
+nei [contratti per le relazioni musicali](../proposte/musica/media/in-corso/RELAZIONI-MUSICALI.md).
 
 ## Obiettivo
 
@@ -149,7 +149,7 @@ Il JavaScript presenta le opzioni e trasmette l'identificativo; nomi e
 regole dei generi restano nel modulo percussivo e nei suoi dati.
 Il ruolo rimane `percussion`, distinto dallo stile. I controlli di adesione
 ritmica delle altre voci appartengono ai loro generatori, secondo il
-contratto di [coordinamento](../proposte/COORDINAMENTO-RITMICO.md).
+contratto di [coordinamento](../proposte/musica/bassa/in-corso/COORDINAMENTO-RITMICO.md).
 
 La scelta deve entrare nelle assegnazioni, negli override manuali e nei
 preset, conservando le precedenze della sessione. L'aggiunta del controllo

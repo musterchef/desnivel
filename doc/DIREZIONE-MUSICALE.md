@@ -200,7 +200,7 @@ prossime finestre da comporre.
 
 Le drums sviluppano ancora figure precomposte: l'adattamento modifica
 realmente i loro controlli, senza costituire il compositore a regole
-previsto dal [contratto percussivo](proposte/STILI-PERCUSSIVI.md).
+previsto dal [contratto percussivo](proposte/musica/media/in-corso/STILI-PERCUSSIVI.md).
 
 ## Override
 

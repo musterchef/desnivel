@@ -35,7 +35,7 @@ guidata e resta disponibile come banco separato; il player dedicato del basso
 - Il meteo deriva da rianalisi storiche su griglia; il fondo OSM è
   un'associazione geometrica e non ha una mappatura musicale.
 - Le drums sviluppano figure precomposte. Il compositore a regole e le
-  influenze multiple di stile restano [proposte](proposte/STILI-PERCUSSIVI.md).
+  influenze multiple di stile restano [proposte](proposte/musica/media/in-corso/STILI-PERCUSSIVI.md).
 - I controlli agiscono su note e ritmo; i suoni e gli effetti degli
   strumenti si impostano in Live. Le corrispondenze musicali richiedono
   taratura all'ascolto.

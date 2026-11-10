@@ -205,7 +205,7 @@ Il catalogo conserva anche `spaced_dialogue` di 8 beat e la base
 `material` e `standard_material` nella stessa configurazione. Non occorre
 un altro file di sessione. La [selezione dello stile](STILI-PERCUSSIVI.md)
 cambia la guida e il materiale; le ulteriori relazioni dei
-[contratti proposti](proposte/RELAZIONI-MUSICALI.md) restano da implementare.
+[contratti proposti](proposte/musica/media/in-corso/RELAZIONI-MUSICALI.md) restano da implementare.
 
 ### Accettazione del riferimento ritmico
 
