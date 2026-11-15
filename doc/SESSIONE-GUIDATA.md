@@ -155,12 +155,12 @@ musicali pertinenti nell'ordine **voce → comportamento → eventuali sorgenti*
 | melodia | motivo letterale oppure sviluppato |
 | basso | autonomo oppure in relazione a una voce |
 | armonia | accordi della sezione, nota ripetuta, accordi sui cambi di una voce oppure sostegno a una voce |
+| ritmo | pattern autonomo, groove sviluppato autonomo oppure in relazione ad altre voci |
 
 Con **accordi sui cambi di una voce**, ogni nuovo attacco della sorgente
 sceglie una triade diatonica; la triade resta fino al successivo cambio
 armonico della sorgente. **Accordi della sezione** mantiene invece la triade
 determinata da tonica, scala e grado della sezione.
-| ritmo | pattern autonomo oppure in relazione ad altre voci |
 
 Il comportamento viene chiesto soltanto quando esistono più alternative.
 Le modalità in relazione ad altre voci vengono proposte quando è presente
@@ -169,6 +169,10 @@ nel passaggio successivo. Il comportamento seleziona il generatore esistente;
 ogni istanza conserva stato e parametri indipendenti. L’armonia di sezione
 parte dagli accordi diatonici della scala; in alternativa può ripetere una
 nota della sezione a intervalli configurabili.
+
+Il pattern autonomo usa una figura esplicita; il groove autonomo usa un
+generatore sviluppato e può selezionare uno stile senza dipendere da altre
+voci. La modalità in relazione usa sorgenti scelte nella sessione.
 
 Un controllo Snake propone melodia, basso o armonia, con comportamento
 autonomo oppure in relazione a una voce Python.

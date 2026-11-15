@@ -33,15 +33,21 @@ def percussion_definition(spec):
     material = reference_material(spec['material'])
     if not material.anchor_beats or not material.development:
         raise ValueError('il materiale di sviluppo richiede ancore e operazioni')
-    sources = spec['interaction']
-    if not isinstance(sources, dict) or set(sources) != {'support_source', 'answer_source'}:
+    sources = spec.get('interaction')
+    if sources is not None and (not isinstance(sources, dict)
+                                or set(sources) != {'support_source', 'answer_source'}):
         raise ValueError('interaction richiede soltanto support_source e answer_source')
     lanes = dict(PAD_NOTES)
     standard = reference_material(spec['standard_material']).pattern() if 'standard_material' in spec else None
+    interaction = {
+        'support_source': sources['support_source'] if sources else None,
+        'answer_source': sources['answer_source'] if sources else None,
+        'support_lanes': list(material.support_roles),
+        'answer_lanes': [r for r in lanes if r not in material.support_roles],
+    }
     return dict(lanes=lanes, material=material.pattern(), anchor_beats=list(material.anchor_beats),
                 development=list(material.development),
-                interaction={**sources, 'support_lanes': list(material.support_roles),
-                             'answer_lanes': [r for r in lanes if r not in material.support_roles]},
+                interaction=interaction,
                 settings=spec.get('settings'), standard_material=standard)
 
 

@@ -42,6 +42,7 @@ GUIDED_CHOICES = (
     GuidedChoice('harmony', 'sustained_texture', 'sostiene una voce', 'support_source',
                  (('follow_source', 0), ('support_source', 1))),
     GuidedChoice('rhythm', 'percussion_pattern', 'pattern autonomo'),
+    GuidedChoice('rhythm', 'percussion_phrase', 'groove autonomo'),
     GuidedChoice('rhythm', 'percussion_phrase', 'in relazione ad altre voci', 'support'),
 )
 

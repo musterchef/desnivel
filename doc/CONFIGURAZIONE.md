@@ -313,7 +313,7 @@ frasi ricevute; il contesto armonico non determina le note percussive.
 |---|---|
 | `material` | Identificativo del catalogo: `spaced_impacts` o `spaced_dialogue`; include attacchi, ancore, sviluppo e ruoli di sostegno |
 | `standard_material` | Figura base opzionale per identificativo: `regular_pulse_eighths` o `regular_pulse_offbeats`; se assente, la base è `material` senza trasformazioni |
-| `interaction` | Soltanto `support_source` e `answer_source`: identificativi delle frasi da usare come sostegno e risposta |
+| `interaction` | Opzionale; se presente contiene soltanto `support_source` e `answer_source`, identificativi delle frasi da usare come sostegno e risposta |
 | `settings` | Valori iniziali dei controlli elencati sotto |
 | `presets` | Assetti dei controlli; nella configurazione fornita non ci sono preset base per le drums |
 
@@ -323,8 +323,8 @@ mappa dei pad di `adapters/percussion.py`. Riferimenti sconosciuti,
 materiali di sviluppo incompleti e definizioni incorporate come `lanes`
 o `style_lanes` producono un errore.
 
-Il materiale corrente, `spaced_impacts`, distribuisce 40 attacchi su 32 beat.
-La configurazione della prova copre i 16 pad del 909 Core Kit:
+Il materiale `spaced_impacts` distribuisce 40 attacchi su 32 beat.
+La mappa dei pad copre i 16 pad del 909 Core Kit:
 
 | Nota MIDI | Canale | Suono |
 |---|---|---|
@@ -346,8 +346,9 @@ La configurazione della prova copre i 16 pad del 909 Core Kit:
 | 51 | `ride_alt` | Ride alternativo |
 
 I nomi locali distinguono i pad; il timbro effettivo dipende dal Rack caricato.
-Il materiale `spaced_impacts` assegna entrambe le casse al sostegno;
-gli altri ruoli rispondono alla melodia. Ancore e assegnazioni musicali
+La frase autonoma non richiede sorgenti e conserva tutti gli eventi
+sviluppati. Con `interaction`, entrambe le casse sono assegnate al sostegno
+e gli altri ruoli rispondono alla melodia. Ancore e assegnazioni musicali
 appartengono al catalogo.
 Gli attacchi sono su una griglia di 0,25 beat; i sostegni proposti ogni
 quattro beat vengono adattati alla frase ricevuta.

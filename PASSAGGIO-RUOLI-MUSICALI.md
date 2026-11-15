@@ -14,9 +14,10 @@ parti accompagnanti.
 
 ## Lavoro fissato
 
-Commit della riorganizzazione:
+Commit rilevanti:
 
 - `ec22358` — `riorganizzazione dei ruoli musicali e armonia`
+- `e47e955` — `creazione dell’organico nel flusso di sessione`
 
 Il commit aggiorna le configurazioni, i generatori, i controlli, il workflow
 di assegnazione e la documentazione. L’assegnazione guidata presenta ruolo,
@@ -37,6 +38,8 @@ di tracce né un organico predefinito da caricare per la prova. Il comando
 usa lo stesso menu sessioni e la stessa preparazione del comando 09; creare
 una nuova sessione per comporre una formazione di prova. Il JSON salvato è
 lo stato della sessione, mentre le voci vengono scelte nel flusso guidato.
+Il setup deriva i generatori guidati dai default dei moduli musicali e dal
+catalogo, non dal preset `organico.json`.
 
 Verifica eseguita dopo il commit:
 
@@ -53,20 +56,19 @@ melodia. Il generatore supporta stili e sviluppo; la mappa MIDI del Drum Rack
 in [STILI-PERCUSSIVI.md](doc/STILI-PERCUSSIVI.md).
 
 La sessione può aggiungere una voce con ruolo `rhythm` attraverso lo stesso
-flusso guidato. La scelta tra pattern autonomo e generatore sviluppato avviene
-per quella voce e le sue sorgenti vengono associate esplicitamente. Non
-occorre aggiungere i drums a un organico globale o scegliere un conteggio
-fisso di tracce. Non confondere il ruolo `rhythm`, la voce percussiva, il
-generatore `percussion_phrase` o `percussion_pattern`, e Snake: sono
-componenti distinti.
+flusso guidato: pattern autonomo, groove sviluppato autonomo con stile,
+oppure groove in relazione ad altre voci. Le sorgenti vengono associate
+esplicitamente solo nella modalità relazionale. Non occorre aggiungere i
+drums a un organico globale o scegliere un conteggio fisso di tracce. Non
+confondere il ruolo `rhythm`, la voce percussiva, il generatore
+`percussion_phrase` o `percussion_pattern`, e Snake: sono componenti distinti.
 
 ## Prossime verifiche e decisioni
 
-1. Comporre una sessione di prova dal flusso guidato e verificare i drums in
-   Live, scegliendo pattern autonomo o frase sviluppata, sorgenti e stile.
-2. Verificare all’ascolto
-   registro, volume, articolazione e comportamento dell’armonia sui cambi
-   della melodia.
+1. Verificare in Live il groove autonomo e quello relazionale e scegliere
+   sorgenti, stile, registro e volume adatti alla formazione composta.
+2. Verificare all’ascolto l’articolazione e il comportamento dell’armonia sui
+   cambi della melodia.
 3. Decidere se il modello futuro deve includere una progressione armonica,
    distinta dal contesto attuale di tonica e scala per sezione.
 

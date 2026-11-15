@@ -49,7 +49,11 @@ class PercussionPhraseGenerator:
         fields = {'support_source', 'support_lanes', 'answer_source', 'answer_lanes'}
         if not isinstance(interaction, dict) or set(interaction) != fields:
             raise ValueError('interaction richiede sorgenti e canali di sostegno e risposta')
-        if any(not isinstance(interaction[k], str) or not interaction[k] for k in ('support_source', 'answer_source')):
+        support_source, answer_source = interaction['support_source'], interaction['answer_source']
+        if (support_source is None) != (answer_source is None):
+            raise ValueError('le sorgenti di interazione devono essere entrambe assenti o entrambe indicate')
+        if support_source is not None and any(not isinstance(interaction[k], str) or not interaction[k]
+                                              for k in ('support_source', 'answer_source')):
             raise ValueError('nomi delle sorgenti di interazione non vuoti richiesti')
         support = interaction['support_lanes']
         answers = interaction['answer_lanes']
@@ -138,6 +142,10 @@ class PercussionPhraseGenerator:
     def _interact(self, events, dependencies, values):
         definition = self.interaction
         answer_name, support_name = definition['answer_source'], definition['support_source']
+        if answer_name is None:
+            return events, {'support_source': None, 'answer_source': None,
+                            'available_sources': list(dependencies), 'supported_hits': 0,
+                            'omitted_answer_hits': 0, 'support_available': False}
         if answer_name not in dependencies:
             raise ValueError(f'frase di riferimento richiesta: {answer_name}')
         support = dependencies.get(support_name)

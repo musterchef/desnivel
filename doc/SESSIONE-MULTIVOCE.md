@@ -205,7 +205,7 @@ completi sono nel [riferimento della configurazione](CONFIGURAZIONE.md).
 | `motif` | Sviluppa un motivo in gradi nel contesto armonico; supporta `melody`, `bass_line` e `harmony`. [Melodia](MELODIA.md) |
 | `responsive_line` | Compone il basso dalla frase di una dipendenza obbligatoria, mantenendo continuità fra finestre. [Basso](BASSO.md) |
 | `sustained_texture` | Accordo diatonico di sezione o nota ripetuta; può seguire o sostenere una dipendenza. [Armonia di sezione](TESSITURA.md) |
-| `percussion_phrase` | Sviluppa materiale precomposto e stili, con sostegni al basso e risposte alla melodia. [Stili percussivi](STILI-PERCUSSIVI.md) e [dialogo](DIALOGO-MUSICALE.md) |
+| `percussion_phrase` | Sviluppa materiale precomposto e stili; può essere autonomo oppure usare sorgenti per sostegni e risposte. [Stili percussivi](STILI-PERCUSSIVI.md) e [dialogo](DIALOGO-MUSICALE.md) |
 
 La destinazione percussiva della prova usa i 16 pad MIDI 36…51 del 909 Core
 Kit, definiti in `adapters/percussion.py`. Il timbro di tutte le voci si

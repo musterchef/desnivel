@@ -245,7 +245,7 @@ def test_percussion_and_texture_sources_are_saved_as_explicit_dependencies(tmp_p
     add_motif(setup)
     first = next(iter(setup.config['voices']))
     setup.submit('aggiungi traccia'); setup.snapshot()
-    for answer in ('1', 'drums', '4', '2', '1', '1'):
+    for answer in ('1', 'drums', '4', '3', '1', '1'):
         setup.submit(answer)
     drums = list(setup.config['voices'])[-1]
     assert setup.config['voices'][drums]['dependencies'] == [first]
@@ -284,11 +284,30 @@ def test_autonomous_percussion_can_be_the_first_voice(tmp_path):
     setup, runtime, devices, _, _ = make_setup(tmp_path)
     announce(devices, 1)
     setup.submit('aggiungi traccia'); setup.snapshot()
-    for answer in ('1', 'drums', '4'):
+    for answer in ('1', 'drums', '4', '1'):
         setup.submit(answer)
     assert len(setup.config['voices']) == 1
     assert next(iter(setup.config['generators'].values()))['type'] == 'percussion_pattern'
     assert next(iter(runtime[0].session.plan(0, 0, 4).values())).notes
+
+
+def test_autonomous_developed_drums_can_use_a_style_without_voice_sources(tmp_path):
+    setup, runtime, devices, _, _ = make_setup(tmp_path)
+    announce(devices, 1)
+    setup.submit('aggiungi traccia'); setup.snapshot()
+    for answer in ('1', 'drums', '4', '2'):
+        setup.submit(answer)
+
+    voice = next(iter(setup.config['voices']))
+    definition = setup.config['generators'][setup.config['voices'][voice]['generator']]
+    assert definition['type'] == 'percussion_phrase'
+    assert 'interaction' not in definition
+    assert setup.config['voices'][voice].get('dependencies') is None
+
+    runtime[0].session.set_parameter(voice, 'style', 'house_classic')
+    phrase = runtime[0].session.plan(0, 0, 4)[voice]
+    assert phrase.notes
+    assert runtime[0].session.coordinator.last_plan['voices'][voice]['composition']['style'] == 'house_classic'
 
 
 @pytest.mark.parametrize('choice,behavior,role,kind', [
@@ -318,7 +337,7 @@ def test_role_then_facet_selects_a_supported_guided_generator(tmp_path, choice, 
     ('2', ['autonomo', 'in relazione a una voce']),
     ('3', ['accordi della sezione', 'nota ripetuta della sezione',
            'accordi sui cambi di una voce', 'sostiene una voce']),
-    ('4', ['pattern autonomo', 'in relazione ad altre voci']),
+    ('4', ['pattern autonomo', 'groove autonomo', 'in relazione ad altre voci']),
 ])
 def test_behavior_choices_belong_to_the_selected_voice(tmp_path, choice, labels):
     setup, _, devices, _, _ = make_setup(tmp_path)
@@ -387,9 +406,6 @@ def test_harmony_support_uses_selected_voice_as_dependency(tmp_path):
 
 def test_guided_roles_and_behavior_choices_follow_generator_declarations():
     definitions = _guided_generator_definitions()
-    definitions['percussion_phrase']['interaction'] = {
-        'support_source': 'voice_01', 'answer_source': 'voice_01'
-    }
     declared_roles = {
         role
         for definition in definitions.values()
@@ -406,6 +422,7 @@ def test_percussion_choices_are_distinct_generators_for_the_same_role():
     options = [choice for choice in GUIDED_CHOICES if choice.role == 'rhythm']
     assert [(choice.generator, choice.label) for choice in options] == [
         ('percussion_pattern', 'pattern autonomo'),
+        ('percussion_phrase', 'groove autonomo'),
         ('percussion_phrase', 'in relazione ad altre voci'),
     ]
 
