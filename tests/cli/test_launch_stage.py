@@ -103,6 +103,46 @@ def test_trial_launcher_creates_a_session_for_guided_ensemble_setup(tmp_path, mo
     assert args[args.index('--timing')+1] == 'allocated'
 
 
+def test_saved_manual_arrangement_with_direction_reuses_allocated_timing(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    config = tmp_path/'output/sessioni/serata.json'
+    config.parent.mkdir(parents=True)
+    config.write_text(json.dumps({
+        'selection_mode': 'manual',
+        'direction': 'direzione.json',
+        'timeline': {'beats_per_km': 12, 'min_windows': 2, 'distance_exponent': .5},
+    }))
+    track = tmp_path/'gpx/tappa05_test.gpx'
+    track.parent.mkdir()
+    track.touch()
+    calls = []
+    monkeypatch.setattr(launch_stage.ensemble, 'main', lambda args: calls.append(args) or 0)
+
+    assert launch_stage.main(['--config', str(config), '--tappa', '05']) == 0
+
+    args = calls[0]
+    assert '--manual-sections' not in args
+    assert args[args.index('--timing')+1] == 'allocated'
+
+
+def test_saved_manual_session_without_direction_keeps_linear_timing(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    config = tmp_path/'output/sessioni/serata.json'
+    config.parent.mkdir(parents=True)
+    config.write_text(json.dumps({'selection_mode': 'manual'}))
+    track = tmp_path/'gpx/tappa05_test.gpx'
+    track.parent.mkdir()
+    track.touch()
+    calls = []
+    monkeypatch.setattr(launch_stage.ensemble, 'main', lambda args: calls.append(args) or 0)
+
+    assert launch_stage.main(['--config', str(config), '--tappa', '05']) == 0
+
+    args = calls[0]
+    assert '--manual-sections' in args
+    assert args[args.index('--timing')+1] == 'linear'
+
+
 @pytest.mark.parametrize('name', ['', '../altro', '/tmp/altro', '.nascosta', 'a/b', 'a\\b', 'nome.json', 'nome.voice-presets'])
 def test_session_names_cannot_escape_the_directory_or_collide_with_preset_libraries(tmp_path, name):
     with pytest.raises(ValueError):

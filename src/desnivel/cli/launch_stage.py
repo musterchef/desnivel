@@ -85,7 +85,8 @@ def main(argv=None):
         manual_sections = False
         if not create and config.is_file():
             saved = json.loads(config.read_text())
-            manual_sections = saved.get('selection_mode') == 'manual'
+            manual_sections = (saved.get('selection_mode') == 'manual'
+                              and not ('direction' in saved and 'timeline' in saved))
             if args.tappa is None and 'journey' in saved:
                 track, _, _ = resolve_journey(saved, config)
                 if not track.is_file():
