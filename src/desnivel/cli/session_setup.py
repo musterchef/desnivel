@@ -2,8 +2,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from dataclasses import dataclass
-from functools import lru_cache
+from dataclasses import asdict, dataclass
 import json
 from pathlib import Path
 import shlex
@@ -11,6 +10,10 @@ from uuid import uuid4
 
 from desnivel.cli.generators import build_generator
 from desnivel.cli.session_config import save_configuration
+from desnivel.music.bass.generator import BassSettings
+from desnivel.music.melodic.generator import DEFAULTS as MELODY_DEFAULTS
+from desnivel.music.percussion.development import DEFAULTS as PERCUSSION_DEFAULTS
+from desnivel.music.texture.generator import TextureGenerator
 from desnivel.music.sequence.settings import ROLES as SNAKE_ROLES
 
 
@@ -43,17 +46,24 @@ GUIDED_CHOICES = (
 )
 
 
-@lru_cache(maxsize=1)
 def _guided_generator_definitions():
-    base = Path(__file__).resolve().parents[3]
-    template = json.loads((base/'presets/organico.json').read_text())
-    definitions = {spec['type']: deepcopy(spec) for spec in template['generators'].values()}
     from desnivel.adapters.percussion import PAD_NOTES
     from desnivel.music.percussion.catalog import reference_material
-    definitions['percussion_pattern'] = dict(
-        type='percussion_pattern', lanes=dict(PAD_NOTES),
-        patterns=[reference_material('regular_pulse_eighths').pattern()])
-    return definitions
+
+    return {
+        'motif': dict(type='motif', degrees=[0, 2, 4, 1, 3, 2, 1, 0],
+                      settings=dict(MELODY_DEFAULTS)),
+        'responsive_line': dict(type='responsive_line',
+                                settings={**asdict(BassSettings()), 'groove_follow': 0.}),
+        'sustained_texture': dict(type='sustained_texture', degree=0,
+                                  settings=TextureGenerator().settings),
+        'percussion_phrase': dict(type='percussion_phrase', material='spaced_impacts',
+                                  standard_material='regular_pulse_eighths',
+                                  settings=dict(PERCUSSION_DEFAULTS)),
+        'percussion_pattern': dict(
+            type='percussion_pattern', lanes=dict(PAD_NOTES),
+            patterns=[reference_material('regular_pulse_eighths').pattern()]),
+    }
 
 
 def _guided_supported_roles():
@@ -286,7 +296,7 @@ class SessionSetup:
             self.pending['dependencies'] = [self._choice(text)]
             self._add()
         elif self.step == 'support':
-            self.pending['definition']['interaction']['support_source'] = self._choice(text)
+            self.pending['definition'].setdefault('interaction', {})['support_source'] = self._choice(text)
             self._question('answer', 'Scegli la sorgente delle risposte percussive.', list(self.config['voices']))
         elif self.step == 'answer':
             sources = self.pending['definition']['interaction']

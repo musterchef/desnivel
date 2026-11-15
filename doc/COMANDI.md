@@ -63,9 +63,11 @@ Aprire `comandi/09 - Sessione multitappa.command` dal Finder, scegliere
 una sessione salvata oppure `0` per crearne una con un nome, poi inserire
 una tappa da `01` a `12`, `07bis` per il FIT ricostruito da Komoot
 oppure `99` per scegliere un file FIT o GPX.
-Per provare la formazione armonica, scegliere **P** nel menu delle sessioni
-e assegnare un nome alla copia di prova. Il comando
-`comandi/10 - Prova formazione armonica.command` apre lo stesso menu.
+Per provare una formazione, creare una sessione e aggiungere le voci dal
+flusso guidato. Ogni sessione conserva il proprio organico; non è richiesto
+un numero fisso di tracce. Il comando
+`comandi/10 - Prova formazione armonica.command` apre lo stesso flusso del
+comando 09.
 Le tappe numerate usano i GPX in `gpx/`; `07bis` richiede il file locale
 `output/ricostruzione-tappa07/tappa07_Roma_Sabaudia.fit`.
 

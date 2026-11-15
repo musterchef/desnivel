@@ -4,16 +4,18 @@ Il launcher `comandi/09 - Sessione multitappa.command` mostra le sessioni
 salvate in `output/sessioni/`. Scegliere un numero per caricarne una oppure
 `0` per crearne una nuova, assegnandole un nome. **A: apri file…** apre
 il dialogo macOS per scegliere una configurazione `.json` in qualsiasi
-cartella. **P** crea una sessione nominata copiando `presets/prova-formazione.json`;
-la configurazione manuale avvia sezioni e timeline in modalità lineare.
-Annullando il dialogo si torna al menu. Le nuove sessioni partono
+cartella. Annullando il dialogo si torna al menu. Le nuove sessioni partono
 senza voci dalla base `presets/sessione.json`; **V** le salva in
 `output/sessioni/<nome>.json`. I nomi già presenti vengono rifiutati durante
 la creazione. Il file `output/sessione.json`, se presente, compare anch'esso
 nel menu e conserva il proprio percorso.
 
-Il comando `comandi/10 - Prova formazione armonica.command` apre lo stesso
-menu del comando 09; scegliere **P** per creare una sessione di prova.
+Ogni sessione costruisce e conserva il proprio organico. Per aggiungere una
+voce, associare una traccia Live e scegliere il ruolo, il comportamento e le
+eventuali sorgenti nel flusso guidato. Il comando
+`comandi/10 - Prova formazione armonica.command` apre lo stesso menu del
+comando 09 e avvia lo stesso flusso; creare una nuova sessione per comporre
+una formazione di prova senza caricare un organico predefinito.
 
 Il nome della sessione attiva è visibile nel pannello. Ogni configurazione
 ha la propria libreria `<nome>.voice-presets.json`, salvo l'uso esplicito

@@ -7,7 +7,7 @@ import re
 from . import ensemble
 from desnivel.cli.file_dialogs import choose_file, choose_track
 from desnivel.cli.session_files import new_session_path, saved_sessions
-from desnivel.cli.session_config import resolve_journey, save_configuration
+from desnivel.cli.session_config import resolve_journey
 
 
 VARIANTS = {
@@ -18,7 +18,7 @@ VARIANTS = {
 def choose_session(root, *, read=None):
     read = input if read is None else read
     paths = saved_sessions(root)
-    print('\nSESSIONI DESNIVEL\n  [0] crea una nuova sessione\n  [P] crea dalla formazione di prova\n  [A] apri file…')
+    print('\nSESSIONI DESNIVEL\n  [0] crea una nuova sessione\n  [A] apri file…')
     for index, path in enumerate(paths, 1):
         print(f'  [{index}] {path.stem} — {path.relative_to(root)}')
     while True:
@@ -36,24 +36,6 @@ def choose_session(root, *, read=None):
             if path is not None:
                 return path, False
             continue
-        if choice.lower() == 'p':
-            template = root/'presets/prova-formazione.json'
-            try:
-                config = json.loads(template.read_text(encoding='utf-8'))
-            except OSError as error:
-                raise ValueError(f'Preset della formazione di prova non disponibile: {template}') from error
-            while True:
-                name = read('Nome della sessione di prova [q annulla]: ').strip()
-                if name.lower() == 'q':
-                    return None
-                try:
-                    path = new_session_path(root, name)
-                except ValueError as error:
-                    print(error)
-                    continue
-                save_configuration(path, config)
-                print(f'Nuova sessione di prova: {path}')
-                return path, False
         if choice == '0':
             while True:
                 name = read('Nome della nuova sessione [q annulla]: ').strip()
@@ -65,7 +47,7 @@ def choose_session(root, *, read=None):
                     print(error)
         if choice.isdecimal() and 1 <= int(choice) <= len(paths):
             return paths[int(choice)-1], False
-        print('Scegli un numero, P per la formazione di prova, A per aprire un file oppure q per annullare.')
+        print('Scegli un numero, A per aprire un file oppure q per annullare.')
 
 
 def resolve_track(stage: str, root: Path) -> Path:

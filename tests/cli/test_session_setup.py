@@ -387,6 +387,9 @@ def test_harmony_support_uses_selected_voice_as_dependency(tmp_path):
 
 def test_guided_roles_and_behavior_choices_follow_generator_declarations():
     definitions = _guided_generator_definitions()
+    definitions['percussion_phrase']['interaction'] = {
+        'support_source': 'voice_01', 'answer_source': 'voice_01'
+    }
     declared_roles = {
         role
         for definition in definitions.values()
@@ -576,7 +579,12 @@ def test_reconfigure_accepts_a_voice_id_directly(tmp_path):
 
 
 def test_add_track_associates_an_unbound_configured_voice_before_adding_a_voice(tmp_path):
-    config = json.loads(Path('presets/prova-formazione.json').read_text())
+    config = json.loads(Path('presets/sessione.json').read_text())
+    config['voices'] = {'voice_01': {'name': 'melodia', 'generator': 'melody', 'destination': 'voice_01'}}
+    config['arrangement'] = {'voice_01': {'role': 'melody'}}
+    config['transport_voice'] = 'voice_01'
+    config['sections'] = [dict(name='prova', from_progress=0, root=57, scale='minor',
+                               assignments={'voice_01': {'role': 'melody'}})]
     devices = LiveDevices(lambda *args: None)
     announce(devices, 1)
     setup = SessionSetup(config, tmp_path/'prova.json', devices, lambda candidate: None, lambda: None)
@@ -589,8 +597,20 @@ def test_add_track_associates_an_unbound_configured_voice_before_adding_a_voice(
 
     assert setup.config['live_bindings']['voice_01'] == 'endpoint_1'
     assert setup.config['transport_voice'] == 'voice_01'
-    assert len(setup.config['voices']) == 4
+    assert len(setup.config['voices']) == 1
     assert len(setup.config.get('live_bindings', {})) == 1
+
+
+def test_guided_generators_do_not_use_the_organico_preset_as_a_template():
+    from desnivel.cli.session_setup import _guided_generator_definitions
+
+    definitions = _guided_generator_definitions()
+
+    assert set(definitions) == {
+        'motif', 'responsive_line', 'sustained_texture', 'percussion_phrase', 'percussion_pattern'
+    }
+    assert definitions['percussion_phrase']['material'] == 'spaced_impacts'
+    assert 'interaction' not in definitions['percussion_phrase']
 
 
 def test_rematch_preserves_id_priority_and_falls_back_to_track_name(tmp_path):

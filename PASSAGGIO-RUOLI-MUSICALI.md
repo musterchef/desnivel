@@ -30,12 +30,13 @@ realizzazione fuori dal registro della sorgente. Il contesto armonico
 disponibile resta quello di tonica e scala della sezione: non è una
 progressione di accordi configurabile.
 
-Il preset [prova-formazione.json](presets/prova-formazione.json) contiene
-quattro voci: melodia, basso, armonia principale e armonia accompagnante.
-Il comando [10 - Prova formazione armonica.command](comandi/10%20-%20Prova%20formazione%20armonica.command)
-usa lo stesso menu sessioni del comando 09. Scegliere **P** crea una
-sessione nominata dalla formazione di prova in `output/sessioni/`; il
-viaggio e l’avvio mantengono il flusso della sessione manuale.
+L’organico appartiene alla sessione e si costruisce dal flusso guidato,
+aggiungendo le voci e associandole alle tracce Live. Non c’è un numero fisso
+di tracce né un organico predefinito da caricare per la prova. Il comando
+[10 - Prova formazione armonica.command](comandi/10%20-%20Prova%20formazione%20armonica.command)
+usa lo stesso menu sessioni e la stessa preparazione del comando 09; creare
+una nuova sessione per comporre una formazione di prova. Il JSON salvato è
+lo stato della sessione, mentre le voci vengono scelte nel flusso guidato.
 
 Verifica eseguita dopo il commit:
 
@@ -51,27 +52,25 @@ melodia. Il generatore supporta stili e sviluppo; la mappa MIDI del Drum Rack
 è definita in `src/desnivel/adapters/percussion.py`. La guida degli stili è
 in [STILI-PERCUSSIVI.md](doc/STILI-PERCUSSIVI.md).
 
-La nuova formazione di prova invece contiene solo quattro voci armoniche:
-non include drums e richiede quindi quattro tracce MIDI con device Desnivel.
-Riattivarli in quella prova significa aggiungere una voce ritmica distinta
-(e una quinta traccia), oppure sostituire una delle quattro parti. Questa
-scelta non è stata fatta; non modificare l’organico della prova senza
-conferma. Non confondere il ruolo `rhythm`, la voce percussiva, il generatore
-`percussion_phrase` o `percussion_pattern`, e Snake: sono componenti distinti.
+La sessione può aggiungere una voce con ruolo `rhythm` attraverso lo stesso
+flusso guidato. La scelta tra pattern autonomo e generatore sviluppato avviene
+per quella voce e le sue sorgenti vengono associate esplicitamente. Non
+occorre aggiungere i drums a un organico globale o scegliere un conteggio
+fisso di tracce. Non confondere il ruolo `rhythm`, la voce percussiva, il
+generatore `percussion_phrase` o `percussion_pattern`, e Snake: sono
+componenti distinti.
 
 ## Prossime verifiche e decisioni
 
-1. Decidere se la prova deve avere una quinta voce drums oppure restare a
-   quattro tracce sostituendo una parte. Se aggiunta, scegliere se usare il
-   generatore percussivo sviluppato già presente in `organico` o un pattern
-   autonomo; definire sorgenti e stile iniziale senza duplicare controlli.
-2. Provare in Live le quattro parti armoniche e verificare all’ascolto
+1. Comporre una sessione di prova dal flusso guidato e verificare i drums in
+   Live, scegliendo pattern autonomo o frase sviluppata, sorgenti e stile.
+2. Verificare all’ascolto
    registro, volume, articolazione e comportamento dell’armonia sui cambi
    della melodia.
 3. Decidere se il modello futuro deve includere una progressione armonica,
    distinta dal contesto attuale di tonica e scala per sezione.
 
-La sessione personale eventualmente salvata in `output/sessioni/` non fa
-parte del repository né del commit. Per la prova corrente, se l’armonia
-principale deve seguire la melodia, riconfigurare la voce con **accordi sui
-cambi di una voce**, poi selezionare la melodia come sorgente e salvare.
+La sessione personale salvata in `output/sessioni/` non fa parte del
+repository né dei commit. Per provare l’armonia principale che segue la
+melodia, scegliere **accordi sui cambi di una voce**, selezionare la melodia
+come sorgente e salvare la sessione.

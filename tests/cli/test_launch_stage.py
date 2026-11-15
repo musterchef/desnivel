@@ -86,43 +86,21 @@ def test_new_session_gets_its_own_path_without_overwriting_or_creating_files(tmp
     assert not path.exists()
 
 
-def test_trial_formation_creates_a_named_session_from_the_preset(tmp_path):
-    template = tmp_path/'presets/prova-formazione.json'
-    template.parent.mkdir()
-    template.write_text(json.dumps({'selection_mode': 'manual', 'voices': {}}))
-    answers = iter(('p', 'prova serale'))
-    path, create = launch_stage.choose_session(tmp_path, read=lambda prompt: next(answers))
-    assert path == tmp_path/'output/sessioni/prova serale.json'
-    assert not create
-    assert json.loads(path.read_text()) == {'selection_mode': 'manual', 'voices': {}}
-
-
-def test_trial_formation_reuses_the_standard_menu_and_manual_timing(tmp_path, monkeypatch):
+def test_trial_launcher_creates_a_session_for_guided_ensemble_setup(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
-    template = tmp_path/'presets/prova-formazione.json'
-    template.parent.mkdir()
-    template.write_text(json.dumps({'selection_mode': 'manual', 'sections': []}))
     track = tmp_path/'gpx/tappa05_test.gpx'
     track.parent.mkdir()
     track.write_text('<gpx/>')
     calls = []
     monkeypatch.setattr(launch_stage.ensemble, 'main', lambda args: calls.append(args) or 0)
-    answers = iter(('p', 'prova armonica', '05'))
+    answers = iter(('0', 'prova armonica', '05'))
     monkeypatch.setattr('builtins.input', lambda prompt: next(answers))
     assert launch_stage.main([]) == 0
-    answers = iter(('1', '05'))
-    monkeypatch.setattr('builtins.input', lambda prompt: next(answers))
-    assert launch_stage.main([]) == 0
-    assert len(calls) == 2
     args = calls[0]
-    resumed_args = calls[1]
     assert args[args.index('--config')+1] == str(tmp_path/'output/sessioni/prova armonica.json')
-    assert '--setup' not in args
-    assert '--manual-sections' in args
-    assert args[args.index('--timing')+1] == 'linear'
-    assert resumed_args[resumed_args.index('--config')+1] == args[args.index('--config')+1]
-    assert '--manual-sections' in resumed_args
-    assert resumed_args[resumed_args.index('--timing')+1] == 'linear'
+    assert '--setup' in args
+    assert '--manual-sections' not in args
+    assert args[args.index('--timing')+1] == 'allocated'
 
 
 @pytest.mark.parametrize('name', ['', '../altro', '/tmp/altro', '.nascosta', 'a/b', 'a\\b', 'nome.json', 'nome.voice-presets'])
