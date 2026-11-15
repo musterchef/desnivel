@@ -18,8 +18,9 @@ Commit rilevanti:
 
 - `ec22358` — `riorganizzazione dei ruoli musicali e armonia`
 - `e47e955` — `creazione dell’organico nel flusso di sessione`
+- `00237d3` — `aggiunta dei groove percussivi autonomi`
 
-Il commit aggiorna le configurazioni, i generatori, i controlli, il workflow
+I commit aggiornano le configurazioni, i generatori, i controlli, il workflow
 di assegnazione e la documentazione. L’assegnazione guidata presenta ruolo,
 comportamento ed eventuali sorgenti. Una voce già associata si può
 riconfigurare con `:riconfigura` mantenendo il collegamento Live.
@@ -41,9 +42,10 @@ lo stato della sessione, mentre le voci vengono scelte nel flusso guidato.
 Il setup deriva i generatori guidati dai default dei moduli musicali e dal
 catalogo, non dal preset `organico.json`.
 
-Verifica eseguita dopo il commit:
+Verifiche sulla revisione fissata:
 
 - `.venv/bin/python -m pytest tests/ -q` — suite completa superata.
+- `node tests/js/voice_device.cjs` — superato.
 - `git diff --check` — superato prima del commit.
 
 ## Audit dei drums
