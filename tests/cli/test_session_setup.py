@@ -332,6 +332,29 @@ def test_role_then_facet_selects_a_supported_guided_generator(tmp_path, choice, 
     assert setup.config['generators'][voice]['type'] == kind
 
 
+def test_new_drums_can_be_added_after_play_without_changing_existing_roles(tmp_path):
+    setup, runtimes, devices, _, _ = make_setup(tmp_path)
+    announce(devices, 1)
+    announce(devices, 2)
+    add_motif(setup, name='synth')
+    source = next(iter(setup.config['voices']))
+    runtimes[0].roles_locked = True
+
+    setup.submit('aggiungi traccia'); setup.snapshot()
+    for answer in ('1', 'drums', '4', '3', '1', '1'):
+        setup.submit(answer)
+
+    drums = next(name for name, spec in setup.config['voices'].items()
+                 if name != source)
+    assert runtimes[0].roles_locked
+    assert runtimes[0].session.configured_roles[source] == 'melody'
+    assert runtimes[0].session.configured_roles[drums] == 'rhythm'
+    assert setup.config['voices'][drums]['dependencies'] == [source]
+    assert setup.config['generators'][setup.config['voices'][drums]['generator']]['interaction'] == {
+        'support_source': source, 'answer_source': source
+    }
+
+
 @pytest.mark.parametrize('choice,labels', [
     ('1', ['motivo letterale', 'motivo sviluppato']),
     ('2', ['autonomo', 'in relazione a una voce']),

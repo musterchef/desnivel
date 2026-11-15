@@ -69,7 +69,7 @@ def reconfigure_runtime(runtime, config, library, *, external_voices=None):
                                 context_sources=runtime.context_sources, external_voices=external_voices)
     if runtime.roles_locked:
         old_roles = runtime.session.configured_roles
-        if any(name not in old_roles or old_roles[name] != role
+        if any(name in old_roles and old_roles[name] != role
                for name, role in candidate.session.configured_roles.items()):
             raise ValueError('ruolo modificabile solo prima del play: riavvia la sessione')
         for name, voice in (external_voices or {}).items():
