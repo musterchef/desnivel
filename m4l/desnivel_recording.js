@@ -17,9 +17,11 @@ var DesnivelRecording = (function () {
         if(data && typeof data==='object' && !Array.isArray(data))return data;
         throw new Error('risposta Live non valida: '+property);
     }
-    function route(object, property, name){
+    function route(object, property, name, identifier){
         var choices=dictionary(object,'available_'+property+'s')['available_'+property+'s'], found=[];
-        for(var i=0;i<choices.length;i++)if(choices[i].display_name===name)found.push(choices[i]);
+        for(var i=0;i<choices.length;i++)if(identifier!==undefined
+            ? String(choices[i].identifier)===String(identifier)
+            : choices[i].display_name===name)found.push(choices[i]);
         if(found.length!==1)throw new Error('routing non univoco: '+name);
         object.set(property,JSON.stringify(found[0]));
         return {property:property,name:name,identifier:found[0].identifier,deadline:new Date().getTime()+1500};
@@ -130,7 +132,7 @@ var DesnivelRecording = (function () {
             if(existing){
                 var existingTrack=api(existing);
                 if(Boolean(value(existingTrack,'has_midi_input'))!==(type==='midi') || voiceDevices(existingTrack).length
-                    || currentRoute(existingTrack,'input_routing_type').display_name!==sources[i].name)
+                    || String(currentRoute(existingTrack,'input_routing_type').identifier)!==String(sources[i].id))
                     throw new Error('traccia esistente incompatibile: '+targetName);
             }
             operations.push({source:sources[i].id,sourceName:sources[i].name,type:type,name:targetName,id:existing});
@@ -161,7 +163,7 @@ var DesnivelRecording = (function () {
                     track.set('solo',0);
                 }
                 track.set('current_monitoring_state',2);
-                inputType=route(track,'input_routing_type',item.sourceName);
+                inputType=route(track,'input_routing_type',item.sourceName,item.source);
             });
             job.steps.push(function(){
                 var track=api(item.id);

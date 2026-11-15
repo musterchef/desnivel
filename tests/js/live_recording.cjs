@@ -1,5 +1,5 @@
 const assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs');
-let nextId=10, queue=[], reports=[], failRoute=false, pendingRouting=[];
+let nextId=10, queue=[], reports=[], failRoute=false, pendingRouting=[], extraRouting=[];
 let now=0, rejectRouting=false, lastRejected=false;
 const objects=new Map(), order=[];
 const song={is_playing:0,current_song_time:0,record_mode:0,loop:1,punch_in:1,punch_out:0,count_in_duration:0,
@@ -20,7 +20,7 @@ class LiveAPI {
   const obj=this.song?song:objects.get(this.id);if(!obj)throw Error('id rimosso');
   if(prop==='tracks')return ids(order);
   if(['devices','arrangement_clips','clip_slots'].includes(prop))return ids(obj[prop]);
-  if(prop==='available_input_routing_types')return [JSON.stringify({[prop]:order.map(id=>({display_name:objects.get(id).name,identifier:String(id)}))})];
+  if(prop==='available_input_routing_types')return [JSON.stringify({[prop]:order.map(id=>({display_name:objects.get(id).name,identifier:String(id)})).concat(extraRouting)})];
   if(prop==='available_input_routing_channels')return [JSON.stringify({[prop]:failRoute&&obj.input_routing_type.display_name==='texture'?[]:[{display_name:'Post FX',identifier:'fx'},{display_name:'Post Mixer',identifier:'mixer'}]})];
   if(prop.startsWith('input_routing_'))return [JSON.stringify({[prop]:obj[prop]})];
   return [obj[prop]];
@@ -81,6 +81,13 @@ for(const id of order.filter(id=>![source1,source2].includes(id))){
 assert.equal(objects.get(source1).devices.length,3);
 assert.equal(objects.get(source1).arrangement_clips.length,1);
 send('prepare',2);flush();assert.equal(order.length,6); // Riuso, nessuna copia ulteriore.
+extraRouting=[{display_name:'synth',identifier:'duplicate-name'}];
+send('prepare',9,'audio');flush();
+assert.equal(reports.at(-1).status,'ready'); // Il routing è scelto per ID, non per nome visualizzato.
+assert.equal(reports.at(-1).tracks[0].source,'synth');
+extraRouting=[];
+send('prepare',10);flush();
+assert.equal(reports.at(-1).status,'ready');
 song.current_song_time=4;send('start',3);assert.equal(reports.at(-1).status,'error');assert.equal(song.record_mode,0);
 song.current_song_time=0;send('start',4);
 assert.notEqual(reports.at(-1).status,'recording');
