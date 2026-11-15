@@ -7,7 +7,7 @@ import re
 from . import ensemble
 from desnivel.cli.file_dialogs import choose_file, choose_track
 from desnivel.cli.session_files import new_session_path, saved_sessions
-from desnivel.cli.session_config import resolve_journey
+from desnivel.cli.session_config import resolve_journey, save_configuration
 
 
 VARIANTS = {
@@ -18,11 +18,11 @@ VARIANTS = {
 def choose_session(root, *, read=None):
     read = input if read is None else read
     paths = saved_sessions(root)
-    print('\nSESSIONI DESNIVEL\n  [0] crea una nuova sessione\n  [A] apri file…')
+    print('\nSESSIONI DESNIVEL\n  [0] crea una nuova sessione\n  [P] crea dalla formazione di prova\n  [A] apri file…')
     for index, path in enumerate(paths, 1):
         print(f'  [{index}] {path.stem} — {path.relative_to(root)}')
     while True:
-        choice = read('Sessione [numero, A apri file, q annulla]: ').strip()
+        choice = read('Sessione [numero, P prova formazione, A apri file, q annulla]: ').strip()
         if choice.lower() == 'q':
             return None
         if choice.lower() == 'a':
@@ -36,6 +36,24 @@ def choose_session(root, *, read=None):
             if path is not None:
                 return path, False
             continue
+        if choice.lower() == 'p':
+            template = root/'presets/prova-formazione.json'
+            try:
+                config = json.loads(template.read_text(encoding='utf-8'))
+            except OSError as error:
+                raise ValueError(f'Preset della formazione di prova non disponibile: {template}') from error
+            while True:
+                name = read('Nome della sessione di prova [q annulla]: ').strip()
+                if name.lower() == 'q':
+                    return None
+                try:
+                    path = new_session_path(root, name)
+                except ValueError as error:
+                    print(error)
+                    continue
+                save_configuration(path, config)
+                print(f'Nuova sessione di prova: {path}')
+                return path, False
         if choice == '0':
             while True:
                 name = read('Nome della nuova sessione [q annulla]: ').strip()
@@ -47,7 +65,7 @@ def choose_session(root, *, read=None):
                     print(error)
         if choice.isdecimal() and 1 <= int(choice) <= len(paths):
             return paths[int(choice)-1], False
-        print('Scegli uno dei numeri elencati, A per aprire un file oppure q per annullare.')
+        print('Scegli un numero, P per la formazione di prova, A per aprire un file oppure q per annullare.')
 
 
 def resolve_track(stage: str, root: Path) -> Path:
@@ -82,9 +100,11 @@ def main(argv=None):
         config, create = selection
         stage = None
         track = None
-        if args.tappa is None and not create and config.is_file():
+        manual_sections = False
+        if not create and config.is_file():
             saved = json.loads(config.read_text())
-            if 'journey' in saved:
+            manual_sections = saved.get('selection_mode') == 'manual'
+            if args.tappa is None and 'journey' in saved:
                 track, _, _ = resolve_journey(saved, config)
                 if not track.is_file():
                     raise ValueError(f'Viaggio della sessione non trovato: {track}. Usa --tappa 99 per scegliere un altro file.')
@@ -111,7 +131,8 @@ def main(argv=None):
         *(['--track', str(track)] if stage is not None else []),
         '--config', str(config),
         *(['--setup'] if create else []),
-        '--timing', 'allocated',
+        *(['--manual-sections'] if manual_sections else []),
+        '--timing', 'linear' if manual_sections else 'allocated',
         '--view-port', '8765',
         *session_args,
     ])

@@ -135,13 +135,13 @@
           "role": "melody"
         },
         "voice_03": {
-          "role": "sustained_texture",
+          "role": "harmony",
           "parameters": {
             "velocity": 45
           }
         },
         "voice_04": {
-          "role": "percussion",
+          "role": "rhythm",
           "parameters": {}
         }
       }
@@ -159,13 +159,13 @@
           "role": "bass_line"
         },
         "voice_03": {
-          "role": "sustained_texture",
+          "role": "harmony",
           "parameters": {
             "velocity": 55
           }
         },
         "voice_04": {
-          "role": "percussion",
+          "role": "rhythm",
           "parameters": {}
         }
       }
@@ -183,13 +183,13 @@
           "role": "bass_line"
         },
         "voice_03": {
-          "role": "sustained_texture",
+          "role": "harmony",
           "parameters": {
             "velocity": 45
           }
         },
         "voice_04": {
-          "role": "percussion",
+          "role": "rhythm",
           "parameters": {}
         }
       }

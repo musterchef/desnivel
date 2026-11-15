@@ -187,8 +187,9 @@ def render_preparation(state):
     step = setup.get('step')
     titles = {'destination': '1 · scegli la traccia', 'name': '2 · nome della voce',
               'voice': '3 · voce musicale', 'behavior': '4 · comportamento',
-              'existing_voice': 'scegli la voce da ricollegare',
-              'source': 'sorgente del basso', 'texture_source': 'sorgente della nota sostenuta',
+              'existing_voice': 'scegli la voce configurata da associare o ricollegare',
+              'source': 'sorgente del basso', 'texture_source': 'sorgente dell’armonia',
+              'support_source': 'sorgente da sostenere',
               'support': 'sorgente di sostegno', 'answer': 'sorgente delle risposte',
               'snake_source': 'sorgente di Snake'}
     rows.append('TRACCE NEL SET')
@@ -225,7 +226,7 @@ def render_preparation(state):
         rows.append('Invio conferma · Esc annulla')
         rows.append('> '+state['command_input']+'▏')
     else:
-        rows.extend(['A associa traccia · B ricollega voce · T cerca · V salva',
+        rows.extend(['A associa traccia · B ricollega voce · :riconfigura · T cerca · V salva',
                      'D dettagli · : comando · Spazio avvia/pausa · Ctrl+C esci'])
     return '\n'.join(rows)
 

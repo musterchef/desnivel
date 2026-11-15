@@ -47,7 +47,7 @@ e resta bloccata fino al riavvio a zero, anche in pausa:
 |---|---|
 | `melody` | Linea principale basata sul motivo della tappa |
 | `bass_line` | Sostegno con appoggi di tonica, quinta e terza |
-| `sustained_texture` | Sottofondo con tonica sostenuta |
+| `harmony` | Sottofondo con tonica sostenuta |
 
 Nel menu `parametro`, `mode` sceglie **autonomo** o **coordinato** per
 qualsiasi ruolo. Entrambe le modalità usano il contesto locale della finestra in esecuzione,
@@ -76,7 +76,7 @@ fra attività dei gate e suddivisione, entro l'intervallo del ruolo:
 |---|---|---|
 | `melody` | `8n` | `16n` |
 | `bass_line` | `4n` | `16n` |
-| `sustained_texture` | `2n` | `8n` |
+| `harmony` | `2n` | `8n` |
 
 La densità cresce fra l'attività calma sulla griglia lenta e quella intensa
 sulla griglia rapida. Si usa la griglia più lenta che la rappresenta senza
@@ -108,7 +108,7 @@ nell'intervallo del ruolo; con `pulse` manuale varia soltanto l'attività.
 `pulse` manuale può scegliere qualsiasi suddivisione supportata, compreso `32n`.
 
 Sui 16 passi, l'attività automatica varia da 4 a 8 gate per `melody`, da 3 a 6
-per `bass_line` e da 1 a 3 per `sustained_texture`, dai tratti calmi a quelli
+per `bass_line` e da 1 a 3 per `harmony`, dai tratti calmi a quelli
 intensi. La modalità coordinata può diradare ulteriormente il basso;
 una sorgente silenziosa azzera i gate. Il controllo manuale `activity` resta in [0, 1].
 In modalità coordinata anche dinamiche e articolazioni della sorgente
@@ -170,7 +170,7 @@ Il ruolo determina come le altre voci lasciano spazio: una sorgente
 `melody` contribuisce alle scelte di densità del basso, attività delle
 altre melodie e alleggerimento delle tessiture nel registro occupato;
 una sorgente `bass_line` alleggerisce attività melodica e densità degli
-altri bassi; `sustained_texture` contribuisce alla condivisione del registro
+altri bassi; `harmony` contribuisce alla condivisione del registro
 fra tessiture. Gli override manuali conservano la precedenza.
 
 La previsione richiede dati recenti (massimo 0,75 s), BPM e posizione

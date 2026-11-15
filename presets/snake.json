@@ -13,7 +13,7 @@
         "pulse": {"slowest": "4n", "fastest": "16n"},
         "response": {"activity": 0.2, "velocity": 18, "articulation": -0.3}
       },
-      "sustained_texture": {
+      "harmony": {
         "parameters": {"octave": 1, "activity": 0.125, "velocity": 48, "length_ms": 2500, "movement": 0.1},
         "pulse": {"slowest": "2n", "fastest": "8n"},
         "response": {"activity": 0.125, "velocity": 12, "articulation": 0.3}

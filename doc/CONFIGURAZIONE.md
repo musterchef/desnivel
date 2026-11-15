@@ -173,9 +173,8 @@ Ruoli supportati:
 
 - `melody`: motivo letterale o sviluppato, secondo `development`.
 - `bass_line`: motivo letterale, senza lo sviluppo melodico.
-- `sustained_texture`: una nota per finestra dal primo grado di `degrees`;
-  usa registro e velocity. Gli altri controlli ritmici e di sviluppo non
-  modificano questa nota sostenuta.
+- `harmony`: accordo diatonico dal primo grado di `degrees`; usa registro e
+  velocity. Gli altri controlli ritmici e di sviluppo non modificano l'accordo.
 
 I valori predefiniti del codice possono essere sovrascritti dal file.
 Per esempio, `organico.json` imposta `development: 0.7` e `seed: 7`.
@@ -186,21 +185,40 @@ Il device segnala i controlli inattivi senza eliminarne i valori.
 
 ## Parametri del generatore `sustained_texture`
 
-Supporta il ruolo `sustained_texture`. `degree` è il grado di riferimento,
+Il generatore realizza l’armonia di sezione come accordo diatonico (gradi
+1, 3 e 5 a partire dal grado configurato) oppure come nota singola ripetuta.
+La scelta `realization` e i parametri ritmici della ripetizione sono
+configurabili per voce.
+
+Supporta il ruolo `harmony`. `degree` è il grado di riferimento,
 intero non negativo e predefinito 0, con la stessa numerazione di `degrees`
 del motivo. I controlli usabili in `settings`, preset e assegnazioni sono:
 
 | Parametro | Predefinito | Intervallo | Effetto |
 |---|---:|---|---|
 | `octave` | 0 | Intero −5…5 | Trasposizione del grado di riferimento e del registro rispetto alla tonica della sezione |
-| `velocity` | 85 | Intero 1…127 | Velocity della nota sostenuta |
-| `follow_source` | 0 | Intero 0 oppure 1 | Switch **Segui sorgente**: 0 usa il grado di sezione; 1 sceglie una nota dalla frase ricevuta |
+| `velocity` | 85 | Intero 1…127 | Velocity delle note generate |
+| `realization` | `chord` | `chord`, `repeated_note` | Accordo diatonico della sezione oppure nota singola ripetuta |
+| `step_beats` | 1 | 0,25…8 beat | Intervallo tra gli attacchi in `repeated_note` |
+| `articulation` | 0,9 | 0,05…1 | Quota dell'intervallo occupata da ciascuna nota ripetuta |
+| `follow_source` | 0 | Intero 0 oppure 1 | Switch **Segui sorgente**: 0 usa il grado di sezione; 1 deriva la realizzazione dalla frase ricevuta |
+| `support_source` | 0 | Intero 0 oppure 1 | Switch **Supporta sorgente**: 0 non ha effetto; 1 sposta la realizzazione fuori dal registro della sorgente e riduce la velocity |
 
 La modalità coordinata legge al massimo una dipendenza musicale, richiesta
-o facoltativa secondo la configurazione della voce. In assenza della
-sorgente o con una frase vuota produce silenzio. La modalità indipendente
-usa soltanto il contesto armonico. Entrambe producono al massimo una nota,
-dall'inizio alla fine della finestra, e rispettano presenza e organico.
+o facoltativa secondo la configurazione della voce. Una sorgente assente
+produce silenzio; una frase vuota silenzia `follow_source` e lascia in
+`support_source` la realizzazione di sezione. La modalità indipendente usa
+soltanto il contesto armonico. `follow_source` e `support_source` non
+possono essere attivi insieme. La realizzazione `chord` produce tre note
+simultanee; `repeated_note` produce attacchi distanziati secondo
+`step_beats`. Entrambe rispettano presenza e organico.
+
+Con `support_source` attivo, l'intera realizzazione si sposta per ottave
+finché non cade fuori dal registro occupato dalla sorgente nella finestra
+corrente; se nessuna trasposizione è libera, la finestra resta silenziosa
+(`register_contested`). La velocity si riduce in proporzione al rapporto di
+occupazione della sorgente: una sorgente silenziosa lascia invariati note e
+velocity.
 
 `organico.json` assegna questo generatore ad `atmosphere`, con `degree: 0`,
 `octave: 1`, velocity 52 e modalità indipendente iniziale. `voice_03` legge
@@ -255,7 +273,7 @@ il dettaglio in `composition.density`. Con presenza nulla il device mostra
 
 ## Parametri del generatore `percussion_pattern`
 
-Supporta `percussion` e non richiede dipendenze. Legge pattern espliciti
+Supporta `rhythm` e non richiede dipendenze. Legge pattern espliciti
 configurati, senza dedurre ritmo o altezze dalla scala del contesto.
 
 | Campo della definizione | Contenuto |
@@ -287,7 +305,7 @@ lo stesso adattatore e lo stesso dispositivo delle altre voci.
 ## Parametri del generatore `percussion_phrase`
 
 La prova corrente usa `music/percussion/development.py`. Supporta
-`percussion` con frasi di riferimento dichiarate nelle dipendenze. Sviluppa
+`rhythm` con frasi di riferimento dichiarate nelle dipendenze. Sviluppa
 un materiale su richieste consecutive e lo adatta agli attacchi delle
 frasi ricevute; il contesto armonico non determina le note percussive.
 

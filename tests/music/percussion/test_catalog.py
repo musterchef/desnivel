@@ -41,14 +41,14 @@ PERCUSSION_BEFORE = {
 }
 
 SESSIONS_EXPECTED = {
-    ('organico', 'none'): 'a9f9097e555e66be35170c5a6e465aeb99212f73bdd1ae1a1791f799978299e6',
-    ('organico', 'house_classic'): '5bfb9a10813ca8b015fe81ae319a92ea17251ec806fb07ec5ea17ce34d743d6e',
-    ('organico', 'boom_bap_90s'): '674ae56c7951a55a77ed0df5fb45717c8f8277f3b97572e671b3a76cc3f75f33',
-    ('organico', 'breakbeat_house'): '25b363a7ddbaf3a0580a9225b4e03b3b4457ec57f7851e00a65ccd90d9034d98',
-    ('dialogo', 'none'): 'cf0b938334d4fef8df0adff396e4ef27052670f85893ed5f08f578a6a5200f47',
-    ('dialogo', 'house_classic'): '3ae64619dd018cc16f87ef048cc96b67ebf194a3207be1e7549a4cea5d5e9722',
-    ('dialogo', 'boom_bap_90s'): 'a8d6c9e4c13b9445e0b7501ba8d32aeb6b8fcb7da8ddcff8c8db7a11673e864f',
-    ('dialogo', 'breakbeat_house'): '7dc32f05542398f23e4710876669b9ce6bed3f2e46fc2eac5b3651996b661e32',
+    ('organico', 'none'): '8622a4978635dbb34775bb4594dbd6958b2acafe1e65edc9802208cc7fac020d',
+    ('organico', 'house_classic'): 'cda7bf077cfd62de6d3f8aab4fb21fb2cd24a116c9551f243fa108af85f05811',
+    ('organico', 'boom_bap_90s'): '0e6e28336dbdf67b6d846d00207131db6eb59089142d30cca1c9564ce05701f8',
+    ('organico', 'breakbeat_house'): '038a45e5cecb210eaeb90a6ce467c7430311c24189147e7faedd9d482f12d8da',
+    ('dialogo', 'none'): 'dc7fa16f264bcc2d8253887a2e485754a7d634892fbe9b691469a33b2ccc9c97',
+    ('dialogo', 'house_classic'): 'd75660d539a43351c73625913bb336cfe7186b0c988404959debd8d21b94a270',
+    ('dialogo', 'boom_bap_90s'): 'a1236749669c151a625ceeaccc4cde4fa73181169c9a9d707ed9b120789e95f7',
+    ('dialogo', 'breakbeat_house'): '7edf4d82aa7f842dd3ffd90bac73b263542f8f03dabf27f35086476008592d54',
 }
 
 
@@ -60,7 +60,7 @@ def configuration(name):
         config['generators']['atmosphere']['settings']['follow_source'] = 1
         config['sections'] = [dict(name='dialogue', from_progress=0, root=57, scale='dorian',
                                    assignments={n: {'role': r} for n, r in zip(config['voices'],
-                                                ('melody', 'bass_line', 'sustained_texture', 'percussion'))})]
+                                                ('melody', 'bass_line', 'harmony', 'rhythm'))})]
     return config
 
 
@@ -74,7 +74,7 @@ def capture(spec, style, variation):
         melody = Phrase(4, () if index % 5 == 0 else (
             Note(0, 60, .7, 90), Note(1.5, 64, .5, 80), Note(3, 67, .8, 85)))
         bass = Phrase(4, () if index % 7 == 0 else (Note(.5, 36, .8, 90), Note(2.5, 40, .7, 80)))
-        req = PlanningRequest(beat, 4, None, {'voice_01': melody, 'voice_02': bass}, 'percussion',
+        req = PlanningRequest(beat, 4, None, {'voice_01': melody, 'voice_02': bass}, 'rhythm',
                               {'style': requested, 'variation': variation, 'displacement_beats': .25}, beat)
         prepared = gen.prepare_reference(req)
         plan = gen.stage(replace(req, rhythm=prepared.reference, prepared_material=prepared.material))

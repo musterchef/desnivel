@@ -10,7 +10,7 @@ from desnivel.music.bass.voice import BassVoice
 from desnivel.music.percussion.generator import PercussionGenerator
 from desnivel.music.percussion.development import PercussionPhraseGenerator
 from desnivel.music.percussion.catalog import STYLE_OPTIONS, reference_material
-from desnivel.music.texture.generator import TextureGenerator
+from desnivel.music.texture.generator import REALIZATION_CHOICES, TextureGenerator
 
 
 @dataclass
@@ -65,7 +65,10 @@ def build_generator(spec):
     elif kind == 'sustained_texture':
         compose = TextureGenerator(spec.get('degree', 0), spec.get('settings'))
         controls = {'octave': Control(-5, 5, True), 'velocity': Control(1, 127, True),
-                    'follow_source': Control(0, 1, True, toggle=True)}
+                    'realization': ChoiceControl(REALIZATION_CHOICES),
+                    'step_beats': Control(.25, 8), 'articulation': Control(.05, 1),
+                    'follow_source': Control(0, 1, True, toggle=True),
+                    'support_source': Control(0, 1, True, toggle=True)}
         values = compose.settings
     elif kind == 'percussion_phrase':
         compose = PercussionPhraseGenerator(**percussion_definition(spec))

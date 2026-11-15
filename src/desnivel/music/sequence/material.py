@@ -86,7 +86,7 @@ def compose(context, role, values, *, phrasing, motif=(0, 2, 4, 1), source: Phra
             available = 0
         else:
             attacks = {min(steps-1, int(n.beat/source.length_beats*steps)) for n in source.notes}
-            if role == 'sustained_texture':
+            if role == 'harmony':
                 weights = {}
                 for n in source.notes:
                     weights[n.pitch % 12] = weights.get(n.pitch % 12, 0)+n.duration*n.velocity

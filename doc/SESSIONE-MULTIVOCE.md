@@ -61,8 +61,9 @@ Nella configurazione fornita:
 Impostare l'identificativo in **Voce** e premere **Collega** sulle istanze,
 quindi avviare il trasporto di Live. La prova usa il 909 Core Kit con i
 16 pad sulle note MIDI 36…51. La mappa completa è definita in
-`adapters/percussion.py` e descritta nel riferimento di configurazione. Lo strumento atmosferico riceve una nota
-sostenuta monofonica per finestra: il suono si sceglie nello strumento Live.
+`adapters/percussion.py` e descritta nel riferimento di configurazione.
+Lo strumento atmosferico riceve un accordo diatonico o una nota singola
+ripetuta, secondo il controllo `realization`; il timbro si sceglie in Live.
 Tutte le voci attive devono essere collegate, altrimenti la sessione attende
 in `waiting_for_devices`.
 
@@ -177,11 +178,11 @@ Le famiglie conservano i seguenti parametri musicali, modificabili nel JSON:
 
 | Famiglia | `voice_03`: ruolo / velocity | `voice_04`: rapporto velocity |
 |---|---|---|
-| `level` | `sustained_texture` / 45 | 0,75 |
-| `ascent` | `sustained_texture` / 55 | 0,85 |
-| `descent` | `sustained_texture` / 48 | 0,9 |
+| `level` | `harmony` / 45 | 0,75 |
+| `ascent` | `harmony` / 55 | 0,85 |
+| `descent` | `harmony` / 48 | 0,9 |
 
-`voice_03` usa `sustained_texture`, con `degree: 0` e `octave: 1`:
+`voice_03` usa `harmony`, con `degree: 0` e `octave: 1`:
 in modalità indipendente sostiene la root della sezione un'ottava sopra.
 `follow_source` sceglie invece una classe di altezza dalla frase melodica.
 La nota viene riarticolata a ogni finestra: [regole della tessitura](TESSITURA.md).
@@ -201,9 +202,9 @@ completi sono nel [riferimento della configurazione](CONFIGURAZIONE.md).
 
 | Tipo | Comportamento e riferimento |
 |---|---|
-| `motif` | Sviluppa un motivo in gradi nel contesto armonico; supporta `melody`, `bass_line` e `sustained_texture`. [Melodia](MELODIA.md) |
+| `motif` | Sviluppa un motivo in gradi nel contesto armonico; supporta `melody`, `bass_line` e `harmony`. [Melodia](MELODIA.md) |
 | `responsive_line` | Compone il basso dalla frase di una dipendenza obbligatoria, mantenendo continuità fra finestre. [Basso](BASSO.md) |
-| `sustained_texture` | Una nota per finestra dal grado di sezione o da una dipendenza; nella prova legge facoltativamente `voice_01`. [Tessitura](TESSITURA.md) |
+| `sustained_texture` | Accordo diatonico di sezione o nota ripetuta; può seguire o sostenere una dipendenza. [Armonia di sezione](TESSITURA.md) |
 | `percussion_phrase` | Sviluppa materiale precomposto e stili, con sostegni al basso e risposte alla melodia. [Stili percussivi](STILI-PERCUSSIVI.md) e [dialogo](DIALOGO-MUSICALE.md) |
 
 La destinazione percussiva della prova usa i 16 pad MIDI 36…51 del 909 Core

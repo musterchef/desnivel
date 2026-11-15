@@ -105,7 +105,7 @@ def test_context_and_period_changes_keep_material_and_adapt_scale():
 def test_role_exit_interrupts_the_melodic_sentence_and_reentry_recalls_a_cell():
     g = generator()
     g(request())
-    g(replace(request(4), role='sustained_texture'))
+    g(replace(request(4), role='harmony'))
     assert g._development is None
     plan = g.stage(request(8))
     assert plan.decision['phase'] == 'statement'

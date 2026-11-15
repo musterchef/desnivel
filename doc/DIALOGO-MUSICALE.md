@@ -40,7 +40,7 @@ dall'organico; il produttore deve comunque essere registrato.
 
 `groove_follow` richiede `rhythm_voice`. Senza produttore il controllo è
 segnalato inattivo nel dispositivo e un valore positivo viene rifiutato.
-Nel ruolo `sustained_texture` del motivo non ha effetto ed è segnalato inattivo.
+Nel ruolo `harmony` del motivo non ha effetto ed è segnalato inattivo.
 
 I preset utente salvati prima dell'introduzione di `groove_follow` vengono
 completati in memoria con valore zero. Lo snapshot espone l'aggiunta in

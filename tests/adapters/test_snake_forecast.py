@@ -52,7 +52,7 @@ def test_duplicate_packets_do_not_refresh_age_and_invalidation_requires_new_tele
 def test_unsupported_state_is_unavailable_instead_of_a_silent_phrase(change):
     forecast=SnakeForecast(clock=lambda:0.)
     forecast.update(packet(**change))
-    source=forecast.project('sustained_texture',6,4,beat=4,bpm=120)
+    source=forecast.project('harmony',6,4,beat=4,bpm=120)
     assert source.phrase is None and source.unavailable_reason
 
 

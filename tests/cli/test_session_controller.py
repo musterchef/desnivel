@@ -30,7 +30,7 @@ def test_structured_commands_drive_preparation_without_a_terminal(tmp_path):
     assert 'command_input' not in state
     assert not service.execute({'action': 'setup_reply', 'value': '99'})
     assert service.tick()['control_error']
-    for value in ('1', 'synth', '1'):
+    for value in ('1', 'synth', '1', '1'):
         assert service.execute(dict(action='setup_reply', value=value))
     voice = service.runtime.transport_voice
     message = dict(version=1, action='hello', voice=voice, device_id='endpoint_1', instance='instance_1',
@@ -112,7 +112,7 @@ def transport_controller(tmp_path, *, playing=1):
     service, devices, sent = controller(tmp_path)
     announce(devices, 1)
     service.execute({'action': 'setup_begin'})
-    for value in ('1', 'synth', '1'):
+    for value in ('1', 'synth', '1', '1'):
         assert service.execute(dict(action='setup_reply', value=value))
     message = dict(version=1, action='hello', voice=service.runtime.transport_voice,
                    device_id='endpoint_1', instance='instance_1', serial=1, reply_port=10001,

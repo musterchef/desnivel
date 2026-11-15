@@ -90,7 +90,7 @@ def test_equal_pulse_limits_keep_a_fixed_subdivision(music):
         assert pulse(AdaptiveContext(intensity=intensity), settings) == '8n'
 
 
-@pytest.mark.parametrize('role', ['melody','bass_line','sustained_texture'])
+@pytest.mark.parametrize('role', ['melody','bass_line','harmony'])
 def test_coupled_rhythm_preserves_density_across_grids_with_only_gate_rounding_error(music, role):
     from desnivel.music.rhythm import SUBDIVISIONS
     recipe = music['roles'][role]
@@ -103,7 +103,7 @@ def test_coupled_rhythm_preserves_density_across_grids_with_only_gate_rounding_e
         actual = round(activity*16)/(16*step)
         assert abs(actual-target.value) <= .5/(16*step)+1e-9
         assert actual >= previous
-        assert round(activity*16) <= {'melody':8,'bass_line':6,'sustained_texture':3}[role]
+        assert round(activity*16) <= {'melody':8,'bass_line':6,'harmony':3}[role]
         previous = actual
 
 

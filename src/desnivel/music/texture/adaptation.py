@@ -7,7 +7,7 @@ def targets(request):
     terrain = 0. if intent.intensity is None else intent.intensity-.5
     low = request.context.root+12*request.setting('octave')
     pressure = 0.
-    for peer in (*request.peers('melody'), *request.peers('sustained_texture')):
+    for peer in (*request.peers('melody'), *request.peers('harmony')):
         if peer.register is None or peer.occupied_ratio is None:
             continue
         a, b = peer.register

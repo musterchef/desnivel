@@ -44,7 +44,7 @@ accetta gli identificativi della tabella, non gli indici del menu.
 Esempio per un'assegnazione:
 
 ```json
-{"role": "percussion", "parameters": {"style": "house_classic"}}
+{"role": "rhythm", "parameters": {"style": "house_classic"}}
 ```
 
 Selezionare lo stile lascia invariati gli altri controlli e la posizione

@@ -21,11 +21,11 @@ def test_sources_are_visible_to_generators_and_adaptation_by_role_without_pollut
         stage=stage,accept=lambda p:None,adapt=adapt)})
     phrase=Phrase(4,(Note(0,60,2.,90),Note(2,67,2.,80)))
     external={'external_a':MusicalSource('melody',phrase,carry_in=1),
-              'external_b':MusicalSource('sustained_texture',None,unavailable_reason='stale')}
+              'external_b':MusicalSource('harmony',None,unavailable_reason='stale')}
     coordinator.plan(0,4,MusicalContext(0,'level',60,'minor'),
         assignments={'line':Assignment('bass_line',{'density':1.})},adaptive_context=AdaptiveContext(),external_sources=external)
     assert requests[0].peers('melody')[0].attacks==1
-    assert requests[0].peers('sustained_texture')==()
+    assert requests[0].peers('harmony')==()
     assert staged[0].external_sources['external_a'].phrase==phrase
     assert 'external_a' not in coordinator.last_plan['observation']['voices']
     assert coordinator.last_plan['external_sources']['external_a']['carry_in']==1

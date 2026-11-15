@@ -64,7 +64,7 @@ class PercussionPhraseGenerator:
         if settings is not None and not isinstance(settings, dict):
             raise ValueError('settings deve essere una mappa di parametri')
         self.settings = {**DEFAULTS, **deepcopy(settings or {})}
-        self.validate('percussion', {})
+        self.validate('rhythm', {})
         self.reset()
 
     def reset(self):
@@ -196,7 +196,7 @@ class PercussionPhraseGenerator:
 
     def prepare_reference(self, request):
         """Prepara gli appoggi senza leggere le altre voci o avanzare il periodo."""
-        values = self.validate('percussion', request.parameters)
+        values = self.validate('rhythm', request.parameters)
         start = request.logical_start
         if start is None:
             raise ValueError('il riferimento richiede una posizione musicale logica')

@@ -156,26 +156,26 @@ def test_manual_role_survives_sections_and_follow_section_restores_configured_ro
             {'name': 'rest', 'from_progress': .6, 'root': 62, 'scale': 'minor', 'assignments': {}},
             {'name': 'return', 'from_progress': .8, 'root': 60, 'scale': 'major',
              'assignments': {'part_a': {'role': 'melody'}}},
-        ]}, {'line': Generator(generate, ('melody', 'sustained_texture'))}, {'out': lambda *args: None})
+        ]}, {'line': Generator(generate, ('melody', 'harmony'))}, {'out': lambda *args: None})
     bridge = VoiceDeviceBridge({'part_a': DeviceVoice.for_session(session, 'part_a', lambda: progress[0])},
                                lambda *args: sent.append(args))
     state = bridge.handle(message())
-    assert state['supported_roles'] == ['melody', 'sustained_texture']
+    assert state['supported_roles'] == ['melody', 'harmony']
     assert state['role_mode'] == 'section' and state['role'] == 'melody'
-    state = bridge.handle(message(2, 'role', role='sustained_texture'))
+    state = bridge.handle(message(2, 'role', role='harmony'))
     assert state['role_mode'] == 'manual'
     session.plan(0, 0, 4)
-    assert calls[-1].role == 'sustained_texture'
+    assert calls[-1].role == 'harmony'
     progress[0] = .6
     state = bridge.handle(message(3))
-    assert state['role'] == 'sustained_texture' and not state['active']
+    assert state['role'] == 'harmony' and not state['active']
     assert session.plan(.6, 4, 4) == {}  # Il ruolo non attiva una voce esclusa dall'organico.
     progress[0] = .8
     session.plan(.8, 8, 4)
-    assert calls[-1].role == 'sustained_texture'
+    assert calls[-1].role == 'harmony'
     with pytest.raises(ValueError, match='ruolo non supportato'):
         bridge.handle(message(4, 'role', role='unknown'))
-    assert session.role_state('part_a', .8)['role'] == 'sustained_texture'
+    assert session.role_state('part_a', .8)['role'] == 'harmony'
     state = bridge.handle(message(5, 'role', role=None))
     assert state['role_mode'] == 'section' and state['role'] == 'melody'
     session.plan(.8, 12, 4)

@@ -12,7 +12,7 @@ from desnivel.music.interactions import VoicePlan, GestureSpan
 from desnivel.music.rhythm import shape_rhythm, rhythm_influences
 from .adaptation import targets
 
-ROLES = ('melody', 'sustained_texture', 'bass_line')
+ROLES = ('melody', 'harmony', 'bass_line')
 DEFAULTS = dict(octave=0, step_beats=1.0, articulation=.8, velocity=85,
                 development=0., activity=.75, phrase_windows=4, seed=0, groove_follow=0.)
 
@@ -61,7 +61,7 @@ class MotifGenerator:
         if request.context is None:
             raise ValueError('il motivo richiede tonica e scala')
         values = {**self.settings, **request.parameters}
-        if request.role == 'sustained_texture':
+        if request.role == 'harmony':
             texture = self._texture.stage(replace(request, parameters={
                 'octave': values['octave'], 'velocity': values['velocity']}))
             return VoicePlan(texture.phrase, (texture, None, None, request.start), texture.decision, texture.gestures)
@@ -123,7 +123,7 @@ class MotifGenerator:
         """Segnala i controlli senza effetto nel ruolo e nella modalità correnti."""
         values = {**self.settings, **parameters}
         inactive = {}
-        if role == 'sustained_texture':
+        if role == 'harmony':
             inactive = {name: 'Nota sostenuta: usa registro e velocity'
                         for name in DEFAULTS if name not in ('octave', 'velocity')}
         elif role != 'melody' or values['development'] == 0:

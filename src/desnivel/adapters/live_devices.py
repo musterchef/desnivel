@@ -62,7 +62,8 @@ class LiveDevices:
                     errors.append('identità duplicata: reinserire il controllo copiato')
                 if other['reply_port'] == device['reply_port']:
                     errors.append('porta Receive duplicata')
-                if other['track']['id'] == device['track']['id']:
+                if (other['track']['id'] == device['track']['id']
+                        and other['track']['index'] == device['track']['index']):
                     errors.append('più controlli Desnivel sulla stessa traccia')
             device['error'] = '; '.join(dict.fromkeys(errors)) or None
         return sorted(devices, key=lambda d: (d['track']['index'], d['instance']))

@@ -21,9 +21,9 @@ bank_parameters = partial(bank_parameters, paths=CONFIG['paths'])
 
 def test_roles_change_register_gate_activity_and_duration_without_device_dependencies():
     material = {role: compose(CONTEXT, role, DEFAULTS[role]) for role in ROLES}
-    assert sum(material['melody'].gates) > sum(material['bass_line'].gates) > sum(material['sustained_texture'].gates)
-    assert min(material['bass_line'].notes) < min(material['melody'].notes) < min(material['sustained_texture'].notes)
-    assert material['sustained_texture'].lengths_ms[0] > material['melody'].lengths_ms[0]
+    assert sum(material['melody'].gates) > sum(material['bass_line'].gates) > sum(material['harmony'].gates)
+    assert min(material['bass_line'].notes) < min(material['melody'].notes) < min(material['harmony'].notes)
+    assert material['harmony'].lengths_ms[0] > material['melody'].lengths_ms[0]
     assert material['melody'] == compose(CONTEXT, 'melody', DEFAULTS['melody'])
 
 

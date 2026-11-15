@@ -9,7 +9,7 @@ from desnivel.music.interactions import VoicePlan, GestureSpan
 
 
 DEFAULTS = {'pattern': 0, 'velocity_ratio': 1., 'gate_beats': .1}
-ROLES = ('percussion',)
+ROLES = ('rhythm',)
 
 
 class PercussionGenerator:
@@ -54,7 +54,7 @@ class PercussionGenerator:
                 hits.append((beat, lanes[lane], velocity))
             self.patterns.append((name, length, tuple(sorted(hits))))
         self.settings = {**DEFAULTS, **deepcopy(settings or {})}
-        self.validate('percussion', {})
+        self.validate('rhythm', {})
         self.last_decision = None
 
     def validate(self, role, parameters):

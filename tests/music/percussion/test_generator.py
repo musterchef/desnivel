@@ -28,7 +28,7 @@ def generator(spec=None):
 
 
 def request(start=0, length=4, **parameters):
-    return PlanningRequest(start, length, None, {}, 'percussion', parameters)
+    return PlanningRequest(start, length, None, {}, 'rhythm', parameters)
 
 
 def test_patterns_follow_json_hits_midi_map_and_velocity():
@@ -64,7 +64,7 @@ def test_gate_is_clipped_before_next_same_pitch_and_phrase_end():
 
 def test_percussion_uses_registered_controls_and_common_device_destination():
     registered = build_generator(definition())
-    assert registered.generator.supported_roles == ('percussion',)
+    assert registered.generator.supported_roles == ('rhythm',)
     assert set(registered.controls) == {'pattern', 'velocity_ratio', 'gate_beats'}
     assert registered.presets['quarters']['pattern'] == 2
     sent = []

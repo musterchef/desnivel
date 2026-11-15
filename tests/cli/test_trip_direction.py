@@ -9,6 +9,7 @@ import pytest
 from desnivel.adapters.voice_device import VoiceDeviceBridge
 from desnivel.cli.ensemble_runtime import EnsembleRuntime
 from desnivel.cli.trip_direction import load_trip_sections
+from desnivel.music.phrases import Note
 from desnivel.trip.track import Track
 
 
@@ -97,7 +98,8 @@ def test_texture_switch_uses_coordinator_source_presence_and_existing_destinatio
     runtime, bridge, sent = make_runtime(direction)
     identity = dict(version=1, voice='voice_03', instance='texture', reply_port=9103)
     state = bridge.handle(dict(identity, serial=1, action='hello'))
-    assert set(state['controls']) == {'octave', 'velocity', 'follow_source'}
+    assert set(state['controls']) == {'octave', 'velocity', 'realization', 'step_beats', 'articulation',
+                                      'follow_source', 'support_source'}
     assert state['controls']['follow_source']['toggle']
     assert state['controls']['follow_source']['value'] == 0
     assert runtime.session.plan(0, 0, 4)['voice_03'].notes[0].pitch == 69
@@ -108,11 +110,30 @@ def test_texture_switch_uses_coordinator_source_presence_and_existing_destinatio
     assert 69 <= texture.notes[0].pitch <= 80
     assert runtime.session.coordinator.last_plan['voices']['voice_03']['composition']['source'] == 'voice_01'
     bridge.destination('voice_03')(4, texture)
-    assert sent[-1][0] == 9103 and sent[-1][2]['plan']['phrase']['notes'][0]['duration'] == 4
+    sent_notes = sent[-1][2]['plan']['phrase']['notes']
+    assert sent[-1][0] == 9103
+    assert [(note['beat'], note['duration']) for note in sent_notes] == [
+        (0, 1), (0, 1), (0, 1),
+        (1, .5), (1, .5), (1, .5),
+        (1.5, 1), (1.5, 1), (1.5, 1),
+        (2.5, 1.5), (2.5, 1.5), (2.5, 1.5),
+    ]
     runtime.session.set_presence_multiplier('voice_01', 0)
     assert not runtime.session.plan(0, 8, 4)['voice_03'].notes
     bridge.handle(dict(identity, serial=3, action='parameter', parameter='follow_source', value=0))
     assert runtime.session.plan(0, 12, 4)['voice_03'].notes[0].pitch == 69
+
+
+def test_harmony_realization_can_be_changed_through_device_controls(direction):
+    runtime, bridge, _ = make_runtime(direction)
+    identity = dict(version=1, voice='voice_03', instance='texture', reply_port=9103)
+    bridge.handle(dict(identity, serial=1, action='hello'))
+    bridge.handle(dict(identity, serial=2, action='parameter',
+                       parameter='realization', value='repeated_note'))
+    bridge.handle(dict(identity, serial=3, action='parameter', parameter='step_beats', value=.5))
+    bridge.handle(dict(identity, serial=4, action='parameter', parameter='articulation', value=.6))
+    phrase = runtime.session.plan(0, 0, 4)['voice_03']
+    assert phrase.notes == tuple(Note(beat, 69, .3, 55) for beat in (0, .5, 1, 1.5, 2, 2.5, 3, 3.5))
 
 
 def test_internal_band_change_keeps_same_context_and_phrase_development(direction):
@@ -154,11 +175,10 @@ def test_internal_band_change_keeps_same_context_and_phrase_development(directio
     assert runtime.last_decisions['voices']['voice_01']['parameters']['step_beats'] == .5
     assert runtime.last_decisions['voices']['voice_02']['parameters']['density'] == 1.2
     assert set(bridge.last_plans) == {'voice_01', 'voice_02', 'voice_03', 'voice_04'}
-    assert runtime.last_decisions['voices']['voice_03']['role'] == 'sustained_texture'
-    assert len(runtime.last_decisions['voices']['voice_03']['notes']) == 1
-    assert runtime.last_decisions['voices']['voice_03']['notes'][0]['pitch'] == 69
+    assert runtime.last_decisions['voices']['voice_03']['role'] == 'harmony'
+    assert [note['pitch'] for note in runtime.last_decisions['voices']['voice_03']['notes']] == [69, 72, 76]
     percussion = runtime.last_decisions['voices']['voice_04']
-    assert percussion['role'] == 'percussion'
+    assert percussion['role'] == 'rhythm'
     assert percussion['composition']['method'] == 'percussion_phrase'
     assert percussion['composition']['logical_start'] == 8
     assert percussion['composition']['material'] == 'spaced_impacts'
@@ -172,7 +192,7 @@ def test_internal_band_change_keeps_same_context_and_phrase_development(directio
     assert {note['pitch'] for note in percussion['notes']} <= set(range(36, 52))
     assert {note['pitch'] for note in percussion['notes']} - {36, 38, 42}
     plans = {port: message for port, _, message in sent if message['kind'] == 'plan'}
-    assert {note['pitch'] for note in plans[9103]['plan']['phrase']['notes']} == {69}
+    assert {note['pitch'] for note in plans[9103]['plan']['phrase']['notes']} == {69, 72, 76}
     assert list(plans[9104]['plan']['phrase']['notes']) == percussion['notes']
     json.dumps(runtime.snapshot(), allow_nan=False)
 

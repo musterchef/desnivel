@@ -27,7 +27,7 @@ def generator(spec=None):
 def request(start=0, length=4, **parameters):
     notes = tuple(Note(i, 60, min(.1, length-i), 90) for i in range(0, math.ceil(length), 4))
     reference = Phrase(length, notes)
-    return PlanningRequest(start, length, None, {'voice_01': reference, 'voice_02': reference}, 'percussion', parameters)
+    return PlanningRequest(start, length, None, {'voice_01': reference, 'voice_02': reference}, 'rhythm', parameters)
 
 
 def signature(phrase, offset=0):
@@ -105,19 +105,19 @@ def test_notes_are_bounded_and_registered_with_existing_device_controls():
 
 def test_control_applicability_and_single_development_axis():
     compose = generator()
-    base = compose.describe_controls('percussion', {'variation': 0})
+    base = compose.describe_controls('rhythm', {'variation': 0})
     assert base['variation']['label'] == 'Variazione'
     assert 'inactive_reason' in base['seed']
     assert 'inactive_reason' in base['support_tolerance_beats']
     assert 'velocity_ratio' not in base and 'gate_beats' not in base
-    assert 'displacement_beats' not in compose.describe_controls('percussion', {'variation': 1})
+    assert 'displacement_beats' not in compose.describe_controls('rhythm', {'variation': 1})
     compose.development = ('statement', 'accent')
-    assert 'inactive_reason' in compose.describe_controls('percussion', {'variation': 1})['displacement_beats']
+    assert 'inactive_reason' in compose.describe_controls('rhythm', {'variation': 1})['displacement_beats']
     registered = build_generator(configuration())
     assert registered.presets == {}
     assert 'conceptuality' not in registered.controls
     with pytest.raises(ValueError, match='sconosciuti'):
-        compose.validate('percussion', {'conceptuality': 1})
+        compose.validate('rhythm', {'conceptuality': 1})
 
 
 @pytest.mark.parametrize('problem', ['unknown_operation', 'missing_statement', 'unknown_anchor', 'bad_settings'])
@@ -163,7 +163,7 @@ def test_phase_stays_on_common_window_boundary_when_live_planning_skips_a_window
 def ensemble_request(support_beats, melody_beats):
     support = Phrase(4, tuple(Note(b, 45, .1, 100) for b in support_beats))
     foreground = Phrase(4, tuple(Note(b, 69, .1, 80) for b in melody_beats))
-    return PlanningRequest(0, 4, None, {'voice_01': foreground, 'voice_02': support}, 'percussion', {'variation': 1})
+    return PlanningRequest(0, 4, None, {'voice_01': foreground, 'voice_02': support}, 'rhythm', {'variation': 1})
 
 
 def test_support_follows_actual_reference_attacks_instead_of_fixed_material():
@@ -191,11 +191,11 @@ def test_joint_rest_is_silent_and_missing_optional_support_does_not_invent_hits(
     compose = generator()
     assert not compose(ensemble_request([], [])).notes
     source = Phrase(4, (Note(0, 60, .1, 90),))
-    phrase = compose(PlanningRequest(0, 4, None, {'voice_01': source}, 'percussion', {'variation': 1}))
+    phrase = compose(PlanningRequest(0, 4, None, {'voice_01': source}, 'rhythm', {'variation': 1}))
     assert phrase.notes and all(n.pitch != 36 for n in phrase.notes)
     assert not compose.last_decision['interaction']['support_available']
     with pytest.raises(ValueError, match='riferimento richiesta'):
-        compose(PlanningRequest(0, 4, None, {}, 'percussion', {'variation': 1}))
+        compose(PlanningRequest(0, 4, None, {}, 'rhythm', {'variation': 1}))
 
 
 def test_full_palette_remains_available_and_both_support_lanes_follow_reference():
@@ -204,7 +204,7 @@ def test_full_palette_remains_available_and_both_support_lanes_follow_reference(
     reference = Phrase(length, tuple(Note(b+.5, 45, .1, 90) for b in range(0, length, 4)))
     foreground = Phrase(length, (Note(0, 69, .1, 90),))
     phrase = generator()(PlanningRequest(0, length, None,
-        {'voice_01': foreground, 'voice_02': reference}, 'percussion', {'variation': 1}))
+        {'voice_01': foreground, 'voice_02': reference}, 'rhythm', {'variation': 1}))
     assert {n.pitch for n in phrase.notes} == set(spec['lanes'].values())
     support = {spec['lanes'][name] for name in spec['interaction']['support_lanes']}
     for pitch in support:
@@ -215,13 +215,13 @@ def test_full_palette_remains_available_and_both_support_lanes_follow_reference(
 def test_standard_mode_repeats_the_configured_groove_even_when_other_voices_rest():
     compose = generator()
     silent = Phrase(4, ())
-    req = PlanningRequest(0, 4, None, {'voice_01': silent}, 'percussion', {'variation': 0})
+    req = PlanningRequest(0, 4, None, {'voice_01': silent}, 'rhythm', {'variation': 0})
     first = compose(req)
     assert len(first.notes) == len(definition()['standard_material']['hits'])
     assert [n.beat for n in first.notes if n.pitch == 36] == [0, 2]
     assert [n.beat for n in first.notes if n.pitch == 38] == [1, 3]
-    assert compose(PlanningRequest(4, 4, None, {}, 'percussion', {'variation': 0})) == first
-    assert not generator()(PlanningRequest(0, 4, None, {'voice_01': silent}, 'percussion', {'variation': 1})).notes
+    assert compose(PlanningRequest(4, 4, None, {}, 'rhythm', {'variation': 0})) == first
+    assert not generator()(PlanningRequest(0, 4, None, {'voice_01': silent}, 'rhythm', {'variation': 1})).notes
 
 
 def test_intermediate_variation_changes_attacks_and_remains_reproducible_across_window_sizes():

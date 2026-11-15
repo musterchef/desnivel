@@ -10,12 +10,12 @@ def request(role='melody', start=0, **parameters):
     return PlanningRequest(start, 4, MusicalContext(0, 'test', 60, 'major'), {}, role, parameters)
 
 
-def test_melody_continues_motif_and_texture_sustains_one_note():
+def test_melody_continues_motif_and_harmony_realizes_a_section_chord():
     generator = MotifGenerator([0, 2, 4, 1, 3, 2])
     assert [n.pitch for n in generator(request()).notes] == [60, 64, 67, 62]
     assert [n.pitch for n in generator(request(start=4)).notes] == [65, 64, 60, 64]
-    held = generator(request('sustained_texture'))
-    assert len(held.notes) == 1 and held.notes[0].duration == 4
+    held = generator(request('harmony'))
+    assert [(note.pitch, note.duration) for note in held.notes] == [(60, 4), (64, 4), (67, 4)]
     low = generator(request('bass_line', octave=-2))
     assert [n.pitch for n in low.notes] == [36, 40, 43, 38]
 
@@ -24,7 +24,7 @@ def test_motif_sustained_role_matches_texture_generator_for_equivalent_inputs():
     motif = MotifGenerator([2, 4, 1])
     texture = TextureGenerator(2)
     for start in (0, 4, 8):
-        req = request('sustained_texture', start=start, octave=1, velocity=70)
+        req = request('harmony', start=start, octave=1, velocity=70)
         assert motif(req) == texture(req)
 
 

@@ -73,9 +73,10 @@ Il valore numerico rimane quello impostato.
 | Sostegno ricavato dalla melodia | **Segui sorgente** `1`, `octave = 1`, `velocity = 50` |
 | Stesso comportamento in un registro più basso | Mantieni lo switch scelto; imposta `octave = 0` |
 
-Con **Segui sorgente** attivo, una melodia assente o silenziosa fa tacere
-anche la tessitura. La voce è monofonica: produce una nota sostenuta per
-finestra, con un nuovo attacco nella finestra successiva. Il timbro e il
+La realizzazione iniziale è un accordo di sezione. Nel controllo
+`realization` puoi scegliere anche la nota ripetuta e regolarne gli attacchi
+con `step_beats` e `articulation`. Con **Segui sorgente** attivo, una
+melodia assente o silenziosa fa tacere anche l'armonia. Il timbro e il
 rilascio dello strumento determinano la continuità sonora percepita.
 
 ## Percussioni — Drums, `voice_04`

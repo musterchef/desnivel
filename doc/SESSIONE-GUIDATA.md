@@ -4,15 +4,27 @@ Il launcher `comandi/09 - Sessione multitappa.command` mostra le sessioni
 salvate in `output/sessioni/`. Scegliere un numero per caricarne una oppure
 `0` per crearne una nuova, assegnandole un nome. **A: apri file…** apre
 il dialogo macOS per scegliere una configurazione `.json` in qualsiasi
-cartella. Annullando il dialogo si torna al menu. Le nuove sessioni partono
+cartella. **P** crea una sessione nominata copiando `presets/prova-formazione.json`;
+la configurazione manuale avvia sezioni e timeline in modalità lineare.
+Annullando il dialogo si torna al menu. Le nuove sessioni partono
 senza voci dalla base `presets/sessione.json`; **V** le salva in
 `output/sessioni/<nome>.json`. I nomi già presenti vengono rifiutati durante
 la creazione. Il file `output/sessione.json`, se presente, compare anch'esso
 nel menu e conserva il proprio percorso.
 
+Il comando `comandi/10 - Prova formazione armonica.command` apre lo stesso
+menu del comando 09; scegliere **P** per creare una sessione di prova.
+
 Il nome della sessione attiva è visibile nel pannello. Ogni configurazione
 ha la propria libreria `<nome>.voice-presets.json`, salvo l'uso esplicito
 di `--voice-presets`. Questi file di preset non compaiono nel menu delle sessioni.
+
+Con una configurazione che contiene voci non ancora collegate, **A associa
+traccia** chiede prima quale voce configurata associare; solo dopo aver
+collegato quelle esistenti propone di aggiungerne una nuova. **B ricollega
+voce** consente di spostare un'associazione esistente. Per rifare la scelta
+di nome, ruolo e comportamento di una voce mantenendo la traccia Live
+associata, usare `:riconfigura` e selezionare la voce.
 
 Per una nuova sessione si sceglie la tappa. Il viaggio mantiene direzione GPX,
 timeline allocata e mappa sulla porta 8765. La scelta `99` apre il selettore
@@ -92,8 +104,9 @@ La creazione della traccia e l'inserimento dei device avvengono in Live.
 I controlli annunciano la propria presenza anche prima dell'associazione.
 L'inventario considera i controlli al livello principale delle normali
 tracce di Live. Le tracce senza controllo Desnivel, comprese le copie REC,
-non entrano nel conteggio. Più controlli sulla stessa traccia, identità
-copiate e porte Receive duplicate sono segnalati come conflitti.
+non entrano nel conteggio. Più controlli con lo stesso ID Live e indice
+di traccia, identità copiate e porte Receive duplicate sono segnalati come
+conflitti.
 
 ## Comandi
 
@@ -123,6 +136,7 @@ Premere `:` per aprire un comando testuale, quindi Invio:
 | `tracce` | Mostra tracce rilevate, associazioni, assenze e conflitti |
 | `aggiungi traccia` | Guida nella scelta della destinazione e nella creazione della voce |
 | `associa <id voce>` | Sostituisce la destinazione di una voce esistente con un controllo compatibile |
+| `riconfigura [id voce]` | Rifà nome, ruolo e comportamento di una voce esistente senza cambiare la traccia Live |
 | `rimuovi <id voce>` | Rimuove voce e associazione dalla configurazione |
 | `trasporto <id voce>` | Sceglie il controllo che fornisce il trasporto di Live |
 | `ritmo <id voce>` | Sceglie un generatore capace di fornire il riferimento ritmico |
@@ -136,19 +150,25 @@ musicali pertinenti nell'ordine **voce → comportamento → eventuali sorgenti*
 
 | Voce | Comportamenti |
 |---|---|
-| melodia | sviluppo di un motivo |
+| melodia | motivo letterale oppure sviluppato |
 | basso | autonomo oppure in relazione a una voce |
-| nota sostenuta | segue l'armonia della sezione oppure una voce |
-| drums | pattern autonomo oppure in relazione ad altre voci |
+| armonia | accordi della sezione, nota ripetuta, accordi sui cambi di una voce oppure sostegno a una voce |
+
+Con **accordi sui cambi di una voce**, ogni nuovo attacco della sorgente
+sceglie una triade diatonica; la triade resta fino al successivo cambio
+armonico della sorgente. **Accordi della sezione** mantiene invece la triade
+determinata da tonica, scala e grado della sezione.
+| ritmo | pattern autonomo oppure in relazione ad altre voci |
 
 Il comportamento viene chiesto soltanto quando esistono più alternative.
 Le modalità in relazione ad altre voci vengono proposte quando è presente
 almeno una voce Python utilizzabile come sorgente. Le sorgenti si scelgono
 nel passaggio successivo. Il comportamento seleziona il generatore esistente;
-ogni istanza conserva stato e parametri indipendenti. La nota sostenuta usa
-il generatore di tessitura, che produce una nota lunga per finestra musicale.
+ogni istanza conserva stato e parametri indipendenti. L’armonia di sezione
+parte dagli accordi diatonici della scala; in alternativa può ripetere una
+nota della sezione a intervalli configurabili.
 
-Un controllo Snake propone melodia, basso o nota sostenuta, con comportamento
+Un controllo Snake propone melodia, basso o armonia, con comportamento
 autonomo oppure in relazione a una voce Python.
 Snake può essere l'unica traccia della sessione e fornire il trasporto.
 `N` apre la stessa procedura di aggiunta nelle sessioni guidate.

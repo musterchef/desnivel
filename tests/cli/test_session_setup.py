@@ -66,6 +66,8 @@ def add_motif(setup, device_number=1, name='melody'):
     setup.submit(str(device_number))
     setup.submit(name)
     setup.submit('1')
+    if setup.step == 'behavior':
+        setup.submit('2')
 
 
 def test_empty_session_add_multiple_same_type_associate_remove_and_reload(tmp_path):
@@ -168,7 +170,7 @@ def test_snake_role_cannot_change_after_session_play(tmp_path):
     runtime.bridge.handle(play)
     runtime.on_message(runtime.bridge, play)
     with pytest.raises(ValueError, match='prima del play'):
-        runtime.bridge.handle(dict(identity, serial=4, action='role', role='sustained_texture'))
+        runtime.bridge.handle(dict(identity, serial=4, action='role', role='harmony'))
     assert runtime.bridge.voices[name].role_state()['role'] == 'bass_line'
 
 
@@ -250,12 +252,32 @@ def test_percussion_and_texture_sources_are_saved_as_explicit_dependencies(tmp_p
     definition = setup.config['generators'][drums]
     assert definition['interaction'] == dict(support_source=first, answer_source=first)
     setup.submit('aggiungi traccia'); setup.snapshot()
-    for answer in ('1', 'texture', '3', '2', '1'):
+    for answer in ('1', 'texture', '3', '3', '1'):
         setup.submit(answer)
     texture = list(setup.config['voices'])[-1]
     assert setup.config['voices'][texture]['optional_dependencies'] == [first]
     assert setup.config['generators'][texture]['settings']['follow_source'] == 1
     assert len(runtime[0].session.plan(0, 0, 4)) == 3
+
+
+def test_guided_harmony_following_a_voice_explicitly_selects_chords(tmp_path):
+    setup, _, devices, _, _ = make_setup(tmp_path)
+    announce(devices, 1)
+    announce(devices, 2)
+    add_motif(setup)
+    source = next(iter(setup.config['voices']))
+    setup.submit('aggiungi traccia')
+    setup.submit('1')
+    setup.submit('armonia')
+    setup.submit('3')
+    setup.submit('3')
+    setup.submit('1')
+
+    harmony = next(name for name, spec in setup.config['voices'].items() if name != source)
+    settings = setup.config['generators'][setup.config['voices'][harmony]['generator']]['settings']
+    assert settings['realization'] == 'chord'
+    assert settings['follow_source'] == 1
+    assert setup.config['voices'][harmony]['optional_dependencies'] == [source]
 
 
 def test_autonomous_percussion_can_be_the_first_voice(tmp_path):
@@ -269,11 +291,11 @@ def test_autonomous_percussion_can_be_the_first_voice(tmp_path):
     assert next(iter(runtime[0].session.plan(0, 0, 4).values())).notes
 
 
-@pytest.mark.parametrize('choice,role,kind', [
-    ('1', 'melody', 'motif'), ('2', 'bass_line', 'motif'),
-    ('3', 'sustained_texture', 'sustained_texture'), ('4', 'percussion', 'percussion_pattern'),
+@pytest.mark.parametrize('choice,behavior,role,kind', [
+    ('1', '1', 'melody', 'motif'), ('2', '1', 'bass_line', 'motif'),
+    ('3', '1', 'harmony', 'sustained_texture'), ('4', '1', 'rhythm', 'percussion_pattern'),
 ])
-def test_voice_choice_selects_a_supported_guided_generator(tmp_path, choice, role, kind):
+def test_role_then_facet_selects_a_supported_guided_generator(tmp_path, choice, behavior, role, kind):
     setup, _, devices, _, _ = make_setup(tmp_path)
     announce(devices, 1)
     setup.submit('aggiungi traccia')
@@ -281,8 +303,10 @@ def test_voice_choice_selects_a_supported_guided_generator(tmp_path, choice, rol
     setup.submit('prima voce')
     assert setup.step == 'voice'
     assert [item['label'] for item in setup.snapshot()['choices']] == [
-        'melodia', 'basso', 'nota sostenuta', 'drums']
+        'melodia', 'basso', 'armonia', 'ritmo']
     setup.submit(choice)
+    if setup.step == 'behavior':
+        setup.submit(behavior)
     assert not setup.waiting
     voice = next(iter(setup.config['voices']))
     assert setup.config['arrangement'][voice]['role'] == role
@@ -290,8 +314,10 @@ def test_voice_choice_selects_a_supported_guided_generator(tmp_path, choice, rol
 
 
 @pytest.mark.parametrize('choice,labels', [
+    ('1', ['motivo letterale', 'motivo sviluppato']),
     ('2', ['autonomo', 'in relazione a una voce']),
-    ('3', ['segue l’armonia della sezione', 'segue una voce']),
+    ('3', ['accordi della sezione', 'nota ripetuta della sezione',
+           'accordi sui cambi di una voce', 'sostiene una voce']),
     ('4', ['pattern autonomo', 'in relazione ad altre voci']),
 ])
 def test_behavior_choices_belong_to_the_selected_voice(tmp_path, choice, labels):
@@ -305,6 +331,58 @@ def test_behavior_choices_belong_to_the_selected_voice(tmp_path, choice, labels)
     setup.submit(choice)
     assert setup.step == 'behavior'
     assert [item['label'] for item in setup.snapshot()['choices']] == labels
+
+
+@pytest.mark.parametrize('behavior,development', [('1', 0.), ('2', 0.7)])
+def test_melody_facets_change_development_not_role(tmp_path, behavior, development):
+    setup, _, devices, _, _ = make_setup(tmp_path)
+    announce(devices, 1)
+    setup.submit('aggiungi traccia')
+    setup.submit('1')
+    setup.submit('melody')
+    setup.submit('1')
+    setup.submit(behavior)
+    voice = next(iter(setup.config['voices']))
+    definition = setup.config['generators'][voice]
+    assert setup.config['arrangement'][voice]['role'] == 'melody'
+    assert definition['type'] == 'motif'
+    assert definition['settings']['development'] == development
+
+
+@pytest.mark.parametrize('behavior,realization', [('1', 'chord'), ('2', 'repeated_note')])
+def test_harmony_facets_select_realization_without_changing_role(tmp_path, behavior, realization):
+    setup, _, devices, _, _ = make_setup(tmp_path)
+    announce(devices, 1)
+    announce(devices, 2)
+    add_motif(setup)
+    setup.submit('aggiungi traccia')
+    setup.submit('1')
+    setup.submit('seconda voce')
+    setup.submit('3')
+    setup.submit(behavior)
+    harmony = list(setup.config['voices'])[-1]
+    assert setup.config['arrangement'][harmony]['role'] == 'harmony'
+    assert setup.config['generators'][harmony]['settings']['realization'] == realization
+
+
+def test_harmony_support_uses_selected_voice_as_dependency(tmp_path):
+    setup, _, devices, _, _ = make_setup(tmp_path)
+    announce(devices, 1)
+    announce(devices, 2)
+    add_motif(setup)
+    source = next(iter(setup.config['voices']))
+    setup.submit('aggiungi traccia')
+    setup.submit('1')
+    setup.submit('seconda voce')
+    setup.submit('3')
+    setup.submit('4')
+    assert setup.step == 'support_source'
+    setup.submit('1')
+    harmony = next(name for name, spec in setup.config['voices'].items()
+                   if spec['generator'] != setup.config['voices'][source]['generator'])
+    assert setup.config['arrangement'][harmony]['role'] == 'harmony'
+    assert setup.config['generators'][harmony]['settings']['support_source'] == 1
+    assert setup.config['voices'][harmony]['dependencies'] == [source]
 
 
 def test_guided_roles_and_behavior_choices_follow_generator_declarations():
@@ -322,7 +400,7 @@ def test_guided_roles_and_behavior_choices_follow_generator_declarations():
 
 
 def test_percussion_choices_are_distinct_generators_for_the_same_role():
-    options = [choice for choice in GUIDED_CHOICES if choice.role == 'percussion']
+    options = [choice for choice in GUIDED_CHOICES if choice.role == 'rhythm']
     assert [(choice.generator, choice.label) for choice in options] == [
         ('percussion_pattern', 'pattern autonomo'),
         ('percussion_phrase', 'in relazione ad altre voci'),
@@ -339,7 +417,7 @@ def test_snake_uses_voice_then_behavior_then_source(tmp_path):
     setup.submit('1')
     setup.submit('snake basso')
     assert [item['label'] for item in setup.snapshot()['choices']] == [
-        'melodia', 'basso', 'nota sostenuta']
+        'melodia', 'basso', 'armonia']
     setup.submit('2')
     assert setup.step == 'behavior'
     setup.submit('2')
@@ -397,11 +475,11 @@ def test_ensemble_terminal_guides_a_new_voice_and_saves_it(tmp_path, monkeypatch
             self.count = 0
         def handle_request(self):
             self.count += 1
-            if self.count == 7:
+            if self.count == 8:
                 raise KeyboardInterrupt
         def close(self):
             pass
-    commands = iter(['aggiungi traccia', '1', 'synth', '1', 'salva', 'tracce'])
+    commands = iter(['aggiungi traccia', '1', 'synth', '1', '2', 'salva', 'tracce'])
     class Keys:
         command = None
         def __enter__(self): return self
@@ -456,6 +534,65 @@ def test_reassociation_can_select_an_existing_voice_by_its_display_name(tmp_path
     assert len(runtime[0].registry) == 1
 
 
+def test_reconfigure_restarts_the_guided_process_without_changing_live_binding(tmp_path):
+    setup, runtime, devices, _, _ = make_setup(tmp_path)
+    announce(devices, 1)
+    add_motif(setup, name='synth')
+    voice = next(iter(setup.config['voices']))
+    binding = setup.config['live_bindings'][voice]
+    generator = setup.config['voices'][voice]['generator']
+
+    setup.submit('riconfigura')
+    assert setup.step == 'existing_voice'
+    assert setup.snapshot()['choices'] == [dict(value='1', label='synth')]
+    setup.submit('1')
+    assert setup.step == 'name'
+    setup.submit('')
+    setup.submit('3')
+    assert setup.step == 'behavior'
+    setup.submit('1')
+
+    assert setup.config['live_bindings'][voice] == binding
+    assert setup.config['voices'][voice]['name'] == 'synth'
+    assert setup.config['voices'][voice]['generator'] == generator
+    assert setup.config['generators'][generator]['type'] == 'sustained_texture'
+    assert setup.config['arrangement'][voice]['role'] == 'harmony'
+    assert setup.config['sections'][0]['assignments'][voice]['role'] == 'harmony'
+    assert len(setup.config['voices']) == 1
+    assert runtime[0].transport_voice == voice
+
+
+def test_reconfigure_accepts_a_voice_id_directly(tmp_path):
+    setup, _, devices, _, _ = make_setup(tmp_path)
+    announce(devices, 1)
+    add_motif(setup, name='synth')
+    voice = next(iter(setup.config['voices']))
+
+    setup.submit('riconfigura '+voice)
+
+    assert setup.step == 'name'
+    assert setup.pending['voice'] == voice
+    assert setup.pending['operation'] == 'edit'
+
+
+def test_add_track_associates_an_unbound_configured_voice_before_adding_a_voice(tmp_path):
+    config = json.loads(Path('presets/prova-formazione.json').read_text())
+    devices = LiveDevices(lambda *args: None)
+    announce(devices, 1)
+    setup = SessionSetup(config, tmp_path/'prova.json', devices, lambda candidate: None, lambda: None)
+
+    setup.submit('aggiungi traccia')
+    assert setup.step == 'existing_voice'
+    setup.submit('1')
+    assert setup.step == 'destination'
+    setup.submit('1')
+
+    assert setup.config['live_bindings']['voice_01'] == 'endpoint_1'
+    assert setup.config['transport_voice'] == 'voice_01'
+    assert len(setup.config['voices']) == 4
+    assert len(setup.config.get('live_bindings', {})) == 1
+
+
 def test_rematch_preserves_id_priority_and_falls_back_to_track_name(tmp_path):
     setup, runtime, devices, now, sent = make_setup(tmp_path)
     # Annuncia device 1 con traccia 'synth'
@@ -480,4 +617,3 @@ def test_rematch_preserves_id_priority_and_falls_back_to_track_name(tmp_path):
     # È stato riassociato automaticamente al nuovo ID della traccia con lo stesso nome
     assert setup.config['live_bindings'][voice] == 'endpoint_new'
     assert runtime[0].bridge.bindings[voice] == 'endpoint_new'
-

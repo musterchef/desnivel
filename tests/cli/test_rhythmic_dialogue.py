@@ -18,7 +18,7 @@ def configuration():
     config['generators']['atmosphere']['settings']['follow_source'] = 1
     config['sections'] = [dict(name='dialogue', from_progress=0, root=57, scale='dorian',
                                assignments={name: {'role': role} for name, role in zip(config['voices'],
-                                            ('melody', 'bass_line', 'sustained_texture', 'percussion'))})]
+                                            ('melody', 'bass_line', 'harmony', 'rhythm'))})]
     return config
 
 

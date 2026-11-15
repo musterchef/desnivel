@@ -7,7 +7,8 @@ const TRACK_STATUS = {
 const STEP_NAMES = {
   destination: 'Scegli la traccia', name: 'Nome della voce', voice: 'Voce musicale',
   behavior: 'Comportamento', existing_voice: 'Voce da ricollegare', source: 'Sorgente del basso',
-  texture_source: 'Sorgente della nota sostenuta', support: 'Sostegno ritmico', answer: 'Sorgente delle risposte',
+  texture_source: 'Sorgente dell’armonia', support_source: 'Sorgente da sostenere',
+  support: 'Sostegno ritmico', answer: 'Sorgente delle risposte',
   snake_source: 'Sorgente di Snake',
 };
 const RECORD_STATUS = {

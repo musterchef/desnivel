@@ -24,15 +24,22 @@ class GuidedChoice:
 
 
 GUIDED_CHOICES = (
-    GuidedChoice('melody', 'motif', 'sviluppo di un motivo'),
+    GuidedChoice('melody', 'motif', 'motivo letterale',
+                 settings=(('development', 0.),)),
+    GuidedChoice('melody', 'motif', 'motivo sviluppato',
+                 settings=(('development', 0.7),)),
     GuidedChoice('bass_line', 'motif', 'autonomo'),
     GuidedChoice('bass_line', 'responsive_line', 'in relazione a una voce', 'source'),
-    GuidedChoice('sustained_texture', 'sustained_texture', 'segue l’armonia della sezione',
-                 settings=(('follow_source', 0),)),
-    GuidedChoice('sustained_texture', 'sustained_texture', 'segue una voce', 'texture_source',
-                 (('follow_source', 1),)),
-    GuidedChoice('percussion', 'percussion_pattern', 'pattern autonomo'),
-    GuidedChoice('percussion', 'percussion_phrase', 'in relazione ad altre voci', 'support'),
+    GuidedChoice('harmony', 'sustained_texture', 'accordi della sezione',
+                 settings=(('realization', 'chord'), ('follow_source', 0))),
+    GuidedChoice('harmony', 'sustained_texture', 'nota ripetuta della sezione',
+                 settings=(('realization', 'repeated_note'), ('follow_source', 0))),
+    GuidedChoice('harmony', 'sustained_texture', 'accordi sui cambi di una voce', 'texture_source',
+                 (('realization', 'chord'), ('follow_source', 1))),
+    GuidedChoice('harmony', 'sustained_texture', 'sostiene una voce', 'support_source',
+                 (('follow_source', 0), ('support_source', 1))),
+    GuidedChoice('rhythm', 'percussion_pattern', 'pattern autonomo'),
+    GuidedChoice('rhythm', 'percussion_phrase', 'in relazione ad altre voci', 'support'),
 )
 
 
@@ -127,7 +134,26 @@ class SessionSetup:
             self.can_edit()
             if not self._voices():
                 raise ValueError('non ci sono ancora voci da ricollegare: associa la prima traccia')
+            self.pending = {'operation': 'rebind'}
             self._question('existing_voice', 'Quale voce vuoi ricollegare?', self._voices())
+        elif parts == ['riconfigura']:
+            self.can_edit()
+            if 'arrangement' not in self.config:
+                raise ValueError('la riconfigurazione guidata richiede una sessione dinamica')
+            voices = self.config['voices']
+            if not voices:
+                raise ValueError('non ci sono voci da riconfigurare')
+            self.pending = {'operation': 'edit'}
+            self._question('existing_voice', 'Quale voce vuoi riconfigurare? La traccia Live resta associata.',
+                           list(voices))
+        elif len(parts) == 2 and parts[0] == 'riconfigura':
+            self.can_edit()
+            if 'arrangement' not in self.config:
+                raise ValueError('la riconfigurazione guidata richiede una sessione dinamica')
+            if parts[1] not in self.config['voices']:
+                raise ValueError('voce musicale sconosciuta o non modificabile con questa procedura')
+            self.pending = {'operation': 'edit', 'voice': parts[1]}
+            self._question('name', f"Nome della voce; lascia vuoto per mantenere {self.config['voices'][parts[1]]['name']}.")
         elif parts == ['salva']:
             save_configuration(self.path, self.config)
             self.notice = f'Configurazione salvata: {self.path}'
@@ -140,6 +166,13 @@ class SessionSetup:
                 if parts[1] not in self._voices():
                     raise ValueError('voce sconosciuta')
                 self.pending['voice'] = parts[1]
+            else:
+                bindings = self.config.get('live_bindings', {})
+                unbound = [name for name in self._voices() if name not in bindings]
+                if unbound:
+                    self.pending['operation'] = 'rebind'
+                    self._question('existing_voice', 'Scegli una voce già configurata da associare.', unbound)
+                    return
             self._question('destination', 'Scegli una traccia disponibile oppure 0 per prepararla in Live.')
         elif len(parts) == 2 and parts[0] == 'rimuovi':
             self.can_edit()
@@ -183,13 +216,19 @@ class SessionSetup:
                 candidate['transport_voice' if parts[0] == 'trasporto' else 'rhythm_voice'] = name
             self._commit(candidate)
         else:
-            self.notice = ('Comandi: tracce · aggiungi traccia · associa <id voce> · rimuovi <id voce> · '
+            self.notice = ('Comandi: tracce · aggiungi traccia · associa <id voce> · riconfigura [id voce] · '
+                           'rimuovi <id voce> · '
                            'trasporto <id voce> · ritmo <id voce|nessuna> · salva · annulla')
 
     def _answer(self, text):
         if self.step == 'existing_voice':
-            self.pending = {'voice': self._choice(text)}
-            self._question('destination', 'Scegli la nuova traccia per questa voce.')
+            voice = self._choice(text)
+            operation = self.pending.get('operation')
+            self.pending['voice'] = voice
+            if operation == 'edit':
+                self._question('name', f"Nome della voce; lascia vuoto per mantenere {self.config['voices'][voice]['name']}.")
+            else:
+                self._question('destination', 'Scegli la nuova traccia per questa voce.')
         elif self.step == 'destination':
             if text == '0':
                 self._question('destination', 'Per una traccia già presente, scegli il suo numero nell’elenco. '
@@ -209,21 +248,25 @@ class SessionSetup:
             else:
                 self._question('name', f"Nome della voce; lascia vuoto per usare {device['track']['name']}.")
         elif self.step == 'name':
-            name = text or self.pending['device']['track']['name']
+            editing = self.pending.get('operation') == 'edit'
+            voice = self.pending.get('voice')
+            name = text or (self.config['voices'][voice]['name'] if editing
+                            else self.pending['device']['track']['name'])
             if not name or len(name) > 100 or not name.isprintable():
                 raise ValueError('nome della voce richiesto, massimo 100 caratteri')
             self.pending['name'] = name
-            roles = (SNAKE_ROLES if self.pending['device']['device_kind'] == 'snake'
+            roles = (SNAKE_ROLES if not editing and self.pending['device']['device_kind'] == 'snake'
                      else _guided_supported_roles())
             self._question('voice', 'Quale voce musicale vuoi aggiungere?', roles)
         elif self.step == 'voice':
             self.pending['role'] = self._choice(text)
-            if self.pending['device']['device_kind'] == 'snake':
+            editing = self.pending.get('operation') == 'edit'
+            if not editing and self.pending['device']['device_kind'] == 'snake':
                 options = [('autonomous', 'autonomo'), ('coordinated', 'in relazione a una voce')]
             else:
                 options = _guided_behavior_options(self.pending['role'])
             if not self.config['voices']:
-                if self.pending['device']['device_kind'] == 'snake':
+                if not editing and self.pending['device']['device_kind'] == 'snake':
                     options = [option for option in options if option[0] != 'coordinated']
                 else:
                     options = [option for option in options if not option[0].source_step]
@@ -239,6 +282,9 @@ class SessionSetup:
         elif self.step == 'texture_source':
             self.pending['optional_dependencies'] = [self._choice(text)]
             self._add()
+        elif self.step == 'support_source':
+            self.pending['dependencies'] = [self._choice(text)]
+            self._add()
         elif self.step == 'support':
             self.pending['definition']['interaction']['support_source'] = self._choice(text)
             self._question('answer', 'Scegli la sorgente delle risposte percussive.', list(self.config['voices']))
@@ -252,12 +298,14 @@ class SessionSetup:
             self._add()
 
     def _select_behavior(self, behavior):
-        voices = list(self.config['voices'])
+        editing = self.pending.get('operation') == 'edit'
+        edited_voice = self.pending.get('voice')
+        voices = [name for name in self.config['voices'] if name != edited_voice]
         guided = isinstance(behavior, GuidedChoice)
         source_step = behavior.source_step if guided else None
         if (behavior == 'coordinated' or source_step) and not voices:
             raise ValueError('questo comportamento richiede una voce sorgente già presente')
-        if self.pending['device']['device_kind'] == 'snake':
+        if not editing and self.pending['device']['device_kind'] == 'snake':
             self.pending['mode'] = behavior
             if behavior == 'coordinated':
                 self._question('snake_source', 'Scegli la voce sorgente.', voices)
@@ -277,7 +325,9 @@ class SessionSetup:
         if source_step == 'source':
             self._question('source', 'Scegli la voce sorgente.', voices)
         elif source_step == 'texture_source':
-            self._question('texture_source', 'Quale voce deve seguire la nota sostenuta?', voices)
+            self._question('texture_source', 'Quale voce deve seguire l’armonia?', voices)
+        elif source_step == 'support_source':
+            self._question('support_source', 'Quale voce deve sostenere?', voices)
         elif source_step == 'support':
             self._question('support', 'Scegli la sorgente di supporto ritmico.', voices)
         else:
@@ -289,6 +339,33 @@ class SessionSetup:
                                       for name in config.get('snake', {}).get('components', {})}}
 
     def _add(self):
+        if self.pending.get('operation') == 'edit':
+            candidate = deepcopy(self.config)
+            voice = self.pending['voice']
+            old_generator = candidate['voices'][voice]['generator']
+            shared = any(name != voice and spec['generator'] == old_generator
+                         for name, spec in candidate['voices'].items())
+            generator = 'voice_'+uuid4().hex[:12] if shared else old_generator
+            if shared:
+                candidate['voices'][voice]['generator'] = generator
+            candidate['generators'][generator] = self.pending['definition']
+            candidate['voices'][voice]['name'] = self.pending['name']
+            for key in ('dependencies', 'optional_dependencies'):
+                values = self.pending.get(key, [])
+                if values:
+                    candidate['voices'][voice][key] = values
+                else:
+                    candidate['voices'][voice].pop(key, None)
+            if not any(spec['generator'] == old_generator for spec in candidate['voices'].values()):
+                candidate['generators'].pop(old_generator, None)
+            role = self.pending['role']
+            candidate['arrangement'][voice] = {**candidate['arrangement'].get(voice, {}), 'role': role}
+            for section in candidate['sections']:
+                assignment = section.setdefault('assignments', {}).get(voice, {})
+                section['assignments'][voice] = {**assignment, 'role': role}
+            self._commit(candidate)
+            self.notice = f"{self._voices()[voice]['name']} riconfigurata. L’associazione Live è rimasta invariata."
+            return
         self.devices.find(self.pending['device']['device_id'])
         candidate = deepcopy(self.config)
         name = 'voice_'+uuid4().hex[:12]
@@ -387,8 +464,8 @@ class SessionSetup:
                 if device['device_id'] not in present:
                     tracks.append(dict(name=device['track']['name'], position=None, kind=device['device_kind'],
                                        status='missing', choice=i, voice_name=None, reason='traccia non più disponibile'))
-        labels = {'melody': 'melodia', 'bass_line': 'basso', 'sustained_texture': 'nota sostenuta',
-                  'percussion': 'drums', 'autonomous': 'autonoma', 'coordinated': 'coordinata', 'nessuna': 'nessuna'}
+        labels = {'melody': 'melodia', 'bass_line': 'basso', 'harmony': 'armonia',
+                  'rhythm': 'ritmo', 'autonomous': 'autonoma', 'coordinated': 'coordinata', 'nessuna': 'nessuna'}
         choices = []
         if self.step != 'destination':
             for i, option in enumerate(self.options, 1):

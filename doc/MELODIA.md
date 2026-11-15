@@ -123,6 +123,6 @@ ritentativi e reset. La suite multivoce verifica il dialogo con le drums e
 l'assenza di aggiornamenti dello stato quando una voce successiva fallisce.
 
 Nel ruolo `bass_line` il generatore mantiene il motivo letterale. Nel ruolo
-`sustained_texture` delega al [generatore di tessitura](TESSITURA.md) usando
-registro e velocity. Il dispositivo segnala i controlli non pertinenti al
-ruolo o alla modalità corrente.
+`harmony` delega al [generatore di armonia di sezione](TESSITURA.md)
+usando registro e velocity. Il dispositivo segnala i controlli non
+pertinenti al ruolo o alla modalità corrente.

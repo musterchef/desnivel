@@ -40,7 +40,7 @@ def setup(components=None, configure=None):
 
 def test_current_context_and_retries_are_isolated_between_instances():
     session,sent,receive,state=setup({'snake_a':{'role':'melody','mode':'autonomous','source':'a'},
-                                     'snake_b':{'role':'sustained_texture','mode':'autonomous','source':'a'}})
+                                     'snake_b':{'role':'harmony','mode':'autonomous','source':'a'}})
     receive();receive('snake_b')
     original=deepcopy(state)
     session.tick(state)
@@ -61,7 +61,7 @@ def test_role_and_manual_controls_remain_distinct_and_coordination_uses_current_
     session,sent,receive,state=setup();receive()
     spec=session.server.bridge.voices['snake_a']
     spec.apply_parameter('velocity',70)
-    spec.apply_role('sustained_texture')
+    spec.apply_role('harmony')
     values=spec.read_values()
     assert values['length_ms']==2500 and values['velocity']==70
     spec.apply_manual('velocity',False)
@@ -132,7 +132,7 @@ def test_configured_recipe_reaches_device_banks_without_changing_other_sessions(
     assert other.paths == (1,7,5,11,9)
 
 
-@pytest.mark.parametrize('role,slow,fast', [('melody',2,1), ('bass_line',3,1), ('sustained_texture',4,2)])
+@pytest.mark.parametrize('role,slow,fast', [('melody',2,1), ('bass_line',3,1), ('harmony',4,2)])
 @pytest.mark.parametrize('intensity', [0., 1.])
 def test_first_window_already_selects_pulse_from_journey_and_role(role, slow, fast, intensity):
     session,sent,receive,state = setup({'snake_a':{'role':role,'mode':'autonomous','source':'a'}})
@@ -255,7 +255,7 @@ def test_setup_readiness_requires_connection_banks_and_instrument():
     assert session.setup_missing()['snake_a']=='Snake incompatibile'
 
 
-@pytest.mark.parametrize('role', ('melody', 'bass_line', 'sustained_texture'))
+@pytest.mark.parametrize('role', ('melody', 'bass_line', 'harmony'))
 def test_journey_changes_all_banks_and_paths_for_each_role_with_stable_polling(role):
     session,sent,receive,state=setup({'snake_a':{'role':role,'mode':'autonomous','source':'a'}})
     receive()
@@ -272,7 +272,7 @@ def test_journey_changes_all_banks_and_paths_for_each_role_with_stable_polling(r
     for start in (12,16,20,24):
         active=advance(start,1.,1.,0.)
     a,b=calm['parameters'],active['parameters']
-    limits = {'melody': (4, 8), 'bass_line': (3, 6), 'sustained_texture': (1, 3)}
+    limits = {'melody': (4, 8), 'bass_line': (3, 6), 'harmony': (1, 3)}
     assert (sum(a[f'Gate_{i:02}'] for i in range(1,17)),
             sum(b[f'Gate_{i:02}'] for i in range(1,17))) == limits[role]
     assert sum(v for k,v in b.items() if k.startswith('Gate_')) > sum(v for k,v in a.items() if k.startswith('Gate_'))

@@ -44,6 +44,13 @@ def test_ambiguous_devices_cannot_be_bound(changes, reason):
         inventory.bind('endpoint_a', 'melody', 9006)
 
 
+def test_reused_track_id_at_different_positions_does_not_create_a_conflict():
+    inventory = LiveDevices(lambda *args: None)
+    inventory.observe(announcement(instance='a', device_id='endpoint_a', track_id=11, index=0))
+    inventory.observe(announcement(instance='b', device_id='endpoint_b', port=10002, track_id=11, index=1))
+    assert all(device['error'] is None for device in inventory.available())
+
+
 def test_existing_controls_remain_visible_until_they_send_the_inventory():
     now = [0.]
     inventory = LiveDevices(lambda *a: None, clock=lambda: now[0])

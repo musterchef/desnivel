@@ -3,7 +3,7 @@ import math
 
 from desnivel.music.rhythm import SUBDIVISIONS
 
-ROLES = ('melody', 'bass_line', 'sustained_texture')
+ROLES = ('melody', 'bass_line', 'harmony')
 CONTROL_LIMITS = {'octave': (-3, 3, True), 'activity': (0, 1, False),
                   'velocity': (1, 127, True), 'length_ms': (10, 10000, False),
                   'movement': (0, 1, False)}

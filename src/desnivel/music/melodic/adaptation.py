@@ -4,7 +4,7 @@ from desnivel.music.texture.adaptation import targets as texture_targets
 
 
 def targets(request):
-    if request.role == 'sustained_texture':
+    if request.role == 'harmony':
         return texture_targets(request)
     if request.role != 'melody':
         return {}
@@ -12,8 +12,8 @@ def targets(request):
     terrain = 0. if intent.intensity is None else intent.intensity-.5
     dynamic = intent.dynamic_pressure or 0.
     bass = attack_rate(request.peers('bass_line'))
-    percussion = attack_rate(request.peers('percussion'))
-    pressure = bounded(.65*(bass or 0.)+.35*(percussion or 0.)/4, 0., 1.)
+    rhythm = attack_rate(request.peers('rhythm'))
+    pressure = bounded(.65*(bass or 0.)+.35*(rhythm or 0.)/4, 0., 1.)
     other_melodies = sum(p.occupied_ratio or 0. for p in request.peers('melody'))
     pressure = bounded(pressure+.5*other_melodies, 0., 1.)
     result = {'velocity': ParameterTarget(bounded(base['velocity']+16*terrain+12*dynamic, 1, 127),

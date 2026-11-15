@@ -30,7 +30,7 @@ def generator(spec=None):
 def request(start=0, length=4, silent=False, **parameters):
     foreground = Phrase(length, () if silent else tuple(Note(i, 60, .1, 90) for i in range(0, length, 4)))
     return PlanningRequest(start, length, None, {'voice_01': foreground, 'voice_02': Phrase(length, ())},
-                           'percussion', parameters, start)
+                           'rhythm', parameters, start)
 
 
 def compose(generator, req):
@@ -51,10 +51,10 @@ def test_none_preserves_existing_material_and_profiles_need_explicit_mapping():
     g = generator()
     g.style_lanes = None
     with pytest.raises(ValueError, match='ruoli kick'):
-        g.validate('percussion', {'style': 'house_classic'})
-    assert g.describe_controls('percussion', {})['style']['inactive_reason']
+        g.validate('rhythm', {'style': 'house_classic'})
+    assert g.describe_controls('rhythm', {})['style']['inactive_reason']
     with pytest.raises(ValueError, match='sconosciuto'):
-        a.validate('percussion', {'style': 'unknown'})
+        a.validate('rhythm', {'style': 'unknown'})
 
 
 @pytest.mark.parametrize('style', STYLE_BY_ID)
