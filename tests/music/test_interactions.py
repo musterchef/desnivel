@@ -4,7 +4,7 @@ import pytest
 
 from desnivel.music.coordinator import MusicCoordinator, Voice
 from desnivel.music.arrangement import Assignment
-from desnivel.music.interactions import GestureSpan, RhythmRelation, VoicePlan
+from desnivel.music.interactions import GestureSpan, RhythmRelation, VoicePlan, record_gestures
 from desnivel.music.phrases import Note, Phrase
 from desnivel.music.rhythm import PreparedRhythm, RhythmReference, shape_rhythm
 
@@ -106,6 +106,16 @@ def test_complete_gestures_only_and_no_same_window_history_leak_or_reuse():
     assert resolved.phrase == phrase()
     c.plan(12, 4)
     assert b.requests[-1].relations[0].unavailable_reason == 'consumed'
+
+
+def test_record_gestures_preserves_a_boundary_note_without_float_drift():
+    note = Note(2.2222222222222223, 60, 1.7777777777777777, 80)
+    pending, history = {}, []
+
+    record_gestures(pending, history, 'a', (GestureSpan(204, 208),),
+                    Phrase(4, (note,)), 204, 64)
+
+    assert history[0].phrase.notes == (note,)
 
 
 def test_presence_silence_is_stored_as_silence_and_memory_expires():

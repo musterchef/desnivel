@@ -118,12 +118,18 @@ def record_gestures(pending, history, voice, spans, phrase, start, limit):
         key = (voice, span.start, span.end)
         parts = pending.setdefault(key, [])
         notes = []
+        span_length = span.end-span.start
+        offset = start-span.start
         for note in phrase.notes:
             absolute = start+note.beat
             if span.start <= absolute < span.end:
                 if absolute+note.duration > span.end:
                     raise ValueError('una nota attraversa il confine del gesto')
-                notes.append(Note(absolute-span.start, note.pitch, note.duration, note.velocity))
+                beat = offset+note.beat
+                duration = min(note.duration, span_length-beat)
+                if beat+duration > span_length:
+                    duration = math.nextafter(duration, 0.)
+                notes.append(Note(beat, note.pitch, duration, note.velocity))
         parts.append((low, high, tuple(notes)))
         cursor = span.start
         for a, b, _ in sorted(parts):
