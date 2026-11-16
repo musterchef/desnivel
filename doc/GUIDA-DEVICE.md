@@ -7,7 +7,7 @@ Le tabelle propongono valori di partenza: gli altri controlli restano come sono.
 ## Prima di regolare
 
 - Collega le Voice con **C** nel terminale e avvia **Play** in Live.
-- Cambia un controllo alla volta. Le modifiche agiscono sulle prossime frasi; ascolta almeno quattro battute. Per confrontare dallo stesso punto usa **R**, poi **Play**, mantenendo lo stesso `seed`.
+- Cambia un controllo alla volta. Le modifiche agiscono sulle prossime frasi; ascolta almeno quattro battute. Per confrontare dallo stesso punto usa **R**, poi **Play**, mantenendo lo stesso `seed` configurato.
 - **Presenza ×** regola quante frasi partecipano: `0` silenzia la voce; `1` segue la presenza prevista dalla sezione. Non regola il volume e non rende attiva una voce fuori organico.
 - Un controllo **[inattivo]** non interviene nel ruolo o nella modalità corrente.
 - **manual** e l'indicatore **auto/manual** si riferiscono al parametro selezionato. Modificarlo rende manuale soltanto quel valore. Spegni **manual** per restituirlo all'automazione: i controlli adattivi riprendono gradualmente, gli altri seguono la configurazione. Un preset rende manuali i valori che applica, rilasciabili singolarmente. Ruolo e presenza restano indipendenti.
@@ -26,12 +26,14 @@ Usa il ruolo `melody` per questi assetti.
 | Altezze del motivo senza trasformazioni | `development = 0`, `step_beats = 1`; il dialogo ritmico resta applicabile |
 | Più appoggio sulla guida delle drums | `groove_follow = 0.8`; per meno adesione diretta usa `0.1` |
 
-`development` governa le trasformazioni del motivo; `activity` il respiro,
-le pause e le suddivisioni; `step_beats` la durata ritmica di riferimento.
-Con `development = 0`, `activity`, `phrase_windows` e `seed` sono inattivi.
+`development` governa le trasformazioni del motivo; `activity` la densità e
+le pause; `step_beats` la griglia ritmica di riferimento. Con
+`development = 0`, `activity` e `phrase_windows` sono inattivi. `seed` è
+configurato nel preset e non è un controllo del device.
 
-`phrase_windows = 2` organizza periodi di 8 beat; `8` di 32 beat nelle
-configurazioni fornite. Non impone una chiusura sulla tonica a ogni periodo.
+`phrase_windows = 2` dichiara gesti di 8 beat; `8` gesti di 32 beat nelle
+configurazioni fornite. Determina quando un gesto completo può essere usato
+dalle relazioni storiche; non programma una chiusura melodica.
 `octave = -1` abbassa il registro di riferimento, `1` lo alza.
 `velocity` regola l'intensità di riferimento; `articulation` accorcia o
 allunga le note rispetto allo spazio disponibile.
@@ -78,6 +80,15 @@ La realizzazione iniziale è un accordo di sezione. Nel controllo
 con `step_beats` e `articulation`. Con **Segui sorgente** attivo, una
 melodia assente o silenziosa fa tacere anche l'armonia. Il timbro e il
 rilascio dello strumento determinano la continuità sonora percepita.
+
+## Progressione armonica autonoma
+
+Questa sezione compare soltanto per una voce configurata con il comportamento
+**progressione autonoma**. Nel device, apri il menu **Parametro**, scegli
+`progression`, quindi usa il menu del valore per selezionare `ciclo 0–5–3–4`,
+`ciclo 0–3–4–0` oppure `ciclo 0–4–5–3`. La scelta agisce sulle prossime
+finestre e rende manuale soltanto il ciclo; `octave`, `velocity` e
+`articulation` restano indipendenti.
 
 ## Percussioni — Drums, `voice_04`
 

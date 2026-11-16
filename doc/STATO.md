@@ -3,14 +3,14 @@
 Desnivel legge registrazioni FIT/GPX e compone frasi multivoce. La sessione
 principale è `desnivel.cli.ensemble`. Il launcher permette di creare sessioni
 con un nome o caricare le configurazioni salvate in `output/sessioni/`, e
-di scegliere `01`–`12`, la variante locale `07bis` o un file con `99`: [avvio e sorgenti](COMANDI.md#sessione-multivoce-con-scelta-della-tappa).
+di scegliere `01`–`12` o un file con `O`: [avvio e sorgenti](COMANDI.md#sessione-multivoce-con-scelta-della-tappa).
 
 ## Funzionalità operative
 
 | Area | Comportamento | Riferimento |
 |---|---|---|
 | Viaggio | Lettura FIT/GPX, filtri GPS, selezione dei tratti osservati e ricampionamento a 10 Hz; metriche neutre pubblicabili via OSC | [Dati del viaggio](DATI-VIAGGIO.md) |
-| Analisi | Profilo altimetrico, zone, macrosezioni, diagnostica della sorgente e report HTML | [Analisi del percorso](ANALISI-PERCORSO.md) |
+| Analisi | Profilo altimetrico, zone, macrosezioni, forma neutra della tappa, diagnostica della sorgente e report HTML | [Analisi del percorso](ANALISI-PERCORSO.md) |
 | Direzione musicale | Tavolozza, armonia e motivo dal profilo; assetti delle macrosezioni e override configurabili | [Direzione musicale](DIREZIONE-MUSICALE.md) |
 | Tempo | Replay lineare oppure allocazione in beat; Play, Stop, ripresa e restart collegati al trasporto di Live | [Timeline](TIMELINE.md) |
 | Composizione | Generatori di melodia, basso, tessitura e percussioni; ruoli, organico, presenza e dipendenze per sezione | [Voci e contesto](RUOLI-MUSICALI.md) |

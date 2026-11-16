@@ -8,6 +8,7 @@ from . import ensemble
 from desnivel.cli.file_dialogs import choose_file, choose_track
 from desnivel.cli.session_files import new_session_path, saved_sessions
 from desnivel.cli.session_config import resolve_journey
+from desnivel.cli.track_source import read_stage_choice
 
 
 VARIANTS = {
@@ -58,7 +59,7 @@ def resolve_track(stage: str, root: Path) -> Path:
     elif re.fullmatch(r'0[1-9]|1[0-2]', stage):
         matches = sorted((root / 'gpx').glob(f'tappa{stage}_*.gpx'))
     else:
-        raise ValueError('Usa due cifre da 01 a 12, 07bis oppure 99 per scegliere un file.')
+        raise ValueError('Usa due cifre da 01 a 12 oppure O per aprire un file.')
     if not matches:
         raise ValueError(f'Traccia della tappa {stage} non trovata.')
     if len(matches) > 1:
@@ -71,7 +72,7 @@ def main(argv=None):
         description=__doc__,
         epilog='Gli altri argomenti sono passati a desnivel.cli.ensemble e possono '
                'sostituire i valori predefiniti di config, timing e view-port.')
-    parser.add_argument('--tappa', help='01–12, 07bis oppure 99 per sostituire il viaggio; se omessa riusa quello salvato nella sessione.')
+    parser.add_argument('--tappa', help='01–12 oppure O per aprire un file; se omessa riusa il viaggio salvato nella sessione.')
     parser.add_argument('--config', type=Path, help='Carica direttamente una configurazione, senza mostrare il menu delle sessioni.')
     args, session_args = parser.parse_known_args(argv)
     try:
@@ -90,11 +91,11 @@ def main(argv=None):
             if args.tappa is None and 'journey' in saved:
                 track, _, _ = resolve_journey(saved, config)
                 if not track.is_file():
-                    raise ValueError(f'Viaggio della sessione non trovato: {track}. Usa --tappa 99 per scegliere un altro file.')
+                    raise ValueError(f'Viaggio della sessione non trovato: {track}. Usa --tappa O per aprire un altro file.')
         if track is None:
             stage = (args.tappa if args.tappa is not None else
-                     input('Numero tappa (01–12, 07bis oppure 99 per un file FIT/GPX): ')).strip()
-            track = choose_track() if stage == '99' else resolve_track(stage, Path.cwd())
+                     read_stage_choice('Numero tappa (01–12; O apre un file FIT/GPX): ')).strip()
+            track = choose_track() if stage.casefold() == 'o' else resolve_track(stage, Path.cwd())
         if track is None:
             print('Avvio annullato.')
             return 130
@@ -105,7 +106,7 @@ def main(argv=None):
         parser.error(str(error))
     print(f'Sessione {config.stem}: {config}', flush=True)
     print(f"{'Viaggio salvato nella sessione' if stage is None else 'Tappa '+stage}: {track}", flush=True)
-    if stage == '99' and track.suffix.lower() == '.fit':
+    if stage is not None and stage.casefold() == 'o' and track.suffix.lower() == '.fit':
         print('FIT: se mancano gli eventi timer, le pause saranno stimate dai campioni GPS.',
               flush=True)
         if not any(flag in session_args for flag in ('--infer-fit-pauses', '--no-infer-fit-pauses')):

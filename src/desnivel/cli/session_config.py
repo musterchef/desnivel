@@ -45,10 +45,12 @@ def journey_configuration(path, track, timing_reference, infer_fit_pauses):
     return result
 
 
-def resolve_configuration(track, config, direction):
+def resolve_configuration(track, config, direction, settings_path=None):
     if direction is not None:
         from desnivel.cli.trip_direction import prepare_trip_config
-        return prepare_trip_config(track, config, direction)
+        if settings_path is None:
+            return prepare_trip_config(track, config, direction)
+        return prepare_trip_config(track, config, direction, settings_path)
     resolved = deepcopy(config)
     if 'arrangement' in resolved:
         for section in resolved['sections']:

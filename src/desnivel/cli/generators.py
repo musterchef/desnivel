@@ -11,6 +11,7 @@ from desnivel.music.percussion.generator import PercussionGenerator
 from desnivel.music.percussion.development import PercussionPhraseGenerator
 from desnivel.music.percussion.catalog import STYLE_OPTIONS, reference_material
 from desnivel.music.texture.generator import REALIZATION_CHOICES, TextureGenerator
+from desnivel.music.texture.progression import HarmonicProgressionGenerator
 
 
 @dataclass
@@ -58,7 +59,7 @@ def build_generator(spec):
         controls = {'octave': Control(-5, 5, True), 'step_beats': Control(.25, 8),
                     'articulation': Control(.05, 1), 'velocity': Control(1, 127, True),
                     'development': Control(0, 1), 'activity': Control(0, 1),
-                    'phrase_windows': Control(2, 8, True), 'seed': Control(0, 2147483647, True),
+                    'phrase_windows': Control(2, 8, True),
                     'groove_follow': Control(0, 1)}
         values = compose.settings
     elif kind == 'responsive_line':
@@ -75,6 +76,12 @@ def build_generator(spec):
                     'step_beats': Control(.25, 8), 'articulation': Control(.05, 1),
                     'follow_source': Control(0, 1, True, toggle=True),
                     'support_source': Control(0, 1, True, toggle=True)}
+        values = compose.settings
+    elif kind == 'harmonic_progression':
+        compose = HarmonicProgressionGenerator(spec['progressions'], spec.get('settings'))
+        controls = {'progression': ChoiceControl(tuple((item.id, item.label) for item in compose.progressions)),
+                    'octave': Control(-5, 5, True), 'velocity': Control(1, 127, True),
+                    'articulation': Control(.05, 1)}
         values = compose.settings
     elif kind == 'percussion_phrase':
         compose = PercussionPhraseGenerator(**percussion_definition(spec))

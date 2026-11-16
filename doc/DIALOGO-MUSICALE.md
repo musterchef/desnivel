@@ -144,7 +144,7 @@ guidata dal GPX. Formule, transizioni e precedenze sono descritte in
 ## Gesti, stato e reset
 
 Il generatore dichiara gli intervalli tramite `GestureSpan`, in beat di
-trasporto. Il motivo sviluppato dichiara l'intero periodo `phrase_windows`;
+trasporto. Il motivo sviluppato dichiara il gesto di durata `phrase_windows`;
 le drums dichiarano il ciclo del materiale; motivo letterale, basso e
 tessitura dichiarano la propria frase della finestra.
 

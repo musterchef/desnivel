@@ -25,9 +25,10 @@ def apply_control(runtime, action):
 
 class SessionController:
     def __init__(self, runtime, source_config, path, server, library, components, *,
-                 direction=None, port=9006, connect_port=9101, clock=time.monotonic):
+                 direction=None, settings_path=None, port=9006, connect_port=9101, clock=time.monotonic):
         self.runtime, self.server, self.library, self.components = runtime, server, library, components
-        self.direction, self.port, self.connect_port, self.clock = direction, port, connect_port, clock
+        self.direction, self.settings_path = direction, settings_path
+        self.port, self.connect_port, self.clock = port, connect_port, clock
         self.error = None
         self.setup_paused = False
         self.restart_deadline = None
@@ -55,7 +56,7 @@ class SessionController:
         return None
 
     def configure(self, candidate):
-        resolved = resolve_configuration(self.runtime.track, candidate, self.direction)
+        resolved = resolve_configuration(self.runtime.track, candidate, self.direction, self.settings_path)
         components = self.components.candidate(candidate)
         replacement = reconfigure_runtime(self.runtime, resolved, self.library, external_voices=components.voices)
         components.attach(replacement)

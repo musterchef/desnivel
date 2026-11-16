@@ -21,6 +21,9 @@ def main(argv=None):
     parser.add_argument('--infer-fit-pauses', action=argparse.BooleanOptionalAction, default=None,
                         help='Se il FIT non contiene eventi timer, stima le pause dai campioni GPS.')
     parser.add_argument('--config', type=Path, required=True)
+    from desnivel.settings import DEFAULT_SETTINGS_PATH
+    parser.add_argument('--settings', type=Path, default=DEFAULT_SETTINGS_PATH,
+                        help='Impostazioni TOML applicative.')
     parser.add_argument('--setup', action='store_true', help='Crea una sessione vuota se il file di configurazione non esiste.')
     direction_options = parser.add_mutually_exclusive_group()
     direction_options.add_argument('--direction', type=Path,
@@ -81,7 +84,7 @@ def main(argv=None):
         track = load_track(args.gpx, timing_reference=args.timing_reference,
                            infer_missing_fit_timer=args.infer_fit_pauses)
         from desnivel.cli.session_config import resolve_configuration
-        config = resolve_configuration(track, config, direction)
+        config = resolve_configuration(track, config, direction, args.settings)
         from desnivel.cli.weather_context import prepare_weather_context
         weather_source = prepare_weather_context(track, args.weather_context, download=not args.dry_run)
         if args.dry_run:
@@ -155,7 +158,8 @@ def main(argv=None):
     from desnivel.cli.session_controller import SessionController
     from desnivel.cli.session_frontend import TerminalFrontend
     controller = SessionController(runtime, source_config, args.config, server, library, components,
-                                   direction=direction, port=args.port, connect_port=args.connect_port)
+                                   direction=direction, settings_path=args.settings,
+                                   port=args.port, connect_port=args.connect_port)
     server.server.timeout = .1
     last_write = 0.
     print(f'Python pronto su 127.0.0.1:{args.port}. Stato: {args.status_file}', flush=True)

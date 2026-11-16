@@ -58,10 +58,25 @@ def test_boundaries_follow_macrosections_and_preserve_internal_zones(direction):
     assert [s['name'] for s in sections] == ['ascent', 'level', 'descent', 'ascent']
     assert [s['trip']['start_distance_m'] for s in sections] == [0, 600, 900, 1200]
     assert [s['trip']['zone_indices'] for s in sections] == [[0, 1], [2], [3], [4]]
+    assert [s['trip']['form']['trend'] for s in sections] == ['rising', 'level', 'falling', 'rising']
     assert sections[1]['from_progress'] == pytest.approx(600/1800)
     assert sections[0]['assignments'] == sections[-1]['assignments']
     sections[0]['assignments']['voice_01']['parameters']['velocity'] = 1
     assert sections[-1]['assignments']['voice_01']['parameters']['velocity'] == 88
+
+
+def test_resolved_configuration_exposes_neutral_route_form(direction):
+    from desnivel.cli.trip_direction import prepare_trip_config
+
+    config = json.loads(Path('presets/sessione.json').read_text())
+    resolved = prepare_trip_config(track(), config, direction)
+    assert [event['type'] for event in resolved['route_form']['events']] == [
+        'departure', 'profile_change', 'profile_change', 'valley', 'arrival'
+    ]
+    assert resolved['route_form']['spans'][0]['source_kind'] == 'ascent'
+    assert resolved['route_form']['spans'][-1]['end_distance_m'] == 1800
+    assert resolved['route_form']['episodes']
+    assert resolved['route_form']['structure_settings']['min_recovery_ratio'] == 1
 
 
 def test_configured_presence_changes_with_gpx_family_and_keeps_manual_multiplier(direction):

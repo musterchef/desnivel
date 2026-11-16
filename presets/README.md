@@ -20,7 +20,7 @@ di melodia e basso e l'influenza ritmica dalle drums precedenti verso la
 melodia. Le configurazioni di direzione possono cambiare i parametri
 delle sezioni senza sostituire queste relazioni.
 Per cambiarne il comportamento in salita, discesa o pianura si interviene su
-`direzione-viaggio.json`. I due file di analisi descrivono il percorso e non
+`direzione-viaggio.json`. I tre file di analisi descrivono il percorso e non
 contengono decisioni musicali. Aggiungere una voce non richiede un nuovo JSON.
 
 I percorsi `analysis` e `grouping` nella direzione sono relativi al file di

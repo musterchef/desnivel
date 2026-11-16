@@ -77,7 +77,7 @@ class MotifGenerator:
                 raise ValueError('lo sviluppo richiede reset prima di una ripartenza precedente')
             previous = self._previous_development if request.start == self._last_start else self._development
             phrase, decision, state = develop(self.degrees, intervals, root, request, values, previous)
-            span = GestureSpan(state.period_start, state.period_start+state.period_beats)
+            span = GestureSpan(state.gesture_start, state.gesture_start+state.gesture_beats)
             return self._plan(request, values, phrase, decision, span, state, previous)
         decision = {'method': 'literal_motif', 'summary': 'motivo letterale'}
         notes = []
@@ -125,10 +125,10 @@ class MotifGenerator:
         inactive = {}
         if role == 'harmony':
             inactive = {name: 'Nota sostenuta: usa registro e velocity'
-                        for name in DEFAULTS if name not in ('octave', 'velocity')}
+                        for name in DEFAULTS if name not in ('octave', 'velocity', 'seed')}
         elif role != 'melody' or values['development'] == 0:
             inactive = {name: 'Richiede sviluppo melodico attivo'
-                        for name in ('activity', 'phrase_windows', 'seed')}
+                        for name in ('activity', 'phrase_windows')}
             if role != 'melody':
                 inactive['development'] = 'Richiede il ruolo melody'
         return {name: {'inactive_reason': reason} for name, reason in inactive.items()}

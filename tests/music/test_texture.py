@@ -7,6 +7,12 @@ from desnivel.music.coordinator import PlanningRequest
 from desnivel.music.director import MusicalContext
 from desnivel.music.phrases import Note, Phrase
 from desnivel.music.texture.generator import TextureGenerator
+from desnivel.music.texture.progression import HarmonicProgressionGenerator
+
+
+def progressions(*items):
+    return [dict(id=identifier, label=identifier.replace('_', ' '), steps=steps)
+            for identifier, steps in items]
 
 
 def request(start=0, notes=(), **parameters):
@@ -156,3 +162,60 @@ def test_texture_registration_exposes_only_its_controls_and_saves_mode_in_preset
     assert registered.controls['realization'].choices == (
         ('chord', 'accordi di sezione'), ('repeated_note', 'nota ripetuta'))
     assert registered.presets['coordinated']['follow_source'] == 1
+
+
+def test_autonomous_harmonic_progression_cycles_degrees_and_retries_identically():
+    generator = HarmonicProgressionGenerator(progressions(('test', [
+        {'degree': 0, 'beats': 8}, {'degree': 5, 'beats': 8}, {'degree': 3, 'beats': 8},
+    ])), {'articulation': 1})
+    first = generator(request(0))
+    second = generator(request(4))
+    changed = generator(request(8))
+    assert [note.pitch for note in first.notes] == [60, 64, 67]
+    assert [note.pitch for note in second.notes] == [60, 64, 67]
+    assert [note.pitch for note in changed.notes] == [69, 72, 76]
+    assert generator(request(8)) == changed
+    assert generator.last_decision['chords'] == [{'beat': 0, 'degree': 5, 'pitches': [69, 72, 76]}]
+
+
+def test_autonomous_harmonic_progression_handles_changes_inside_a_window_and_resets_at_section():
+    generator = HarmonicProgressionGenerator(progressions(('test', [
+        {'degree': 0, 'beats': 2}, {'degree': 4, 'beats': 2},
+    ])), {'articulation': 1})
+    phrase = generator(request())
+    assert phrase.notes == (
+        Note(0, 60, 2, 85), Note(0, 64, 2, 85), Note(0, 67, 2, 85),
+        Note(2, 67, 2, 85), Note(2, 71, 2, 85), Note(2, 74, 2, 85),
+    )
+    minor = replace(request(4), context=MusicalContext(1, 'minor', 62, 'minor'))
+    assert [note.pitch for note in generator(minor).notes] == [62, 65, 69, 69, 72, 76]
+
+
+@pytest.mark.parametrize('catalog', [[], [dict(id='a', label='a', steps=[{'degree': 0}])],
+                                      [dict(id='a', label='a', steps=[{'degree': -1, 'beats': 1}])],
+                                      [dict(id='a', label='a', steps=[{'degree': 0, 'beats': 0}])],
+                                      [dict(id='a', label='a', steps=[{'degree': 0, 'beats': 1, 'x': 2}])],
+                                      [dict(id='a', label='a', steps=[]), dict(id='a', label='b', steps=[{'degree': 0, 'beats': 1}])]])
+def test_autonomous_harmonic_progression_rejects_invalid_catalog(catalog):
+    with pytest.raises(ValueError):
+        HarmonicProgressionGenerator(catalog)
+
+
+def test_harmonic_progression_registration_exposes_only_performance_controls():
+    registered = build_generator({'type': 'harmonic_progression',
+                                  'progressions': progressions(('test', [
+                                      {'degree': 0, 'beats': 8}, {'degree': 4, 'beats': 8},
+                                  ]))})
+    assert set(registered.controls) == {'progression', 'octave', 'velocity', 'articulation'}
+    assert registered.controls['progression'].choices == (('test', 'test'),)
+    assert registered.generator.supported_roles == ('harmony',)
+
+
+def test_autonomous_harmonic_progression_switches_catalog_entry_at_the_next_window():
+    generator = HarmonicProgressionGenerator(progressions(
+        ('first', [{'degree': 0, 'beats': 8}]), ('second', [{'degree': 4, 'beats': 8}]),
+    ), {'articulation': 1})
+    generator(request())
+    switched = generator(request(4, progression='second'))
+    assert [note.pitch for note in switched.notes] == [67, 71, 74]
+    assert generator.last_decision['progression'] == 'second'

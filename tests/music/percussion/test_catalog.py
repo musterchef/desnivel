@@ -8,6 +8,7 @@ import pytest
 
 from desnivel.cli.generators import build_generator, percussion_definition
 from desnivel.music.coordinator import PlanningRequest
+from desnivel.music.patterns import SCALES
 from desnivel.music.phrases import Note, Phrase
 from desnivel.music.percussion.catalog import MATERIAL_BY_ID, STYLE_BY_ID, HIT_ROLES
 from desnivel.adapters.percussion import PAD_NOTES
@@ -84,7 +85,7 @@ def capture(spec, style, variation):
     return hashlib.sha256(json.dumps(output, sort_keys=True, allow_nan=False).encode()).hexdigest()
 
 
-def capture_session(config, style):
+def capture_session_output(config, style):
     from desnivel.music.session import EnsembleSession
     generators = {key: build_generator(value).generator for key, value in config['generators'].items()}
     destinations = {v['destination']: lambda *args: None for v in config['voices'].values()}
@@ -95,7 +96,12 @@ def capture_session(config, style):
         phrases = session.plan(i/32, i*4, 4)
         result.append({'phrases': {name: asdict(phrase) for name, phrase in phrases.items()},
                        'rhythm': session.coordinator.last_plan['rhythm']})
-    return hashlib.sha256(json.dumps(result, sort_keys=True, allow_nan=False).encode()).hexdigest()
+    return result
+
+
+def capture_session(config, style):
+    output = capture_session_output(config, style)
+    return hashlib.sha256(json.dumps(output, sort_keys=True, allow_nan=False).encode()).hexdigest()
 
 
 @pytest.mark.parametrize('name,style,variation', PERCUSSION_BEFORE)
@@ -106,6 +112,44 @@ def test_centralized_catalog_preserves_notes_references_and_gestures(name, style
 @pytest.mark.parametrize('name,style', SESSIONS_EXPECTED)
 def test_whole_ensemble_dialogue_for_current_arrangement(name, style):
     assert capture_session(configuration(name), style) == SESSIONS_EXPECTED[name,style]
+
+
+@pytest.mark.parametrize('name', ('organico', 'dialogo'))
+def test_ensemble_output_keeps_the_arrangement_and_scale_of_each_section(name):
+    output = capture_session_output(configuration(name), 'house_classic')
+    assert len(output) == 32
+    for index, window in enumerate(output):
+        phrases = window['phrases']
+        assert {'voice_01', 'voice_03', 'voice_04'} <= set(phrases)
+        if name == 'organico' and index < 10:
+            assert 'voice_02' not in phrases
+            scale = 'minor'
+        elif name == 'organico' and index < 24:
+            assert 'voice_02' in phrases
+            scale = 'dorian'
+        elif name == 'organico':
+            assert 'voice_02' in phrases
+            scale = 'minor'
+        else:
+            assert 'voice_02' in phrases
+            scale = 'dorian'
+        allowed = {(57+interval) % 12 for interval in SCALES[scale]}
+        for voice in ('voice_01', 'voice_02'):
+            if voice in phrases:
+                assert all(note['pitch'] % 12 in allowed for note in phrases[voice]['notes'])
+        for phrase in phrases.values():
+            assert phrase['length_beats'] == 4
+            assert all(0 <= note['beat'] < 4 and 0 < note['duration'] <= 4-note['beat']
+                       for note in phrase['notes'])
+
+
+@pytest.mark.parametrize('name', ('organico', 'dialogo'))
+def test_ensemble_percussion_style_changes_its_realization(name):
+    plain = capture_session_output(configuration(name), 'none')
+    styled = capture_session_output(configuration(name), 'house_classic')
+    assert [window['phrases']['voice_04'] for window in plain] != [
+        window['phrases']['voice_04'] for window in styled
+    ]
 
 
 def test_all_materials_have_known_roles_and_unique_explicit_identifiers():

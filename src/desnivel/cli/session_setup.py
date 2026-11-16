@@ -41,6 +41,7 @@ GUIDED_CHOICES = (
                  (('realization', 'chord'), ('follow_source', 1))),
     GuidedChoice('harmony', 'sustained_texture', 'sostiene una voce', 'support_source',
                  (('follow_source', 0), ('support_source', 1))),
+    GuidedChoice('harmony', 'harmonic_progression', 'progressione autonoma'),
     GuidedChoice('rhythm', 'percussion_pattern', 'pattern autonomo'),
     GuidedChoice('rhythm', 'percussion_phrase', 'groove autonomo'),
     GuidedChoice('rhythm', 'percussion_phrase', 'in relazione ad altre voci', 'support'),
@@ -58,6 +59,24 @@ def _guided_generator_definitions():
                                 settings={**asdict(BassSettings()), 'groove_follow': 0.}),
         'sustained_texture': dict(type='sustained_texture', degree=0,
                                   settings=TextureGenerator().settings),
+        'harmonic_progression': dict(
+            type='harmonic_progression',
+            progressions=[
+                dict(id='ciclo_0_5_3_4', label='ciclo 0–5–3–4', steps=[
+                    {'degree': 0, 'beats': 8}, {'degree': 5, 'beats': 8},
+                    {'degree': 3, 'beats': 8}, {'degree': 4, 'beats': 8},
+                ]),
+                dict(id='ciclo_0_3_4_0', label='ciclo 0–3–4–0', steps=[
+                    {'degree': 0, 'beats': 8}, {'degree': 3, 'beats': 8},
+                    {'degree': 4, 'beats': 8}, {'degree': 0, 'beats': 8},
+                ]),
+                dict(id='ciclo_0_4_5_3', label='ciclo 0–4–5–3', steps=[
+                    {'degree': 0, 'beats': 8}, {'degree': 4, 'beats': 8},
+                    {'degree': 5, 'beats': 8}, {'degree': 3, 'beats': 8},
+                ]),
+            ],
+            settings={'progression': 'ciclo_0_5_3_4'},
+        ),
         'percussion_phrase': dict(type='percussion_phrase', material='spaced_impacts',
                                   standard_material='regular_pulse_eighths',
                                   settings=dict(PERCUSSION_DEFAULTS)),
@@ -371,7 +390,7 @@ class SessionSetup:
                 candidate['generators'].pop(old_generator, None)
             role = self.pending['role']
             candidate['arrangement'][voice] = {**candidate['arrangement'].get(voice, {}), 'role': role}
-            for section in candidate['sections']:
+            for section in candidate.get('sections', []):
                 assignment = section.setdefault('assignments', {}).get(voice, {})
                 section['assignments'][voice] = {**assignment, 'role': role}
             self._commit(candidate)

@@ -22,7 +22,7 @@ oppure, dalla radice del repository:
 
 Il launcher permette di scegliere una sessione salvata oppure crearne una
 vuota con un nome, conservata in `output/sessioni/<nome>.json`. Usa timeline allocata e mappa sulla porta 8765.
-Accetta `01`–`12`, `07bis` e `99` per scegliere un file FIT o GPX.
+Accetta `01`–`12` e `O` per aprire un file FIT o GPX.
 La [sessione guidata](SESSIONE-GUIDATA.md) permette di aggiungere voci,
 associare i controlli presenti in Live e salvare la configurazione.
 
@@ -205,6 +205,7 @@ completi sono nel [riferimento della configurazione](CONFIGURAZIONE.md).
 | `motif` | Sviluppa un motivo in gradi nel contesto armonico; supporta `melody`, `bass_line` e `harmony`. [Melodia](MELODIA.md) |
 | `responsive_line` | Compone il basso dalla frase di una dipendenza obbligatoria, mantenendo continuità fra finestre. [Basso](BASSO.md) |
 | `sustained_texture` | Accordo diatonico di sezione o nota ripetuta; può seguire o sostenere una dipendenza. [Armonia di sezione](TESSITURA.md) |
+| `harmonic_progression` | Ciclo autonomo di gradi e durate che realizza triadi diatoniche. [Armonia di sezione](TESSITURA.md#progressione-autonoma) |
 | `percussion_phrase` | Sviluppa materiale precomposto e stili; può essere autonomo oppure usare sorgenti per sostegni e risposte. [Stili percussivi](STILI-PERCUSSIVI.md) e [dialogo](DIALOGO-MUSICALE.md) |
 
 La destinazione percussiva della prova usa i 16 pad MIDI 36…51 del 909 Core

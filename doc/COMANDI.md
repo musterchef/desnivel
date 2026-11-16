@@ -61,24 +61,14 @@ multitappa; `--view-port` permette di cambiarla.
 
 Aprire `comandi/09 - Sessione multitappa.command` dal Finder, scegliere
 una sessione salvata oppure `0` per crearne una con un nome, poi inserire
-una tappa da `01` a `12`, `07bis` per il FIT ricostruito da Komoot
-oppure `99` per scegliere un file FIT o GPX.
+una tappa da `01` a `12` oppure premere `O` per aprire subito un file FIT o
+GPX.
 Per provare una formazione, creare una sessione e aggiungere le voci dal
 flusso guidato. Ogni sessione conserva il proprio organico; non è richiesto
 un numero fisso di tracce. Il comando
 `comandi/10 - Prova formazione armonica.command` apre lo stesso flusso del
 comando 09.
-Le tappe numerate usano i GPX in `gpx/`; `07bis` richiede il file locale
-`output/ricostruzione-tappa07/tappa07_Roma_Sabaudia.fit`.
-
-La variante integra 1.052 punti con posizione, quota e orario dal GPX Komoot
-nel tratto Roma–Ciampino. Conserva i record, gli eventi timer e i riepiloghi
-del FIT originale; questi ultimi non sono ricalcolati. Restano lacune nei
-campioni disponibili, che possono produrre salti nella mappa e nel replay.
-La provenienza dei punti aggiunti è in
-`output/ricostruzione-tappa07/provenienza.json`. La cartella `output/` è
-esclusa da Git: per usare `07bis` su un'altra copia del progetto occorre
-trasferire anche questi file.
+Le tappe numerate usano i file disponibili nel progetto.
 
 Il menu elenca le configurazioni in `output/sessioni/` e il file
 `output/sessione.json` quando presente. Le nuove sessioni partono senza voci
@@ -88,12 +78,12 @@ di sceglierla dal dialogo macOS. Il launcher usa il timing `allocated`
 e la mappa sulla porta `8765`. Dal terminale, nella radice del progetto:
 
 ```sh
-.venv/bin/python -m desnivel.cli.launch_stage --tappa 07bis
+.venv/bin/python -m desnivel.cli.launch_stage --tappa 05
 ```
 
 Senza `--tappa` viene riutilizzato il viaggio salvato nella sessione; se il
 riferimento manca, la scelta è interattiva. **V** salva anche il viaggio
-attivo. `--tappa 99` permette di scegliere un altro FIT/GPX per la sessione.
+attivo. `--tappa O` permette di aprire un altro FIT/GPX per la sessione.
 Gli altri argomenti sono inoltrati
 a `desnivel.cli.ensemble`; per esempio `--view-port 8766` cambia la porta
 dell'interfaccia web. `--no-terminal` disabilita tastiera e pannello del terminale

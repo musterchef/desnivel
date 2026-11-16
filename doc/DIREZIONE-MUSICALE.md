@@ -5,6 +5,13 @@ prima della sessione, usando il profilo GPX analizzato. Le macrosezioni
 conservano organico, presenza e parametri delle famiglie configurate;
 root e scala risolte sono condivise da tutte le voci.
 
+La configurazione risolta espone inoltre una `route_form` neutra con campate
+persistenti ed eventi di partenza, cambi di profilo, inversioni altimetriche,
+lacune e arrivo. Questi eventi sono osservabili nello stato della sessione,
+ma non scelgono ancora progressioni, organico o trasformazioni musicali.
+I campi `from_progress` localizzano confini già ricavati dal profilo; non
+definiscono una forma percentuale della composizione.
+
 ## Avvio
 
 `organico.json` contiene
@@ -179,8 +186,10 @@ mentre i valori applicati restano costanti nella singola finestra composta.
 
 Un valore manuale prevale soltanto sul suo parametro. Rilasciarlo riparte
 dal valore manuale accettato e converge verso l'obiettivo automatico;
-gli altri override restano attivi. Stile, seed, registri, griglia, durata
+gli altri override restano attivi. Stile, registri, griglia, durata
 dei periodi e `follow_source` conservano configurazione o scelta manuale.
+Il seed del generatore resta una scelta di configurazione, non un controllo
+manuale del device.
 Non vengono aggiunti controlli musicali ai device.
 
 Gli stati dei parametri vengono accettati insieme alle frasi: fallimenti,

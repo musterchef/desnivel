@@ -99,8 +99,9 @@ class EnsembleRuntime:
         # politiche adattive, indipendentemente dalla presenza del profilo.
         self.adaptation_enabled = adaptive and (self.window_context.profile is not None
                                                 or any(fn is not None for _, fn, _ in self.context_sources))
-        session_config = deepcopy({k: v for k, v in config.items() if k != 'trip_analysis'})
+        session_config = deepcopy({k: v for k, v in config.items() if k not in ('trip_analysis', 'route_form')})
         self.trip_music = deepcopy(config.get('trip_music'))
+        self.route_form = deepcopy(config.get('route_form'))
         self.section_directions = tuple(deepcopy(section.get('direction')) for section in config['sections'])
         self.section_sources = tuple(deepcopy(section.get('trip')) for section in config['sections'])
         destinations = {}
@@ -365,6 +366,7 @@ class EnsembleRuntime:
         upcoming = [plan for plan in self._sent_plans if plan['start'] > self.beat]
         return {'timing': self.timing,
                 'trip_music': self.trip_music,
+                'route_form': self.route_form,
                 'timeline': ({**self.timeline.snapshot(), 'total_beats': self.timeline.timeline.total_beats,
                               'requested_beats': self.timeline.timeline.requested_beats,
                               'beats_per_km': self.timeline.timeline.beats_per_km,

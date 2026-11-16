@@ -29,7 +29,7 @@ di nome, ruolo e comportamento di una voce mantenendo la traccia Live
 associata, usare `:riconfigura` e selezionare la voce.
 
 Per una nuova sessione si sceglie la tappa. Il viaggio mantiene direzione GPX,
-timeline allocata e mappa sulla porta 8765. La scelta `99` apre il selettore
+timeline allocata e mappa sulla porta 8765. Il tasto `O` apre subito il selettore
 di un file FIT o GPX. **Salva sessione** e **V** conservano anche il file del
 viaggio, l'eventuale FIT di riferimento per le pause e la scelta di stimare
 le pause nei FIT senza eventi timer. Riaprendo la sessione, il launcher
@@ -43,7 +43,7 @@ con Ctrl+C e riaprirlo. Un percorso esplicito evita il menu:
 ```
 
 Per sostituire il viaggio della sessione, usare `--tappa 01` oppure
-`--tappa 99` per aprire il selettore FIT/GPX. La sostituzione viene conservata
+`--tappa O` per aprire il selettore FIT/GPX. La sostituzione viene conservata
 quando si salva la sessione. Se il file salvato è stato spostato, il launcher
 segnala il percorso mancante e richiede una selezione esplicita con `--tappa`.
 
@@ -154,7 +154,7 @@ musicali pertinenti nell'ordine **voce → comportamento → eventuali sorgenti*
 |---|---|
 | melodia | motivo letterale oppure sviluppato |
 | basso | autonomo oppure in relazione a una voce |
-| armonia | accordi della sezione, nota ripetuta, accordi sui cambi di una voce oppure sostegno a una voce |
+| armonia | accordi della sezione, nota ripetuta, accordi sui cambi di una voce, sostegno a una voce oppure progressione autonoma |
 | ritmo | pattern autonomo, groove sviluppato autonomo oppure in relazione ad altre voci |
 
 Con **accordi sui cambi di una voce**, ogni nuovo attacco della sorgente
@@ -168,7 +168,9 @@ almeno una voce Python utilizzabile come sorgente. Le sorgenti si scelgono
 nel passaggio successivo. Il comportamento seleziona il generatore esistente;
 ogni istanza conserva stato e parametri indipendenti. L’armonia di sezione
 parte dagli accordi diatonici della scala; in alternativa può ripetere una
-nota della sezione a intervalli configurabili.
+nota della sezione a intervalli configurabili. **Progressione autonoma** non
+richiede una voce sorgente e offre il controllo `progression` per scegliere
+fra i cicli dichiarati nella configurazione della sessione.
 
 Il pattern autonomo usa una figura esplicita; il groove autonomo usa un
 generatore sviluppato e può selezionare uno stile senza dipendere da altre

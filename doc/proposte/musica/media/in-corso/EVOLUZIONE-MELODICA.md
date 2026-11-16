@@ -1,34 +1,23 @@
 # Evoluzione del discorso melodico
 
-Stato: regole concordate e implementate nel modulo `music/melodic/`.
-Il comportamento operativo è descritto in [Generazione melodica](../../../../MELODIA.md).
+Stato: impianto semplificato implementato. Il comportamento operativo è
+descritto in [Generazione melodica](../../../../MELODIA.md).
 
-## Decisioni adottate
+## Comportamento
 
-- Identità affidata a cellule ricavate dal motivo, con relazioni intervallari
-  riconoscibili anche dopo trasposizione nei gradi della scala.
-- Sviluppo tramite ripresa, variazione ritmica, trasposizione, frammentazione
-  ed estensione, senza successione obbligata di quattro fasi.
-- Richiamo del materiale dopo trasformazioni marcate; alternanza delle
-  cellule per evitare la ripetizione continua dello stesso frammento.
-- Continuità con l'ultima altezza ammessa a suonare e adattamento al nuovo
-  contesto armonico senza ripresentare automaticamente tutto il tema.
-- Distinzione tra fine del periodo, respirazione e chiusura melodica.
-  Chiusure esplicite sulla tonica distanziate di 2–4 periodi partecipanti.
-- Controlli esistenti conservati, senza nuovi parametri pubblici.
-- Stato preparato e accettato separatamente; finestre silenziate e tentativi
-  falliti non producono chiusure accettate o falsi avanzamenti del conteggio.
+- Il motivo in gradi è il materiale sorgente; le cellule ne mantengono il
+  profilo intervallare.
+- Lo sviluppo può riprendere, trasporre o frammentare una cellula, variare
+  il ritmo o proseguirne il movimento. Dopo ripetizioni consecutive può
+  passare a un'altra cellula.
+- Il raccordo considera l'ultima altezza e la scala della sezione.
+- `activity` regola densità e pause; `development` regola la probabilità
+  delle trasformazioni.
+- `phrase_windows` definisce la durata del gesto condiviso con il sistema
+  delle relazioni storiche; non programma una chiusura melodica.
+- La preparazione e l'accettazione dello stato restano separate, così
+  finestre silenziate o piani falliti non avanzano il generatore.
 
-## Direzione del percorso
-
-Il collegamento concordato e implementato usa il profilo complessivo della
-tappa per scegliere una tavolozza armonica e ricavare un motivo dalla forma
-normalizzata. Le macrosezioni ne guidano l'evoluzione mantenendo classi di
-altezza comuni. Sono disponibili override generali e per tappa.
-Configurazione e algoritmo effettivi in
+Il generatore non riceve progressioni di accordi. La direzione dal percorso
+può fornire un motivo e i contesti di sezione; i dettagli sono descritti in
 [Direzione musicale dal percorso](../../../../DIREZIONE-MUSICALE.md).
-
-Le metriche geografiche restano fuori dal generatore melodico e dal
-Coordinator generico. Le variazioni dei controlli dal contesto locale sono
-descritte nella [direzione adattiva](../../../../DIREZIONE-MUSICALE.md#adattamento-dei-parametri).
-Progressioni di accordi e cadenze armoniche complete restano da definire.

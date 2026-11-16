@@ -5,6 +5,8 @@ from pathlib import Path
 
 from desnivel.trip.analysis import analyze_track
 from desnivel.trip.sections import group_zones
+from desnivel.trip.route_form import describe_route_form
+from desnivel.settings import DEFAULT_SETTINGS_PATH, load_settings
 from desnivel.trip.profile import describe_profile, section_intensity
 from desnivel.music.harmony import validate_palettes, validate_context, select_palette, choose_context, pitch_classes
 from desnivel.music.melodic.route import route_motif, validate_motif
@@ -34,7 +36,7 @@ def _validate_override(data, palette_ids):
         validate_motif(data['motif_degrees'])
 
 
-def _resolve(track, path):
+def _resolve(track, path, settings_path=DEFAULT_SETTINGS_PATH):
     path = Path(path)
     definition = json.loads(path.read_text(encoding='utf-8'))
     required = {'analysis', 'grouping', 'families'}
@@ -47,6 +49,7 @@ def _resolve(track, path):
     grouping_config = json.loads((path.parent/definition['grouping']).read_text(encoding='utf-8'))
     analysis = analyze_track(track, analysis_config)
     grouping = group_zones(analysis, grouping_config)
+    route_form = describe_route_form(track, grouping['sections'], load_settings(settings_path).route_structure)
     arrangements = definition['families']
     if not isinstance(arrangements, dict) or set(arrangements) != set(grouping_config['families']):
         raise ValueError('ogni famiglia configurata richiede un assetto musicale, senza famiglie aggiuntive')
@@ -62,8 +65,12 @@ def _resolve(track, path):
         if not isinstance(arrangement['assignments'], dict):
             raise ValueError(f'{family}: assignments deve contenere le assegnazioni delle voci')
     if automatic is None:
-        return [{**deepcopy(arrangements[s['kind']]), 'name': s['kind'], 'from_progress': s['from_progress'],
-                 'trip': deepcopy(s)} for s in grouping['sections']], None, analysis
+        sections = []
+        for source, span in zip(grouping['sections'], route_form['spans']):
+            trip = {**deepcopy(source), 'form': deepcopy(span)}
+            sections.append({**deepcopy(arrangements[source['kind']]), 'name': source['kind'],
+                             'from_progress': source['from_progress'], 'trip': trip})
+        return sections, None, analysis, route_form
     required = {'palettes', 'switch_margin', 'motif'}
     if (not isinstance(automatic, dict) or required-automatic.keys()
             or automatic.keys()-required-{'override', 'stage_overrides'}):
@@ -96,7 +103,7 @@ def _resolve(track, path):
                 'motif_source': 'override' if 'motif_degrees' in effective_override else 'profile',
                 'motif_generators': list(targets), 'overrides': deepcopy(effective_override)}
     sections, previous, previous_effective = [], None, None
-    for source in grouping['sections']:
+    for source, span in zip(grouping['sections'], route_form['spans']):
         local = section_intensity(analysis, source)
         target = min(1., local/(2*profile['mean_absolute_slope_ratio'])) if profile['mean_absolute_slope_ratio'] else 0.
         state = choose_context(palette, target, previous, automatic['switch_margin'])
@@ -108,26 +115,33 @@ def _resolve(track, path):
                 section[key] = effective_override[key]
                 sources[key] = 'stage_override' if key in stage_overrides.get(track.stage_id, {}) else 'override'
         common = sorted(pitch_classes(*previous_effective) & pitch_classes(section['root'], section['scale'])) if previous_effective else []
-        section.update(name=source['kind'], from_progress=source['from_progress'], trip=deepcopy(source),
+        section.update(name=source['kind'], from_progress=source['from_progress'],
+                       trip={**deepcopy(source), 'form': deepcopy(span)},
                        direction={'palette': palette['id'], 'state': state['id'], 'target_intensity': target,
                                   'mean_absolute_slope_ratio': local, 'automatic_root': state['root'],
                                   'automatic_scale': state['scale'], 'sources': sources, 'common_pitch_classes': common})
         sections.append(section)
         previous, previous_effective = state, (section['root'], section['scale'])
-    return sections, decision, analysis
+    return sections, decision, analysis, route_form
 
 
-def load_trip_sections(track, path):
+def load_trip_sections(track, path, settings_path=DEFAULT_SETTINGS_PATH):
     """Sezioni risolte per report e chiamanti che richiedono soltanto i contesti."""
-    return _resolve(track, path)[0]
+    return _resolve(track, path, settings_path)[0]
 
 
-def prepare_trip_config(track, config, path):
+def load_route_form(track, path, settings_path=DEFAULT_SETTINGS_PATH):
+    """Forma neutra risolta con gli stessi criteri usati dalla sessione."""
+    return _resolve(track, path, settings_path)[3]
+
+
+def prepare_trip_config(track, config, path, settings_path=DEFAULT_SETTINGS_PATH):
     """Risolve sezioni e materiale della tappa senza modificare gli ingressi."""
-    sections, decision, analysis = _resolve(track, path)
+    sections, decision, analysis, route_form = _resolve(track, path, settings_path)
     resolved = deepcopy(config)
     resolved['sections'] = sections
     resolved['trip_analysis'] = analysis
+    resolved['route_form'] = route_form
     if 'arrangement' in config:
         for section in sections:
             section['assignments'] = deepcopy(config['arrangement'])

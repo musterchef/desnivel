@@ -10,6 +10,7 @@ requires-python = ">=3.9"
 dependencies = [
     "numpy>=1.24",
     "fitdecode>=0.11,<0.12",
+    "tomli>=2; python_version < '3.11'",
 ]
 
 [project.optional-dependencies]
@@ -23,6 +24,7 @@ desnivel-voice-device = "desnivel.cli.voice_device:main"
 desnivel-connect-voices = "desnivel.cli.connect_voices:main"
 desnivel-ensemble = "desnivel.cli.ensemble:main"
 desnivel-analyze-trip = "desnivel.cli.analyze_trip:main"
+desnivel-route-form = "desnivel.cli.show_route_form:main"
 desnivel-capture-snake = "desnivel.cli.capture_snake:main"
 
 [tool.setuptools.packages.find]

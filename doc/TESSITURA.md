@@ -51,6 +51,21 @@ Il ruolo `harmony` del generatore `motif` delega allo stesso modulo la
 realizzazione a nota ripetuta sul primo grado del motivo. I controlli di
 sviluppo melodico restano responsabilità di `music/melodic/`.
 
+## Progressione autonoma
+
+`music/texture/progression.py` implementa `HarmonicProgressionGenerator`.
+È un generatore distinto dalla tessitura sostenuta: percorre passi espliciti
+di grado e durata, ciclicamente, e realizza per ciascuno una triade
+diatonica. Non legge una sorgente musicale. Al confine di una sezione riparte
+dal primo passo con la nuova tonica e scala. La scelta guidata **progressione
+autonoma** contiene i cicli `0–5–3–4`, `0–3–4–0` e `0–4–5–3`, otto beat per
+passo, selezionabili con il controllo `progression`.
+
+La stessa funzione di voicing realizza le triadi della tessitura sostenuta e
+della progressione, mantenendo identica la corrispondenza tra gradi di scala
+e altezze MIDI. La progressione conserva stato tramite pianificazione e
+accettazione: un retry della stessa finestra non avanza il ciclo.
+
 ## Prova nel dispositivo
 
 1. Avviare la [sessione multivoce](SESSIONE-MULTIVOCE.md) con il device

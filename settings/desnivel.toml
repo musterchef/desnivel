@@ -1,0 +1,6 @@
+[trip.route_structure]
+merge_reversals = true
+max_relative_elevation = 0.2
+max_relative_distance = 0.2
+max_reversal_distance_m = 400.0
+min_recovery_ratio = 1.0

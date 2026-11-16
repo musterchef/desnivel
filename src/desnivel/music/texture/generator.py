@@ -10,6 +10,7 @@ from desnivel.music.patterns import SCALES
 from desnivel.music.phrases import Note, Phrase
 from desnivel.music.interactions import VoicePlan, GestureSpan
 from .adaptation import targets
+from .voicing import diatonic_triad, scale_degree_pitch
 
 
 ROLES = ('harmony',)
@@ -24,27 +25,11 @@ class HarmonyRealization:
     timing: Callable[[tuple[int, ...], float, Mapping, int], tuple[Note, ...]]
 
 
-def _pitch(root, intervals, degree, octave):
-    index = degree % len(intervals)
-    return root + 12*octave + intervals[index] + 12*(degree//len(intervals))
-
-
 def _degree_for_pitch_class(pitch_class, root, intervals):
     scale_pitch_classes = tuple((root+interval) % 12 for interval in intervals)
     return min(range(len(intervals)),
                key=lambda i: min((scale_pitch_classes[i]-pitch_class) % 12,
                                  (pitch_class-scale_pitch_classes[i]) % 12))
-
-
-def _chord_voicing(root, intervals, degree):
-    root_offset = _pitch(0, intervals, degree, 0)
-    pitches = tuple(
-        root + _pitch(0, intervals, degree+2*voice, 0) - root_offset
-        for voice in range(3)
-    )
-    if any(not 0 <= pitch <= 127 for pitch in pitches):
-        raise ValueError('accordo fuori dal registro MIDI')
-    return pitches
 
 
 def _single_note_voicing(root, intervals, degree):
@@ -69,7 +54,7 @@ def _repeated_notes(pitches, length, settings, velocity):
 
 
 REALIZATIONS = {
-    'chord': HarmonyRealization('accordi di sezione', _chord_voicing, _sustained_notes),
+    'chord': HarmonyRealization('accordi di sezione', None, _sustained_notes),
     'repeated_note': HarmonyRealization('nota ripetuta', _single_note_voicing, _repeated_notes),
 }
 REALIZATION_CHOICES = tuple((name, realization.label) for name, realization in REALIZATIONS.items())
@@ -125,7 +110,7 @@ class TextureGenerator:
             raise ValueError('l’armonia richiede tonica e scala')
         intervals = SCALES[request.context.scale]
         degree = self.degree
-        base = _pitch(request.context.root, intervals, degree, values['octave'])
+        base = scale_degree_pitch(request.context.root, intervals, degree, values['octave'])
         if not 0 <= base <= 127:
             raise ValueError('armonia fuori dal registro MIDI')
         # Ripianificare la stessa finestra conserva il riferimento di continuità.
@@ -171,8 +156,10 @@ class TextureGenerator:
                             pitch_class = max(weights, key=weights.get)
                             chord_degree = _degree_for_pitch_class(
                                 pitch_class, request.context.root, intervals)
-                            chord_root = _pitch(request.context.root, intervals, chord_degree, values['octave'])
-                            chord = REALIZATIONS['chord'].voicing(chord_root, intervals, chord_degree)
+                            chord_root = scale_degree_pitch(request.context.root, intervals, chord_degree,
+                                                            values['octave'])
+                            chord = diatonic_triad(request.context.root, intervals, chord_degree,
+                                                   values['octave'])
                             if not chord_events or chord_events[-1][1] != chord:
                                 chord_events.append((beat, chord, chord_root))
                         root = chord_events[-1][2]
@@ -185,7 +172,9 @@ class TextureGenerator:
                     velocity = round(bounded(velocity*(1-observation.occupied_ratio), 1, 127))
 
         realization = REALIZATIONS[values['realization']]
-        pitches = () if root is None else realization.voicing(root, intervals, degree)
+        pitches = (() if root is None else
+                   diatonic_triad(request.context.root, intervals, degree, values['octave'])
+                   if values['realization'] == 'chord' else realization.voicing(root, intervals, degree))
         if values['support_source'] and source_register is not None and pitches:
             low, high = source_register
             anchor = base if reference is None else reference

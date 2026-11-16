@@ -359,7 +359,7 @@ def test_new_drums_can_be_added_after_play_without_changing_existing_roles(tmp_p
     ('1', ['motivo letterale', 'motivo sviluppato']),
     ('2', ['autonomo', 'in relazione a una voce']),
     ('3', ['accordi della sezione', 'nota ripetuta della sezione',
-           'accordi sui cambi di una voce', 'sostiene una voce']),
+           'accordi sui cambi di una voce', 'sostiene una voce', 'progressione autonoma']),
     ('4', ['pattern autonomo', 'groove autonomo', 'in relazione ad altre voci']),
 ])
 def test_behavior_choices_belong_to_the_selected_voice(tmp_path, choice, labels):
@@ -407,6 +407,22 @@ def test_harmony_facets_select_realization_without_changing_role(tmp_path, behav
     assert setup.config['generators'][harmony]['settings']['realization'] == realization
 
 
+def test_guided_harmony_progression_uses_a_serializable_cycle_without_dependencies(tmp_path):
+    setup, _, devices, _, _ = make_setup(tmp_path)
+    announce(devices, 1)
+    setup.submit('aggiungi traccia')
+    for answer in ('1', 'armonia', '3', '3'):
+        setup.submit(answer)
+    voice = next(iter(setup.config['voices']))
+    definition = setup.config['generators'][setup.config['voices'][voice]['generator']]
+    assert definition['type'] == 'harmonic_progression'
+    assert [item['id'] for item in definition['progressions']] == [
+        'ciclo_0_5_3_4', 'ciclo_0_3_4_0', 'ciclo_0_4_5_3'
+    ]
+    assert definition['settings']['progression'] == 'ciclo_0_5_3_4'
+    assert 'dependencies' not in setup.config['voices'][voice]
+
+
 def test_harmony_support_uses_selected_voice_as_dependency(tmp_path):
     setup, _, devices, _, _ = make_setup(tmp_path)
     announce(devices, 1)
@@ -439,6 +455,14 @@ def test_guided_roles_and_behavior_choices_follow_generator_declarations():
         generator = build_generator(definitions[choice.generator]).generator
         assert choice.role in generator.supported_roles
         assert choice in [item for item, _ in _guided_behavior_options(choice.role)]
+
+
+def test_motif_seed_is_configuration_only_not_a_device_control():
+    registered = build_generator({'type': 'motif', 'degrees': [0, 2, 4],
+                                  'settings': {'seed': 7}})
+    assert 'seed' not in registered.controls
+    assert 'seed' not in registered.values
+    assert registered.generator.generate.settings['seed'] == 7
 
 
 def test_percussion_choices_are_distinct_generators_for_the_same_role():
@@ -618,6 +642,25 @@ def test_reconfigure_accepts_a_voice_id_directly(tmp_path):
     assert setup.pending['operation'] == 'edit'
 
 
+def test_reconfigure_dynamic_session_updates_arrangement_without_resolved_sections(tmp_path):
+    config = json.loads(Path('presets/sessione.json').read_text())
+    config['generators']['voice_01'] = dict(type='motif', degrees=[0, 2, 4])
+    config['voices']['voice_01'] = dict(name='melody', generator='voice_01', destination='voice_01')
+    config['arrangement']['voice_01'] = dict(role='melody')
+    applied = []
+    setup = SessionSetup(config, tmp_path/'sessione.json', None, applied.append, lambda: None)
+
+    setup.submit('riconfigura voice_01')
+    setup.submit('')
+    setup.submit('3')
+    setup.submit('1')
+
+    assert len(applied) == 1
+    assert 'sections' not in setup.config
+    assert setup.config['arrangement']['voice_01']['role'] == 'harmony'
+    assert setup.config['generators']['voice_01']['type'] == 'sustained_texture'
+
+
 def test_add_track_associates_an_unbound_configured_voice_before_adding_a_voice(tmp_path):
     config = json.loads(Path('presets/sessione.json').read_text())
     config['voices'] = {'voice_01': {'name': 'melodia', 'generator': 'melody', 'destination': 'voice_01'}}
@@ -647,7 +690,8 @@ def test_guided_generators_do_not_use_the_organico_preset_as_a_template():
     definitions = _guided_generator_definitions()
 
     assert set(definitions) == {
-        'motif', 'responsive_line', 'sustained_texture', 'percussion_phrase', 'percussion_pattern'
+        'motif', 'responsive_line', 'sustained_texture', 'harmonic_progression',
+        'percussion_phrase', 'percussion_pattern'
     }
     assert definitions['percussion_phrase']['material'] == 'spaced_impacts'
     assert 'interaction' not in definitions['percussion_phrase']

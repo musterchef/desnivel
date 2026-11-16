@@ -372,6 +372,55 @@ nel terminale li mostrano a partire da uno.
 
 Senza `--grouping` vengono prodotte soltanto le zone dell'analisi.
 
+## Forma neutra della tappa
+
+`trip/route_form.py` costruisce `route_form` dalle macrosezioni risolte dalla
+direzione GPX. Non assegna funzioni musicali e non divide il viaggio in
+percentuali prestabilite. Per ogni campata conserva famiglia sorgente,
+tendenza altimetrica (`rising`, `falling` o `level`), confini e lunghezza in
+metri, tempo attivo interpolato, dislivello e pendenza media.
+
+Gli eventi disponibili sono `departure`, `profile_change`, `summit`,
+`valley`, `observation_gap` e `arrival`. Vetta e valle richiedono
+un'inversione diretta e persistente fra macrosezioni ascendenti e discendenti;
+un tratto pianeggiante intermedio resta un cambio di profilo e non viene
+reinterpretato. Una lacuna fra macrosezioni resta esplicita e non crea una
+continuità artificiale.
+
+`prepare_trip_config` conserva la descrizione completa in `route_form` e
+aggiunge a ogni `section.trip` la rispettiva campata nel campo `form`.
+Distanza e tempo attivo sono coordinate e misure descrittive: non determinano
+da soli apertura, sviluppo, chiusura o altre decisioni compositive.
+
+`trip/route_structure.py` riduce inoltre le campate in continuità
+strutturali. Un'inversione viene riunita alla continuità soltanto quando la direzione
+precedente riprende, recupera il dislivello perso e l'inversione resta sotto
+i rapporti locali di dislivello e distanza e sotto la lunghezza massima
+configurati in `settings/desnivel.toml`. `merge_reversals` disattiva soltanto
+la riunione delle inversioni; l'unione di campate adiacenti concordi
+resta attiva. Le campate originali e le misure delle variazioni riunite
+restano disponibili e sono mostrate dal comando. Le pause escluse dal tempo
+attivo non creano confini strutturali.
+
+La forma usata dalla sessione si può ispezionare senza avviare Ableton:
+
+```bash
+.venv/bin/python -m desnivel.cli.show_route_form --tappa 05
+```
+
+In alternativa, `comandi/11 - Leggi forma tappa.command` chiede la tappa in
+modo interattivo; `O` apre subito il selettore dei file. Il comando mostra le
+continuità strutturali; con `--output output/forma-tappa.json` salva anche la
+struttura completa. Per un
+file esterno si usa `--track percorso/alla/tappa.gpx` oppure la scelta `O`.
+L'opzione `--direction` permette di indicare criteri diversi da
+`presets/direzione-viaggio.json`. Quando il pacchetto viene installato, lo
+stesso comando è esposto come `desnivel-route-form`.
+`--settings` permette di usare un file TOML diverso senza modificare quello
+principale.
+La vista predefinita mostra le continuità strutturali; `--detailed` aggiunge
+le campate e gli eventi osservati.
+
 ## Report visuale
 
 Aprire `output/analisi-percorso.html` nel browser. Il file incorpora dati, stile

@@ -43,7 +43,7 @@ def test_missing_saved_journey_reports_how_to_select_another_file(tmp_path, monk
     monkeypatch.setattr('builtins.input', lambda prompt: pytest.fail('nessuna sostituzione implicita'))
     with pytest.raises(SystemExit):
         launch_stage.main(['--config', str(config)])
-    assert '--tappa 99' in capsys.readouterr().err
+    assert '--tappa O' in capsys.readouterr().err
 
 
 def test_journey_paths_and_pause_settings_survive_saving_and_explicit_overrides(tmp_path):
@@ -192,6 +192,19 @@ def test_explicit_configuration_bypasses_the_picker_and_does_not_initialize_a_mi
     assert calls[0][calls[0].index('--config')+1] == 'custom.json'
     assert '--setup' not in calls[0]
     assert '--dry-run' in calls[0]
+
+
+@pytest.mark.parametrize('choice', ['O', 'o'])
+def test_o_opens_the_track_picker(tmp_path, monkeypatch, choice):
+    selected = tmp_path/'viaggio esterno.gpx'
+    selected.touch()
+    calls = []
+    monkeypatch.setattr(launch_stage, 'choose_track', lambda: selected)
+    monkeypatch.setattr(launch_stage.ensemble, 'main', lambda args: calls.append(args) or 0)
+
+    assert launch_stage.main(['--tappa', choice, '--config', 'custom.json', '--dry-run']) == 0
+
+    assert calls[0][calls[0].index('--track')+1] == str(selected)
 
 
 def test_session_dialog_opens_a_configuration_outside_the_saved_directory(tmp_path, monkeypatch):

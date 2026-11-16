@@ -5,7 +5,7 @@ import pytest
 from desnivel.music.coordinator import MusicCoordinator, PlanningRequest, Voice
 from desnivel.music.arrangement import Assignment
 from desnivel.music.director import MusicalContext
-from desnivel.music.melodic.development import motif_cells
+from desnivel.music.melodic.development import _fit_cell_rhythm, motif_cells
 from desnivel.music.melodic.generator import MotifGenerator
 
 
@@ -29,43 +29,33 @@ def test_cells_are_derived_from_the_motif_including_short_and_oscillating_materi
 
 
 @pytest.mark.parametrize('windows', [2, 4, 8])
-@pytest.mark.parametrize('seed', [0, 7, 17])
-def test_tonic_closures_are_two_to_four_participating_periods_apart(windows, seed):
-    g = MotifGenerator(MOTIF, dict(development=.7, seed=seed, phrase_windows=windows))
-    closures, sounded_periods = [], []
-    for period in range(24):
-        sounding = period not in (0, 3, 7, 8, 15)
-        if sounding:
-            sounded_periods.append(period)
-        for window in range(windows):
-            # Anche i periodi con l'ultima finestra silenziata contano.
-            audible = sounding and (period % 3 != 1 or window != windows-1)
-            phrase = g(request((period*windows+window)*4, participating=audible))
-            if g.last_decision['ending'] == 'tonic':
-                assert audible and phrase.notes[-1].pitch % 12 == 0
-                closures.append(len(sounded_periods))
-    assert len(closures) >= 4
-    assert 2 <= closures[0] <= 4
-    assert all(2 <= b-a <= 4 for a, b in zip(closures, closures[1:]))
+def test_gesture_spans_group_windows_without_scheduled_tonic_closures(windows):
+    g = MotifGenerator(MOTIF, dict(development=.7, phrase_windows=windows))
+    for i in range(windows*4):
+        plan = g.stage(request(i*4))
+        gesture = i//windows
+        assert plan.gestures[0].start == gesture*windows*4
+        assert plan.gestures[0].end == (gesture+1)*windows*4
+        assert all(note.beat+note.duration <= 4 for note in plan.phrase.notes)
+        assert 'ending' not in plan.decision
+        g.accept(plan)
 
 
-def test_transposition_keeps_cell_intervals_and_recall_restores_source_degrees():
+def test_development_keeps_cell_identity_and_varies_its_melodic_operation():
     g = generator()
-    transposed = recalled = False
+    operations = set()
     for i in range(80):
         phrase = g(request(i*4))
         d = g.last_decision
+        operations.add(d['phase'])
         cell = d['cell_degrees']
         anchor = phrase.notes[:len(cell)]
         assert tuple(cell) in motif_cells(MOTIF)
         assert [n.pitch for n in anchor] == d['anchor_pitches']
         if d['phase'] == 'transpose':
-            transposed = True
             assert d['degree_shift'] != 0
-        if d['phase'] == 'recall':
-            recalled = True
-            assert d['degree_shift'] == 0
-    assert transposed and recalled
+    assert {'rhythm', 'transpose', 'fragment', 'continuation'} <= operations
+    assert not operations & {'recall', 'extend'}
 
 
 def test_state_is_prepared_without_mutation_and_identical_retries_do_not_advance():
@@ -86,7 +76,7 @@ def test_state_is_prepared_without_mutation_and_identical_retries_do_not_advance
     assert a(request(100)) == first.phrase
 
 
-def test_context_and_period_changes_keep_material_and_adapt_scale():
+def test_context_and_gesture_length_changes_keep_material_and_adapt_scale():
     g = generator()
     g(request())
     last_pitch = g._development.last_pitch
@@ -94,7 +84,7 @@ def test_context_and_period_changes_keep_material_and_adapt_scale():
     phrase = g(request(4, context=new_context, velocity=49, step_beats=.5))
     assert abs(phrase.notes[0].pitch-last_pitch) <= 7
     assert all(n.pitch % 12 in (2, 4, 5, 7, 9, 10, 0) for n in phrase.notes)
-    assert g._development.period_start == 0
+    assert g._development.gesture_start == 0
     plan = g.stage(request(8, context=new_context, phrase_windows=2))
     assert plan.gestures[0].start == 8 and plan.gestures[0].end == 16
     assert plan.decision['window'] == 1
@@ -102,7 +92,7 @@ def test_context_and_period_changes_keep_material_and_adapt_scale():
     g(request(12, context=new_context, phrase_windows=2))
 
 
-def test_role_exit_interrupts_the_melodic_sentence_and_reentry_recalls_a_cell():
+def test_role_exit_interrupts_the_melodic_sentence_and_reentry_presents_a_cell():
     g = generator()
     g(request())
     g(replace(request(4), role='harmony'))
@@ -112,14 +102,13 @@ def test_role_exit_interrupts_the_melodic_sentence_and_reentry_recalls_a_cell():
     assert plan.gestures[0].start == 8
 
 
-def test_coordinator_presence_does_not_advance_closure_count_or_create_false_closures():
+def test_coordinator_presence_does_not_advance_silenced_melodic_state():
     g = generator(phrase_windows=2)
     c = MusicCoordinator({'m': Voice(g, supported_roles=('melody',), stage=g.stage, accept=g.accept)})
     for start in range(0, 32, 4):
         result = c.plan(start, 4, MusicalContext(0, 'test', 60, 'major'),
                         assignments={'m': Assignment('melody', {}, 0)})
         assert not result['m'].notes
-    assert g._development.completed_since_close == 0
     assert g._development.last_pitch is None
     c.plan(32, 4, MusicalContext(0, 'test', 60, 'major'), assignments={'m': Assignment('melody', {})})
     assert g.last_decision['phase'] == 'statement'
@@ -133,22 +122,61 @@ def test_single_cell_high_steps_and_full_articulation_fit_the_window():
             assert phrase.notes and all(n.beat+n.duration <= 4 for n in phrase.notes)
 
 
-def test_silence_preserves_the_last_heard_material_and_the_need_for_a_new_opening():
+def test_cell_rhythm_fits_using_available_figures_without_changing_a_fitting_rhythm():
+    assert _fit_cell_rhythm([1., 1., 1.], 1., 4.) == [1., 1., 1.]
+    assert _fit_cell_rhythm([1., 1., 1.], 1., 2.5) == [1., 1., .5]
+    assert _fit_cell_rhythm([1., 1., 1., 1.], 8., 2.4) == [.5]*4
+
+
+@pytest.mark.parametrize('step', [1., 1.5, 2., 2/3])
+def test_developed_attacks_use_intentional_subdivisions_throughout_the_window(step):
+    g = MotifGenerator(MOTIF, dict(development=.7, activity=.75, phrase_windows=4, seed=0,
+                                  step_beats=step))
+    rhythms = set()
+    phases = set()
+    for i in range(400):
+        phrase = g(request(i*4))
+        rhythms.add(tuple(round(n.beat, 6) for n in phrase.notes))
+        phases.add(g.last_decision['phase'])
+        for note in phrase.notes:
+            subdivision = note.beat/(step/8)
+            assert subdivision == pytest.approx(round(subdivision), abs=1e-8)
+            assert note.duration > 0 and note.beat+note.duration <= 4
+    assert not {'recall', 'extend'} & phases
+    assert len(rhythms) > 1
+
+
+def test_activity_changes_melodic_density():
+    sparse = MotifGenerator(MOTIF, dict(development=.7, activity=.2, seed=3))
+    active = MotifGenerator(MOTIF, dict(development=.7, activity=.9, seed=3))
+    sparse_count = active_count = 0
+    for i in range(120):
+        sparse_count += len(sparse(request(i*4)).notes)
+        active_count += len(active(request(i*4)).notes)
+    assert active_count > sparse_count
+
+
+@pytest.mark.parametrize('length,step', [(.3, 1.), (3.4, 1.5), (4., 8.)])
+def test_fractional_windows_and_large_steps_keep_complete_nonoverlapping_cells(length, step):
+    g = MotifGenerator(MOTIF, dict(development=.7, seed=3, step_beats=step, articulation=1))
+    for i in range(80):
+        phrase = g(replace(request(i*length), length_beats=length))
+        decision = g.last_decision
+        assert [n.pitch for n in phrase.notes[:len(decision['cell_degrees'])]] == decision['anchor_pitches']
+        assert all(a.beat+a.duration <= b.beat+1e-10 for a, b in zip(phrase.notes, phrase.notes[1:]))
+        assert all(n.duration > 0 and n.beat+n.duration <= length for n in phrase.notes)
+
+
+def test_silence_preserves_the_last_heard_material_and_gesture_state():
     g = generator(phrase_windows=2)
-    i = 0
-    while True:
-        g(request(i*4))
-        i += 1
-        if g.last_decision['ending'] == 'tonic':
-            break
-        assert i < 32
+    g(request())
     state = g._development
-    g(request(i*4, participating=False))
+    g(request(4, participating=False))
     assert g._development.last_pitch == state.last_pitch
-    assert g._development.closed_last and g._development.cell == state.cell
+    assert g._development.cell == state.cell
     assert g._development.repetitions == state.repetitions
-    g(request((i+1)*4))
-    assert g.last_decision['phase'] == 'statement'
+    g(request(8))
+    assert g.last_decision['phase'] != 'statement'
 
 
 def test_unavailable_transpositions_are_excluded_before_operation_selection():

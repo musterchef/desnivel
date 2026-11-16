@@ -97,6 +97,12 @@ richiede `assignments`. Con `automatic_music`, root e scala sono risolte
 dal profilo; eventuali valori nella famiglia sono override espliciti.
 Senza automatismo sono richieste `root` e `scale` per ogni famiglia.
 
+Le impostazioni applicative separate sono in `settings/desnivel.toml`.
+`trip.route_structure` contiene l'attivazione della riunione delle inversioni,
+i rapporti massimi locali di dislivello e distanza, la distanza fisica
+massima e il rapporto minimo di recupero. Questi controlli modificano la
+riduzione neutra del percorso, non la direzione o i generatori musicali.
+
 | Campo dell'assetto | Significato |
 |---|---|
 | `root` | Altezza MIDI intera di riferimento, non soltanto una classe di altezza; i generatori verificano il registro delle note prodotte |
@@ -154,20 +160,22 @@ partecipazione, non una misura del volume o una conferma audio.
 I gradi partono da zero: `0` è la tonica, `1` il grado successivo della
 scala; oltre l'ultimo grado si sale nell'ottava successiva.
 
-I seguenti valori possono comparire in `settings`, nei preset e nei
-`parameters` delle assegnazioni. I limiti riportati sono quelli del registro
-della sessione e dei controlli esposti dal dispositivo.
+Gli otto controlli musicali possono comparire in `settings`, nei preset e nei
+`parameters` delle assegnazioni. `seed` è un'impostazione di riproducibilità:
+si specifica in `settings` o nell'assegnazione, non nel preset del device.
+I limiti riportati sono quelli del registro della sessione e dei controlli
+esposti dal dispositivo.
 
 | Parametro | Predefinito | Intervallo | Effetto |
 |---|---:|---|---|
 | `octave` | 0 | Intero −5…5 | Trasposizione di ottave rispetto a `root` |
-| `step_beats` | 1 | 0,25…8 beat | Passo regolare nel motivo letterale; durata di riferimento nello sviluppo |
+| `step_beats` | 1 | 0,25…8 beat | Passo del motivo letterale e griglia di riferimento nello sviluppo |
 | `articulation` | 0,8 | 0,05…1 | Frazione della durata disponibile occupata dalla nota articolata |
 | `velocity` | 85 | Intero 1…127 | Intensità MIDI di riferimento, con accenti nello sviluppo; non è un volume in dB |
 | `development` | 0 | 0…1 | Zero ripete il motivo; sopra zero attiva e regola lo sviluppo |
-| `activity` | 0,75 | 0…1 | Pesi di durate brevi, lunghe e pause nello sviluppo |
-| `phrase_windows` | 4 | Intero 2…8 | Finestre del periodo e del gesto melodico; la fine non impone una chiusura sulla tonica |
-| `seed` | 0 | Intero 0…2147483647 | Riproducibilità delle variazioni |
+| `activity` | 0,75 | 0…1 | Scelta di durate brevi o lunghe e probabilità di pause nello sviluppo |
+| `phrase_windows` | 4 | Intero 2…8 | Durata del gesto storico e intervallo di rivalutazione degli obiettivi adattivi |
+| `seed` | 0 | Intero 0…2147483647 | Impostazione di riproducibilità, non esposta come controllo del device |
 
 Ruoli supportati:
 
@@ -225,6 +233,39 @@ velocity.
 `voice_01` come dipendenza facoltativa. Lo switch viene conservato nei
 preset utente della tessitura. Non sono forniti preset base per questa voce.
 Algoritmo, registro e prova d'ascolto sono in [Tessitura sostenuta](TESSITURA.md).
+
+## Parametri del generatore `harmonic_progression`
+
+Il generatore percorre autonomamente una progressione scelta da un catalogo
+di cicli. `progressions` è una lista non vuota di elementi con `id`, `label`
+e `steps`; ogni passo contiene `degree`, grado intero non negativo della
+scala, e `beats`, durata positiva in beat. Il controllo `progression` sceglie
+l'identificativo attivo. Alla fine dell'ultimo passo il ciclo ricomincia. Il
+cambio di sezione riavvia il ciclo sul primo passo usando la nuova tonica e
+scala.
+
+```json
+{
+  "type": "harmonic_progression",
+  "progressions": [{
+    "id": "ciclo_0_5_3_4",
+    "label": "ciclo 0–5–3–4",
+    "steps": [
+      {"degree": 0, "beats": 8},
+      {"degree": 5, "beats": 8},
+      {"degree": 3, "beats": 8},
+      {"degree": 4, "beats": 8}
+    ]
+  }],
+  "settings": {"progression": "ciclo_0_5_3_4"}
+}
+```
+
+Supporta il ruolo `harmony` e non richiede sorgenti. I controlli di
+esecuzione sono `progression`, `octave` (−5…5), `velocity` (1…127) e
+`articulation` (0,05…1); quest'ultima regola la durata delle triadi entro il
+passo. I passi e le loro durate sono materiale compositivo della definizione
+del generatore, non controlli del device.
 
 ## Parametri del generatore `responsive_line`
 
