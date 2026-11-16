@@ -5,7 +5,8 @@ import time
 from dataclasses import dataclass
 from typing import Any
 
-from ..trip.config import DEFAULT_CONFIG, Config
+from ..settings import DEFAULT_CONFIG
+from ..trip.config import Config
 from ..trip.track import Track
 from ..trip.metrics import build_metric_samples
 from .osc import OscClient

@@ -52,7 +52,8 @@ slope_norm      = clip(max(slope_ratio, 0) / slope_reference, 0, 1)
 effort_estimate = clip(weight_speed * speed_norm + weight_slope * slope_norm, 0, 1)
 ```
 
-I pesi e le velocità di riferimento sono configurabili in `src/desnivel/trip/config.py`.
+I pesi e le velocità di riferimento sono configurabili nella sezione
+`trip.gpx` di `settings/desnivel.toml`.
 
 ---
 
@@ -67,7 +68,8 @@ I pesi e le velocità di riferimento sono configurabili in `src/desnivel/trip/co
 ## Riferimenti nel codice e uso
 
 - **Catalogo metriche**: `src/desnivel/trip/metrics.py`
-- **Configurazioni e parametri**: `src/desnivel/trip/config.py`
+- **Valori delle impostazioni**: `settings/desnivel.toml`
+- **Modelli tipizzati**: `src/desnivel/trip/config.py` e `src/desnivel/settings.py`
 - **Comando per lo streaming delle metriche**:
   ```sh
   python -m desnivel.cli.stream_metrics --gpx gpx/tappa04_Levanto_La_Spezia.gpx --speed 30

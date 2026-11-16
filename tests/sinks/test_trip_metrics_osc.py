@@ -1,10 +1,13 @@
 """Test del sink OSC neutrale delle metriche viaggio."""
 from __future__ import annotations
 
+from dataclasses import replace
+
 import numpy as np
 import pytest
 
-from desnivel.trip.config import Config, GpxConfig, OscConfig
+from desnivel.settings import DEFAULT_CONFIG
+from desnivel.trip.config import Config
 from desnivel.sinks.osc import FakeOscClient
 from desnivel.sinks.trip_metrics_osc import (
     TripMetricsOscSink,
@@ -24,9 +27,11 @@ def _track(duration_s: float = 2.0) -> Track:
 
 
 def _config() -> Config:
-    return Config(
-        osc=OscConfig(trip_metrics_rate_hz=1.0),
-        gpx=GpxConfig(
+    return replace(
+        DEFAULT_CONFIG,
+        osc=replace(DEFAULT_CONFIG.osc, trip_metrics_rate_hz=1.0),
+        gpx=replace(
+            DEFAULT_CONFIG.gpx,
             speed_reference_kmh=36.0,
             slope_reference=0.2,
             effort_weight_speed=0.4,

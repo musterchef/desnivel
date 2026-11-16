@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 
 from desnivel.reports.pause_validation import render_pause_validation
-from desnivel.trip.config import DEFAULT_CONFIG
+from desnivel.settings import DEFAULT_CONFIG
 from desnivel.trip.loader import read_source
 from desnivel.trip.loader._filter import filter_position_spikes
 from desnivel.trip.loader._parse import stage_id_from_path

@@ -5,7 +5,9 @@ from pathlib import Path
 
 import numpy as np
 
-from ..config import DEFAULT_CONFIG, Config
+from desnivel.settings import DEFAULT_CONFIG
+
+from ..config import Config
 from ..track import Track, TrackSegment
 from ._derive import derive_channels
 from ._filter import filter_position_spikes

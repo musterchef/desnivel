@@ -98,10 +98,20 @@ dal profilo; eventuali valori nella famiglia sono override espliciti.
 Senza automatismo sono richieste `root` e `scale` per ogni famiglia.
 
 Le impostazioni applicative separate sono in `settings/desnivel.toml`.
-`trip.route_structure` contiene l'attivazione della riunione delle inversioni,
-i rapporti massimi locali di dislivello e distanza, la distanza fisica
-massima e il rapporto minimo di recupero. Questi controlli modificano la
-riduzione neutra del percorso, non la direzione o i generatori musicali.
+Il file contiene sezioni tipizzate e complete; chiavi mancanti o sconosciute
+producono un errore:
+
+| Sezione | Responsabilità |
+|---|---|
+| `trip.timing` | Frequenza interna di ricampionamento |
+| `trip.gpx` | Derivazione delle metriche, filtri GPS, interruzioni e stima delle pause |
+| `trip.quality` | Ispezione e raggruppamento dei segmenti sorgente da verificare |
+| `trip.route_structure` | Riduzione delle campate in continuità strutturali e variazioni locali |
+| `transport.osc` | Destinazione e frequenza del trasporto OSC delle metriche |
+
+`--settings` permette ai comandi che lo espongono di caricare un file TOML
+alternativo. Nella sessione e nel comando della forma, la stessa configurazione
+viene usata sia dal loader FIT/GPX sia dalla struttura del percorso.
 
 | Campo dell'assetto | Significato |
 |---|---|

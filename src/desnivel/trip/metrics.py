@@ -6,7 +6,9 @@ from enum import Enum
 
 import numpy as np
 
-from .config import DEFAULT_CONFIG, Config
+from desnivel.settings import DEFAULT_CONFIG
+
+from .config import Config
 from .track import Track
 
 

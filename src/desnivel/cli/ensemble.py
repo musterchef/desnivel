@@ -21,7 +21,7 @@ def main(argv=None):
     parser.add_argument('--infer-fit-pauses', action=argparse.BooleanOptionalAction, default=None,
                         help='Se il FIT non contiene eventi timer, stima le pause dai campioni GPS.')
     parser.add_argument('--config', type=Path, required=True)
-    from desnivel.settings import DEFAULT_SETTINGS_PATH
+    from desnivel.settings import DEFAULT_SETTINGS_PATH, load_settings
     parser.add_argument('--settings', type=Path, default=DEFAULT_SETTINGS_PATH,
                         help='Impostazioni TOML applicative.')
     parser.add_argument('--setup', action='store_true', help='Crea una sessione vuota se il file di configurazione non esiste.')
@@ -81,8 +81,10 @@ def main(argv=None):
         speed = args.speed if args.speed is not None else 1.
         if not math.isfinite(speed) or speed <= 0 or not 1024 <= args.port <= 65535:
             raise ValueError('velocità positiva e porta tra 1024 e 65535 richieste')
+        application_settings = load_settings(args.settings)
         track = load_track(args.gpx, timing_reference=args.timing_reference,
-                           infer_missing_fit_timer=args.infer_fit_pauses)
+                           infer_missing_fit_timer=args.infer_fit_pauses,
+                           config=application_settings.config)
         from desnivel.cli.session_config import resolve_configuration
         config = resolve_configuration(track, config, direction, args.settings)
         from desnivel.cli.weather_context import prepare_weather_context

@@ -10,7 +10,7 @@ from desnivel.trip.loader import load_track, read_source
 from desnivel.trip.loader._fit import timer_intervals
 from desnivel.trip.loader._parse import stage_id_from_path
 from desnivel.trip.loader._derive import derive_channels
-from desnivel.trip.config import DEFAULT_CONFIG
+from desnivel.settings import DEFAULT_CONFIG
 
 
 EPOCH = datetime(1989, 12, 31, tzinfo=timezone.utc).timestamp()

@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 import numpy as np
 import pytest
 
-from desnivel.trip.config import DEFAULT_CONFIG
+from desnivel.settings import DEFAULT_CONFIG
 from desnivel.trip.loader import load_track
 from desnivel.trip.loader._filter import filter_position_spikes
 from desnivel.trip.metrics import MetricName, build_metric_samples

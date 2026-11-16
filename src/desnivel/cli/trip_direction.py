@@ -49,7 +49,8 @@ def _resolve(track, path, settings_path=DEFAULT_SETTINGS_PATH):
     grouping_config = json.loads((path.parent/definition['grouping']).read_text(encoding='utf-8'))
     analysis = analyze_track(track, analysis_config)
     grouping = group_zones(analysis, grouping_config)
-    route_form = describe_route_form(track, grouping['sections'], load_settings(settings_path).route_structure)
+    route_form = describe_route_form(
+        track, grouping['sections'], load_settings(settings_path).trip.route_structure)
     arrangements = definition['families']
     if not isinstance(arrangements, dict) or set(arrangements) != set(grouping_config['families']):
         raise ValueError('ogni famiglia configurata richiede un assetto musicale, senza famiglie aggiuntive')

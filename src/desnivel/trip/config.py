@@ -1,14 +1,14 @@
 """Configurazione del caricamento FIT/GPX e del trasporto delle metriche."""
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
 class TimingConfig:
     """Tempi e frequenze di base della pipeline."""
 
-    internal_rate_hz: float = 10.0
+    internal_rate_hz: float
     """Frequenza di ricampionamento interno (Hz)."""
 
 
@@ -16,9 +16,9 @@ class TimingConfig:
 class OscConfig:
     """Parametri di trasporto OSC."""
 
-    host: str = "127.0.0.1"
-    port: int = 9000
-    trip_metrics_rate_hz: float = 1.0
+    host: str
+    port: int
+    trip_metrics_rate_hz: float
     """Frequenza del contratto neutrale delle metriche viaggio."""
 
 
@@ -28,37 +28,34 @@ class GpxConfig:
 
     # Velocità di riferimento (km/h) per normalizzare la componente di sforzo
     # legata al moto. Sopra questa soglia la componente satura.
-    speed_reference_kmh: float = 25.0
+    speed_reference_kmh: float
     # Pendenza positiva di riferimento (frazione, es. 0.10 = 10%) per
     # normalizzare la componente di sforzo legata alla salita.
-    slope_reference: float = 0.08
+    slope_reference: float
     # Pesi della formula di effort = w_speed * speed_norm + w_slope * slope_pos_norm.
     # Devono sommare a 1 per restare nel range [0, 1].
-    effort_weight_speed: float = 0.4
-    effort_weight_slope: float = 0.6
+    effort_weight_speed: float
+    effort_weight_slope: float
     # Filtraggio leggero del raw GPX (mediana mobile in numero di campioni).
-    raw_median_window: int = 3
+    raw_median_window: int
     # Esclusione conservativa di brevi deviazioni della posizione GPS.
-    max_speed_kmh: float = 70.0
-    spike_max_removed_points: int = 2
-    spike_max_gap_s: float = 60.0
-    spike_min_detour_ratio: float = 0.5
-    recording_gap_s: float = 30.0
-    stop_min_duration_s: float = 300.0
-    stop_radius_m: float = 3.0
+    max_speed_kmh: float
+    spike_max_removed_points: int
+    spike_max_gap_s: float
+    spike_min_detour_ratio: float
+    recording_gap_s: float
+    stop_min_duration_s: float
+    stop_radius_m: float
     # Pause brevi: intervallo anomalo rispetto alla cadenza e basso spostamento.
-    pause_min_gap_s: float = 8.0
-    pause_gap_factor: float = 3.0
-    pause_max_speed_kmh: float = 5.0
+    pause_min_gap_s: float
+    pause_gap_factor: float
+    pause_max_speed_kmh: float
 
 
 @dataclass(frozen=True)
 class Config:
     """Configurazione del producer GPX."""
 
-    timing: TimingConfig = field(default_factory=TimingConfig)
-    gpx: GpxConfig = field(default_factory=GpxConfig)
-    osc: OscConfig = field(default_factory=OscConfig)
-
-
-DEFAULT_CONFIG = Config()
+    timing: TimingConfig
+    gpx: GpxConfig
+    osc: OscConfig

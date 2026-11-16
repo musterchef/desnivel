@@ -57,7 +57,7 @@ def test_command_uses_project_direction_and_can_save_json(tmp_path, monkeypatch,
     output = tmp_path/'forma.json'
     loaded = object()
     monkeypatch.setattr(show_route_form, 'load_track',
-                        lambda path, timing_reference=None: loaded)
+                        lambda path, timing_reference=None, config=None: loaded)
     calls = []
     monkeypatch.setattr(show_route_form, 'load_route_form',
                         lambda track, path, settings: calls.append((track, path, settings)) or route_form())
@@ -75,7 +75,8 @@ def test_o_opens_the_track_picker(tmp_path, monkeypatch):
     loaded = object()
     monkeypatch.setattr(show_route_form, 'choose_track', lambda: selected)
     monkeypatch.setattr(show_route_form, 'load_track',
-                        lambda path, timing_reference=None: loaded if path == selected else None)
+                        lambda path, timing_reference=None, config=None:
+                        loaded if path == selected else None)
     monkeypatch.setattr(show_route_form, 'load_route_form',
                         lambda track, path, settings: route_form() if track is loaded else None)
 

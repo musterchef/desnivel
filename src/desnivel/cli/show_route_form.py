@@ -7,7 +7,7 @@ from desnivel.cli.file_dialogs import choose_track
 from desnivel.cli.launch_stage import resolve_track
 from desnivel.cli.track_source import read_stage_choice
 from desnivel.cli.trip_direction import load_route_form
-from desnivel.settings import DEFAULT_SETTINGS_PATH
+from desnivel.settings import DEFAULT_SETTINGS_PATH, load_settings
 from desnivel.trip.loader import load_track
 
 
@@ -116,7 +116,9 @@ def main(argv=None):
                 return 130
         else:
             path = args.track
-        track = load_track(path, timing_reference=args.timing_reference)
+        application_settings = load_settings(args.settings)
+        track = load_track(path, timing_reference=args.timing_reference,
+                           config=application_settings.config)
         form = load_route_form(track, args.direction, args.settings)
         if args.output:
             args.output.parent.mkdir(parents=True, exist_ok=True)

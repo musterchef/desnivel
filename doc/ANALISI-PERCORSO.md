@@ -136,7 +136,8 @@ scollinamenti come eventi separati o scelte musicali.
 
 `loader/_travel.py` identifica le interruzioni prima della derivazione
 dei canali e del ricampionamento. I criteri comuni a tutte le tappe sono
-in `trip/config.py`, nella classe `GpxConfig`:
+nella sezione `trip.gpx` di `settings/desnivel.toml` e sono rappresentati
+nel codice dalla classe `GpxConfig`:
 
 | Campo | Valore iniziale | Significato |
 |---|---:|---|
@@ -261,8 +262,9 @@ separatamente le esclusioni effettivamente applicate al caricamento.
 ## Esclusione delle deviazioni della posizione
 
 `loader/_filter.py` viene eseguito da `load_track` prima della derivazione
-dei canali. Il GPX originale non viene riscritto. La configurazione è
-in `trip/config.py`, nella classe `GpxConfig`:
+dei canali. Il GPX originale non viene riscritto. I valori sono nella
+sezione `trip.gpx` di `settings/desnivel.toml` e vengono validati tramite
+`GpxConfig`:
 
 | Campo | Valore iniziale | Significato |
 |---|---:|---|
@@ -323,8 +325,8 @@ modificano punti, metriche o assegnazioni musicali:
 - coordinate o tempi non validi, confini di segmento e punti intermedi
   mancanti.
 
-Le condizioni sono definite in `trip/quality.py`, in `REVIEW_SETTINGS`,
-e riportate nel risultato. `inspect_source` accetta impostazioni di
+Le condizioni sono definite nella sezione `trip.quality` di
+`settings/desnivel.toml` e riportate nel risultato. `inspect_source` accetta impostazioni di
 revisione esplicite. Gli indizi separati da non più di 60 secondi nello
 stesso segmento sono raggruppati. Ogni gruppo conserva ID basato sui
 numeri originali dei punti, motivi, estremi, picco, intervalli segnalati

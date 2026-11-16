@@ -105,7 +105,12 @@ def test_cli_can_run_without_loading_a_terminal_frontend(tmp_path, monkeypatch):
     assert ensemble.main(['--config', str(setup.path), '--manual-sections',
                           '--no-terminal', '--status-file', str(target)]) == 0
     assert json.loads(target.read_text())['state'] == 'closed'
-    assert loads == [((tmp_path/'unused.gpx',), {'timing_reference': None, 'infer_missing_fit_timer': True})]
+    assert len(loads) == 1
+    positional, keywords = loads[0]
+    assert positional == (tmp_path/'unused.gpx',)
+    assert keywords['timing_reference'] is None
+    assert keywords['infer_missing_fit_timer'] is True
+    assert keywords['config'].gpx.max_speed_kmh == 70
 
 
 def transport_controller(tmp_path, *, playing=1):

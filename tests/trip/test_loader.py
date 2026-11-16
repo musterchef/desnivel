@@ -7,7 +7,7 @@ from dataclasses import replace
 import numpy as np
 import pytest
 
-from desnivel.trip.config import DEFAULT_CONFIG
+from desnivel.settings import DEFAULT_CONFIG
 from desnivel.trip.loader import load_track
 from desnivel.trip.loader._derive import derive_channels
 from desnivel.trip.loader._parse import parse_gpx_points, stage_id_from_path

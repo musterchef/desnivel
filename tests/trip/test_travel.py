@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from desnivel.trip.analysis import analyze_track
-from desnivel.trip.config import DEFAULT_CONFIG
+from desnivel.settings import DEFAULT_CONFIG
 from desnivel.trip.loader import load_track
 from desnivel.trip.loader._travel import select_travel
 from desnivel.trip.metrics import MetricName, build_metric_samples

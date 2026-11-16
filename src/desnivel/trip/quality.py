@@ -1,25 +1,27 @@
 """Ispezione delle velocità derivate dai punti GPX originali, senza filtri."""
+from dataclasses import asdict
 from datetime import datetime, timezone
 
 import numpy as np
 
-from .config import DEFAULT_CONFIG
+from desnivel.settings import DEFAULT_SETTINGS
+
 from .loader._geo import haversine_m
 
 
-REVIEW_SETTINGS = {'group_gap_s': 60., 'context_s': 60., 'sampling_gap_s': 30.,
-                   'gap_distance_m': 100., 'stationary_duration_s': 30.,
-                   'stationary_radius_m': 10., 'resume_distance_m': 50.}
-
-
-def inspect_source(raw, *, top_count=10, neighbor_points=3,
-                   max_speed_kmh=DEFAULT_CONFIG.gpx.max_speed_kmh, review_settings=None):
+def inspect_source(raw, *, top_count=None, neighbor_points=None,
+                   max_speed_kmh=None, review_settings=None):
     """Ordina gli intervalli per velocità e conserva i punti necessari alla verifica.
 
     Non classifica gli intervalli veloci come errori e non modifica le misure.
     Una velocità richiede coordinate e tempi validi nello stesso segmento,
     senza punti scartati dal parser fra i due estremi.
     """
+    defaults = asdict(DEFAULT_SETTINGS.trip.quality)
+    top_count = defaults.pop('top_count') if top_count is None else top_count
+    neighbor_points = defaults.pop('neighbor_points') if neighbor_points is None else neighbor_points
+    max_speed_kmh = (DEFAULT_SETTINGS.trip.gpx.max_speed_kmh
+                     if max_speed_kmh is None else max_speed_kmh)
     if type(top_count) is not int or top_count < 1 or type(neighbor_points) is not int or neighbor_points < 0:
         raise ValueError('top_count positivo e neighbor_points non negativo richiesti')
     channels = {key: np.asarray(raw[key]) for key in
@@ -75,8 +77,8 @@ def inspect_source(raw, *, top_count=10, neighbor_points=3,
                         'neighbors': [point(j) for j in range(max(0, i-neighbor_points),
                                                            min(n, i+neighbor_points+2))]})
     valid_speeds = speeds[available]
-    settings = {**REVIEW_SETTINGS, **(review_settings or {})}
-    if (set(settings) != set(REVIEW_SETTINGS) or any(type(v) not in (int, float) or not np.isfinite(v) or v <= 0
+    settings = {**defaults, **(review_settings or {})}
+    if (set(settings) != set(defaults) or any(type(v) not in (int, float) or not np.isfinite(v) or v <= 0
                                                     for v in (*settings.values(), max_speed_kmh))):
         raise ValueError('criteri di revisione noti, positivi e finiti richiesti')
     flags = {key: mask.copy() for key, mask in reasons.items()}
@@ -129,4 +131,6 @@ def inspect_source(raw, *, top_count=10, neighbor_points=3,
             'speed_median_kmh': finite(np.median(valid_speeds)) if valid_speeds.size else None,
             'speed_p95_kmh': finite(np.percentile(valid_speeds, 95)) if valid_speeds.size else None,
             'fastest_intervals': fastest,
-            'review_settings': {'max_speed_kmh': max_speed_kmh, **settings}, 'review_segments': review}
+            'review_settings': {'top_count': top_count, 'neighbor_points': neighbor_points,
+                                'max_speed_kmh': max_speed_kmh, **settings},
+            'review_segments': review}

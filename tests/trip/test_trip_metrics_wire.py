@@ -7,6 +7,7 @@ solo alla costruzione della schedule in Python.
 """
 from __future__ import annotations
 
+from dataclasses import replace
 import threading
 
 import numpy as np
@@ -17,7 +18,8 @@ pytest.importorskip("pythonosc")
 from pythonosc.dispatcher import Dispatcher
 from pythonosc.osc_server import BlockingOSCUDPServer
 
-from desnivel.trip.config import Config, GpxConfig, OscConfig
+from desnivel.settings import DEFAULT_CONFIG
+from desnivel.trip.config import Config
 from desnivel.sinks.osc import UdpOscClient
 from desnivel.sinks.trip_metrics_osc import build_trip_metric_schedule
 from desnivel.trip.track import Track
@@ -34,9 +36,11 @@ def _track() -> Track:
 
 
 def _config() -> Config:
-    return Config(
-        osc=OscConfig(trip_metrics_rate_hz=1.0),
-        gpx=GpxConfig(
+    return replace(
+        DEFAULT_CONFIG,
+        osc=replace(DEFAULT_CONFIG.osc, trip_metrics_rate_hz=1.0),
+        gpx=replace(
+            DEFAULT_CONFIG.gpx,
             speed_reference_kmh=36.0,
             slope_reference=0.2,
             effort_weight_speed=0.4,

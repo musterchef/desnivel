@@ -5,7 +5,7 @@ import argparse
 from dataclasses import replace
 from pathlib import Path
 
-from desnivel.trip.config import DEFAULT_CONFIG
+from desnivel.settings import DEFAULT_CONFIG
 from desnivel.trip.loader import load_track
 from desnivel.cli.track_source import add_track_arguments
 from desnivel.sinks.osc import UdpOscClient
