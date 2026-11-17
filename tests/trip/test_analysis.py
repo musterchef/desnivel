@@ -108,7 +108,7 @@ def test_cli_writes_reproducible_analysis_without_music(tmp_path, capsys):
     root = Path(__file__).resolve().parents[2]
     output = tmp_path/'analysis.json'
     args = ['--gpx', str(root/'gpx/tappa05_Firenze_San_Gimignano.gpx'),
-            '--config', str(root/'presets/analisi-percorso.json'), '--output', str(output)]
+            '--settings', str(root/'settings/desnivel.toml'), '--output', str(output)]
     assert main(args) == 0
     first = output.read_text()
     assert main(args) == 0

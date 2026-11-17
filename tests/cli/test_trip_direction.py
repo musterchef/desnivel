@@ -28,13 +28,18 @@ def direction(tmp_path):
     for family in definition['families'].values():
         for assignment in family['assignments'].values():
             assignment['presence'] = 1  # Le prove musicali isolano sviluppo e interazione.
-    analysis = json.loads((definitions/'analisi-percorso.json').read_text())
-    analysis.update(slope_window_m=100, min_zone_distance_m=100)
-    (tmp_path/'analisi-percorso.json').write_text(json.dumps(analysis))
+    settings = Path('settings/desnivel.toml').read_text()
+    settings = settings.replace('slope_window_m = 300.0', 'slope_window_m = 100.0')
+    settings = settings.replace('min_zone_distance_m = 300.0', 'min_zone_distance_m = 100.0')
+    (tmp_path/'desnivel.toml').write_text(settings)
     (tmp_path/'macrosezioni-percorso.json').write_text((definitions/'macrosezioni-percorso.json').read_text())
     path = tmp_path/'direction.json'
     path.write_text(json.dumps(definition))
     return path
+
+
+def settings_for(direction):
+    return direction.parent/'desnivel.toml'
 
 
 def track():
@@ -46,7 +51,7 @@ def track():
 
 def make_runtime(direction):
     config = json.loads(Path('presets/organico.json').read_text())
-    config['sections'] = load_trip_sections(track(), direction)
+    config['sections'] = load_trip_sections(track(), direction, settings_for(direction))
     sent = []
     bridge = VoiceDeviceBridge({}, lambda *args: sent.append(args), clock=lambda: 0.)
     runtime = EnsembleRuntime(track(), config, bridge, clock=lambda: 0.)
@@ -54,7 +59,7 @@ def make_runtime(direction):
 
 
 def test_boundaries_follow_macrosections_and_preserve_internal_zones(direction):
-    sections = load_trip_sections(track(), direction)
+    sections = load_trip_sections(track(), direction, settings_for(direction))
     assert [s['name'] for s in sections] == ['ascent', 'level', 'descent', 'ascent']
     assert [s['trip']['start_distance_m'] for s in sections] == [0, 600, 900, 1200]
     assert [s['trip']['zone_indices'] for s in sections] == [[0, 1], [2], [3], [4]]
@@ -69,7 +74,7 @@ def test_resolved_configuration_exposes_neutral_route_form(direction):
     from desnivel.cli.trip_direction import prepare_trip_config
 
     config = json.loads(Path('presets/sessione.json').read_text())
-    resolved = prepare_trip_config(track(), config, direction)
+    resolved = prepare_trip_config(track(), config, direction, settings_for(direction))
     assert [event['type'] for event in resolved['route_form']['events']] == [
         'departure', 'profile_change', 'profile_change', 'valley', 'arrival'
     ]
@@ -241,7 +246,7 @@ def test_family_names_are_configuration_data(direction):
     definition = json.loads(direction.read_text())
     definition['families']['incline'] = definition['families'].pop('ascent')
     direction.write_text(json.dumps(definition))
-    assert load_trip_sections(track(), direction)[0]['name'] == 'incline'
+    assert load_trip_sections(track(), direction, settings_for(direction))[0]['name'] == 'incline'
 
 
 def test_dry_run_checks_every_macrosection_without_opening_server(monkeypatch, capsys):

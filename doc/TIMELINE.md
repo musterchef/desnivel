@@ -121,7 +121,7 @@ rapporto beat/km. Il report mostra la scala e la durata effettiva.
 ```sh
 .venv/bin/python -m desnivel.cli.analyze_trip \
   --gpx gpx/tappa05_Firenze_San_Gimignano.gpx \
-  --config presets/analisi-percorso.json \
+  --settings settings/desnivel.toml \
   --grouping presets/macrosezioni-percorso.json \
   --timeline-session presets/organico.json \
   --output output/analisi-percorso.json \

@@ -162,7 +162,7 @@ def test_analysis_command_accepts_fit_and_reports_timer_provenance(tmp_path):
     from desnivel.cli.analyze_trip import main
     path = write_fit(tmp_path/'tappa06_trip.fit')
     output, html = tmp_path/'report.json', tmp_path/'report.html'
-    assert main(['--track', str(path), '--config', 'presets/analisi-percorso.json',
+    assert main(['--track', str(path), '--settings', 'settings/desnivel.toml',
                  '--output', str(output), '--html', str(html)]) == 0
     data = json.loads(output.read_text())
     assert data['source_format'] == 'fit'

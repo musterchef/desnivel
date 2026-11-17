@@ -52,6 +52,29 @@ class QualitySettings:
 
 
 @dataclass(frozen=True)
+class AnalysisBand:
+    name: str
+    from_slope_ratio: float | None
+
+
+@dataclass(frozen=True)
+class AnalysisSettings:
+    sample_distance_m: float
+    slope_window_m: float
+    min_zone_distance_m: float
+    bands: tuple[AnalysisBand, ...]
+
+    def as_dict(self):
+        return {
+            'sample_distance_m': self.sample_distance_m,
+            'slope_window_m': self.slope_window_m,
+            'min_zone_distance_m': self.min_zone_distance_m,
+            'bands': [{'name': band.name, 'from_slope_ratio': band.from_slope_ratio}
+                      for band in self.bands],
+        }
+
+
+@dataclass(frozen=True)
 class RouteStructureSettings:
     merge_reversals: bool
     max_relative_elevation: float
@@ -73,6 +96,7 @@ class TripSettings:
     timing: TimingConfig
     gpx: GpxConfig
     quality: QualitySettings
+    analysis: AnalysisSettings
     route_structure: RouteStructureSettings
 
 
@@ -117,6 +141,40 @@ def _validate_config(config):
     _positive(config.osc, ('trip_metrics_rate_hz',), 'transport.osc')
 
 
+def _analysis_settings(section):
+    expected = {'sample_distance_m', 'slope_window_m', 'min_zone_distance_m', 'bands'}
+    if not isinstance(section, dict) or set(section) != expected:
+        raise ValueError(f'trip.analysis richiede {sorted(expected)}')
+    bands = section['bands']
+    if not isinstance(bands, list) or not bands:
+        raise ValueError('trip.analysis.bands deve contenere almeno una fascia')
+    parsed, names, previous = [], set(), -math.inf
+    for index, band in enumerate(bands):
+        required = {'name'} if index == 0 else {'name', 'from_slope_ratio'}
+        if not isinstance(band, dict) or set(band) != required:
+            raise ValueError('la prima fascia richiede name; le successive anche from_slope_ratio')
+        name = band['name']
+        lower = band.get('from_slope_ratio')
+        if not isinstance(name, str) or not name or name in names:
+            raise ValueError('i nomi delle fasce devono essere non vuoti e distinti')
+        if index and (type(lower) not in (int, float)
+                      or not math.isfinite(lower) or lower <= previous):
+            raise ValueError('le soglie delle fasce devono essere finite e strettamente crescenti')
+        names.add(name)
+        if index:
+            previous = lower
+        parsed.append(AnalysisBand(name, lower))
+    settings = AnalysisSettings(
+        sample_distance_m=section['sample_distance_m'],
+        slope_window_m=section['slope_window_m'],
+        min_zone_distance_m=section['min_zone_distance_m'],
+        bands=tuple(parsed),
+    )
+    _positive(settings, ('sample_distance_m', 'slope_window_m', 'min_zone_distance_m'),
+              'trip.analysis')
+    return settings
+
+
 def load_settings(path=DEFAULT_SETTINGS_PATH):
     """Legge e valida un file TOML senza valori sostitutivi impliciti."""
     data = tomllib.loads(Path(path).read_text(encoding='utf-8'))
@@ -124,8 +182,9 @@ def load_settings(path=DEFAULT_SETTINGS_PATH):
         raise ValueError('le impostazioni richiedono le sezioni trip e transport')
     trip = data['trip']
     transport = data['transport']
-    if not isinstance(trip, dict) or set(trip) != {'timing', 'gpx', 'quality', 'route_structure'}:
-        raise ValueError('trip richiede timing, gpx, quality e route_structure')
+    if not isinstance(trip, dict) or set(trip) != {
+            'timing', 'gpx', 'quality', 'analysis', 'route_structure'}:
+        raise ValueError('trip richiede timing, gpx, quality, analysis e route_structure')
     if not isinstance(transport, dict) or set(transport) != {'osc'}:
         raise ValueError('transport richiede soltanto la sezione osc')
     settings = Settings(
@@ -133,6 +192,7 @@ def load_settings(path=DEFAULT_SETTINGS_PATH):
             timing=_require_fields(trip['timing'], TimingConfig, 'trip.timing'),
             gpx=_require_fields(trip['gpx'], GpxConfig, 'trip.gpx'),
             quality=_require_fields(trip['quality'], QualitySettings, 'trip.quality'),
+            analysis=_analysis_settings(trip['analysis']),
             route_structure=_require_fields(
                 trip['route_structure'], RouteStructureSettings, 'trip.route_structure'),
         ),

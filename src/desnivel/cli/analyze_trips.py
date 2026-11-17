@@ -6,6 +6,7 @@ from pathlib import Path
 from desnivel.cli.analyze_trip import analyze_trip
 from desnivel.reports.trip import render_trip_report, render_trip_index, render_source_review
 from desnivel.trip.loader._parse import stage_id_from_path
+from desnivel.settings import DEFAULT_SETTINGS_PATH
 
 
 def stage_sources(directory):
@@ -27,7 +28,8 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--track-dir', '--gpx-dir', dest='gpx_dir', type=Path, required=True,
                         help='Cartella FIT/GPX; a parità di tappa viene usato il FIT.')
-    parser.add_argument('--config', type=Path, required=True)
+    parser.add_argument('--settings', type=Path, default=DEFAULT_SETTINGS_PATH,
+                        help='Impostazioni TOML applicative.')
     parser.add_argument('--grouping', type=Path)
     parser.add_argument('--pause-context', nargs=2, action='append', metavar=('FLANK', 'MIDDLE'))
     parser.add_argument('--timeline-session', type=Path)
@@ -42,7 +44,7 @@ def main(argv=None):
         reports = []
         for source in sources:
             try:
-                result = analyze_trip(source, args.config, grouping=args.grouping,
+                result = analyze_trip(source, args.settings, grouping=args.grouping,
                                       pause_context=args.pause_context, timeline_session=args.timeline_session)
             except (ValueError, KeyError, TypeError, OSError) as error:
                 raise ValueError(f'{source.name}: {error}') from error

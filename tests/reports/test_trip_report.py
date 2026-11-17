@@ -63,7 +63,7 @@ def test_cli_embeds_exactly_the_exported_analysis(tmp_path, with_grouping):
     root = Path(__file__).resolve().parents[2]
     output, report = tmp_path/'nested/analysis.json', tmp_path/'nested/report.html'
     args = ['--gpx', str(root/'gpx/tappa05_Firenze_San_Gimignano.gpx'),
-            '--config', str(root/'presets/analisi-percorso.json'),
+            '--settings', str(root/'settings/desnivel.toml'),
             '--output', str(output), '--html', str(report)]
     if with_grouping:
         args += ['--grouping', str(root/'presets/macrosezioni-percorso.json')]
@@ -82,7 +82,7 @@ def test_cli_rejects_colliding_output_paths_before_writing(tmp_path):
 
     output = tmp_path/'same'
     with pytest.raises(SystemExit):
-        main(['--gpx', 'unused.gpx', '--config', 'unused.json',
+        main(['--gpx', 'unused.gpx', '--settings', 'unused.toml',
               '--output', str(output), '--html', str(output)])
     assert not output.exists()
 
@@ -97,7 +97,7 @@ def test_timeline_report_and_json_use_same_beat_allocation_without_changing_anal
     from desnivel.music.timeline import allocate_timeline
 
     result_path, html = tmp_path/'result.json', tmp_path/'report.html'
-    args = ['--gpx', 'gpx/tappa05_Firenze_San_Gimignano.gpx', '--config', 'presets/analisi-percorso.json',
+    args = ['--gpx', 'gpx/tappa05_Firenze_San_Gimignano.gpx', '--settings', 'settings/desnivel.toml',
             '--grouping', 'presets/macrosezioni-percorso.json', '--output', str(result_path), '--html', str(html)]
     assert main(args) == 0
     original = json.loads(result_path.read_text())
@@ -129,7 +129,7 @@ def test_linear_reference_uses_time_instead_of_distance_and_includes_stops():
 def test_timeline_requires_grouping_and_reports_extension(tmp_path, capsys):
     from desnivel.cli.analyze_trip import main
 
-    args = ['--gpx', 'gpx/tappa05_Firenze_San_Gimignano.gpx', '--config', 'presets/analisi-percorso.json']
+    args = ['--gpx', 'gpx/tappa05_Firenze_San_Gimignano.gpx', '--settings', 'settings/desnivel.toml']
     with pytest.raises(SystemExit):
         main(args+['--timeline-session', 'presets/organico.json'])
     session = tmp_path/'session.json'
@@ -144,7 +144,7 @@ def test_pause_context_is_optional_and_preserves_original_grouping(tmp_path):
     from desnivel.trip.sections import measure_section_bridges
 
     output, html = tmp_path/'analysis.json', tmp_path/'analysis.html'
-    args = ['--gpx', 'gpx/tappa05_Firenze_San_Gimignano.gpx', '--config', 'presets/analisi-percorso.json',
+    args = ['--gpx', 'gpx/tappa05_Firenze_San_Gimignano.gpx', '--settings', 'settings/desnivel.toml',
             '--grouping', 'presets/macrosezioni-percorso.json', '--output', str(output), '--html', str(html)]
     assert main(args) == 0
     baseline = json.loads(output.read_text())
@@ -170,4 +170,4 @@ def test_pause_context_requires_grouping():
     from desnivel.cli.analyze_trip import main
 
     with pytest.raises(SystemExit):
-        main(['--gpx', 'unused.gpx', '--config', 'unused.json', '--pause-context', 'ascent', 'level'])
+        main(['--gpx', 'unused.gpx', '--settings', 'unused.toml', '--pause-context', 'ascent', 'level'])

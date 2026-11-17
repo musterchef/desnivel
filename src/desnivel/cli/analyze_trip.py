@@ -1,5 +1,6 @@
 """Analizza le zone del percorso senza generare o inviare musica."""
 import argparse
+from dataclasses import asdict
 import json
 from pathlib import Path
 
@@ -12,6 +13,7 @@ from desnivel.trip.quality import inspect_source
 from desnivel.trip.sections import group_zones, measure_section_bridges
 from desnivel.reports.trip import render_trip_report
 from desnivel.music.timeline import allocate_timeline, TimelineManager
+from desnivel.settings import DEFAULT_SETTINGS_PATH, load_settings
 
 
 def _linear_spans(track, sections, total_beats):
@@ -29,14 +31,21 @@ def _linear_spans(track, sections, total_beats):
              'duration_beats': end-start} for index, (start, end) in enumerate(zip(beats, beats[1:]))]
 
 
-def analyze_trip(gpx, config, *, grouping=None, pause_context=None, timeline_session=None, timing_reference=None):
+def analyze_trip(gpx, settings_path=DEFAULT_SETTINGS_PATH, *, grouping=None, pause_context=None,
+                 timeline_session=None, timing_reference=None):
     """Prepara gli stessi dati per report singoli e raccolte di tappe."""
     if (pause_context or timeline_session) and not grouping:
         raise ValueError('contesto locale e timeline richiedono il raggruppamento')
-    track = load_track(gpx, timing_reference=timing_reference)
-    result = analyze_track(track, json.loads(config.read_text()))
+    settings = load_settings(settings_path)
+    track = load_track(gpx, timing_reference=timing_reference, config=settings.config)
+    result = analyze_track(track, settings.trip.analysis.as_dict())
+    review = asdict(settings.trip.quality)
+    top_count = review.pop('top_count')
+    neighbor_points = review.pop('neighbor_points')
     result['source_quality'] = inspect_source(read_source(gpx)[0],
-                                            max_speed_kmh=track.metadata['source_filter']['max_speed_kmh'])
+                                            top_count=top_count, neighbor_points=neighbor_points,
+                                            max_speed_kmh=track.metadata['source_filter']['max_speed_kmh'],
+                                            review_settings=review)
     result['source_filter'] = track.metadata['source_filter']
     if grouping:
         result['grouping'] = group_zones(result, json.loads(grouping.read_text()))
@@ -68,7 +77,8 @@ def analyze_trip(gpx, config, *, grouping=None, pause_context=None, timeline_ses
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     add_track_arguments(parser)
-    parser.add_argument('--config', type=Path, required=True)
+    parser.add_argument('--settings', type=Path, default=DEFAULT_SETTINGS_PATH,
+                        help='Impostazioni TOML applicative.')
     parser.add_argument('--grouping', type=Path, help='Famiglie JSON per raggruppare le zone in macrosezioni.')
     parser.add_argument('--pause-context', nargs=2, action='append', metavar=('FLANK', 'MIDDLE'),
                         help='Misura MIDDLE tra due FLANK, per esempio ascent level; ripetibile, richiede --grouping.')
@@ -84,7 +94,7 @@ def main(argv=None):
     if args.output and args.html and args.output.resolve() == args.html.resolve():
         parser.error('JSON e HTML richiedono percorsi distinti')
     try:
-        result = analyze_trip(args.gpx, args.config, grouping=args.grouping,
+        result = analyze_trip(args.gpx, args.settings, grouping=args.grouping,
                               pause_context=args.pause_context, timeline_session=args.timeline_session,
                               timing_reference=args.timing_reference)
         if args.output:

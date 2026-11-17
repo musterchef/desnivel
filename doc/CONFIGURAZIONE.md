@@ -87,12 +87,11 @@ copre la fine del viaggio.
 
 | Campo | Significato |
 |---|---|
-| `analysis` | File dei criteri di analisi del percorso |
 | `grouping` | File delle famiglie di macrosezioni |
 | `families` | Un assetto musicale per ogni famiglia configurata, senza famiglie aggiuntive |
 | `automatic_music` | Profilo della tappa → tavolozza armonica e motivo, con override facoltativi; [contratto completo](DIREZIONE-MUSICALE.md) |
 
-I due percorsi sono relativi al file di direzione. Ogni assetto di famiglia
+Il percorso di `grouping` è relativo al file di direzione. Ogni assetto di famiglia
 richiede `assignments`. Con `automatic_music`, root e scala sono risolte
 dal profilo; eventuali valori nella famiglia sono override espliciti.
 Senza automatismo sono richieste `root` e `scale` per ogni famiglia.
@@ -106,6 +105,7 @@ producono un errore:
 | `trip.timing` | Frequenza interna di ricampionamento |
 | `trip.gpx` | Derivazione delle metriche, filtri GPS, interruzioni e stima delle pause |
 | `trip.quality` | Ispezione e raggruppamento dei segmenti sorgente da verificare |
+| `trip.analysis` | Campionamento altimetrico, persistenza e fasce di pendenza |
 | `trip.route_structure` | Riduzione delle campate in continuità strutturali e variazioni locali |
 | `transport.osc` | Destinazione e frequenza del trasporto OSC delle metriche |
 

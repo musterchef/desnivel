@@ -35,7 +35,7 @@ def test_collection_has_sorted_working_reports_with_same_analysis_as_single_comm
         shutil.copyfile(original, sources/name)
     (sources/'ignore.txt').write_text('non GPX')
     output = tmp_path/'report'
-    assert main(['--gpx-dir', str(sources), '--config', 'presets/analisi-percorso.json',
+    assert main(['--gpx-dir', str(sources), '--settings', 'settings/desnivel.toml',
                  '--grouping', 'presets/macrosezioni-percorso.json', '--pause-context', 'ascent', 'level',
                  '--pause-context', 'descent', 'level', '--timeline-session', 'presets/organico.json',
                  '--output-dir', str(output)]) == 0
@@ -54,7 +54,7 @@ def test_collection_has_sorted_working_reports_with_same_analysis_as_single_comm
     for stage in review['stages']:
         for segment in stage['segments']:
             assert f'{stage["stage"]}:{segment["id"]}' in page
-    expected = analyze_trip(sources/'tappa01_uno.gpx', Path('presets/analisi-percorso.json'),
+    expected = analyze_trip(sources/'tappa01_uno.gpx', Path('settings/desnivel.toml'),
                             grouping=Path('presets/macrosezioni-percorso.json'),
                             pause_context=[['ascent', 'level'], ['descent', 'level']],
                             timeline_session=Path('presets/organico.json'))
@@ -65,7 +65,7 @@ def test_collection_rejects_empty_directory_without_writing_output(tmp_path, cap
     source = tmp_path/'gpx'
     source.mkdir()
     with pytest.raises(SystemExit):
-        main(['--gpx-dir', str(source), '--config', 'presets/analisi-percorso.json',
+        main(['--gpx-dir', str(source), '--settings', 'settings/desnivel.toml',
               '--output-dir', str(tmp_path/'report')])
     assert 'nessun file GPX' in capsys.readouterr().err
     assert not (tmp_path/'report').exists()

@@ -39,18 +39,18 @@ def _validate_override(data, palette_ids):
 def _resolve(track, path, settings_path=DEFAULT_SETTINGS_PATH):
     path = Path(path)
     definition = json.loads(path.read_text(encoding='utf-8'))
-    required = {'analysis', 'grouping', 'families'}
+    required = {'grouping', 'families'}
     if not isinstance(definition, dict) or required-definition.keys() or definition.keys()-required-{'automatic_music'}:
-        raise ValueError('la direzione richiede analysis, grouping, families ed eventuale automatic_music')
-    for key in ('analysis', 'grouping'):
-        if not isinstance(definition[key], str) or not definition[key]:
-            raise ValueError(f'{key} deve indicare un file JSON')
-    analysis_config = json.loads((path.parent/definition['analysis']).read_text(encoding='utf-8'))
+        raise ValueError('la direzione richiede grouping, families ed eventuale automatic_music')
+    if not isinstance(definition['grouping'], str) or not definition['grouping']:
+        raise ValueError('grouping deve indicare un file JSON')
+    application_settings = load_settings(settings_path)
+    analysis_config = application_settings.trip.analysis.as_dict()
     grouping_config = json.loads((path.parent/definition['grouping']).read_text(encoding='utf-8'))
     analysis = analyze_track(track, analysis_config)
     grouping = group_zones(analysis, grouping_config)
     route_form = describe_route_form(
-        track, grouping['sections'], load_settings(settings_path).trip.route_structure)
+        track, grouping['sections'], application_settings.trip.route_structure)
     arrangements = definition['families']
     if not isinstance(arrangements, dict) or set(arrangements) != set(grouping_config['families']):
         raise ValueError('ogni famiglia configurata richiede un assetto musicale, senza famiglie aggiuntive')

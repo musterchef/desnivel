@@ -15,6 +15,15 @@ def test_visible_toml_settings_are_loaded_into_typed_values(tmp_path):
     assert settings.max_reversal_distance_m == 400
 
 
+def test_analysis_bands_restore_the_open_lower_bound_from_toml(tmp_path):
+    path = tmp_path/'desnivel.toml'
+    path.write_text(VALID)
+    analysis = load_settings(path).trip.analysis.as_dict()
+    assert analysis['bands'][0] == {
+        'name': 'steep_descent', 'from_slope_ratio': None}
+    assert analysis['bands'][-1]['from_slope_ratio'] == .06
+
+
 def test_toml_values_build_the_loader_and_transport_config(tmp_path):
     path = tmp_path/'desnivel.toml'
     path.write_text(VALID.replace('max_speed_kmh = 70.0', 'max_speed_kmh = 65.0')

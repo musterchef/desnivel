@@ -247,7 +247,7 @@ generatori mantengono le precedenze esistenti di sezione, preset e controlli.
 
 ## Contratti e diagnostica
 
-Il file di direzione richiede `analysis`, `grouping`, `families` e,
+Il file di direzione richiede `grouping`, `families` e,
 per l'automatismo, `automatic_music`. Quest'ultimo richiede:
 
 | Campo | Vincoli |

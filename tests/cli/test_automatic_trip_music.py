@@ -32,7 +32,7 @@ def track(stage='test', amplitude=1.):
 @pytest.fixture
 def direction(tmp_path):
     data = json.loads(DIRECTION.read_text())
-    for field in ('analysis', 'grouping'):
+    for field in ('grouping',):
         data[field] = str((DIRECTION.parent/data[field]).resolve())
     path = tmp_path/'direction.json'
     path.write_text(json.dumps(data))

@@ -70,7 +70,7 @@ di seguito. `selection_source` distingue `timer_events` da `gps_inference`.
 cd /Users/marco/ogni-tanto-programmo/desnivel
 .venv/bin/python -m desnivel.cli.analyze_trip \
   --gpx gpx/tappa05_Firenze_San_Gimignano.gpx \
-  --config presets/analisi-percorso.json \
+  --settings settings/desnivel.toml \
   --grouping presets/macrosezioni-percorso.json \
   --output output/analisi-percorso.json \
   --html output/analisi-percorso.html
@@ -78,20 +78,20 @@ cd /Users/marco/ogni-tanto-programmo/desnivel
 
 ## Metodo e configurazione
 
-La configurazione JSON richiede quattro campi:
+La sezione `trip.analysis` di `settings/desnivel.toml` richiede quattro campi:
 
 | Campo | Significato |
 |---|---|
 | `sample_distance_m` | Distanza fra i confini degli intervalli osservati. L'ultimo intervallo termina alla fine del percorso. |
 | `slope_window_m` | Ampiezza della finestra centrata sul punto medio di ciascun intervallo. La pendenza è il dislivello fra gli estremi diviso per la distanza. La finestra viene accorciata ai bordi del percorso. |
 | `min_zone_distance_m` | Estensione consecutiva nella stessa nuova fascia necessaria per confermare un cambio. |
-| `bands` | Fasce ordinate con nome e limite inferiore `from_slope_ratio`, incluso. La prima parte da `null`, senza limite inferiore; l'ultima non ha limite superiore. |
+| `bands` | Fasce ordinate con nome e limite inferiore `from_slope_ratio`, incluso. La prima omette il limite inferiore; l'ultima non ha limite superiore. |
 
 I valori numerici devono essere positivi e finiti; le soglie delle fasce possono
 essere negative e devono essere strettamente crescenti. Le pendenze sono frazioni:
 `0.06` significa 6%. I nomi delle fasce sono dati di configurazione.
 
-Il file `presets/analisi-percorso.json` contiene una prima taratura da revisionare:
+La configurazione fornita contiene una prima taratura da revisionare:
 intervalli di 100 m, osservazione di 300 m, persistenza di 300 m; fasce delimitate
 da −6%, −1,5%, +1,5% e +6%. Questi valori non sono soglie ciclistiche validate.
 
@@ -490,7 +490,7 @@ Il confronto serve a valutare una futura soglia per le pause interne.
 ```sh
 .venv/bin/python -m desnivel.cli.analyze_trip \
   --gpx gpx/tappa05_Firenze_San_Gimignano.gpx \
-  --config presets/analisi-percorso.json \
+  --settings settings/desnivel.toml \
   --grouping presets/macrosezioni-percorso.json \
   --pause-context ascent level \
   --pause-context descent level \
@@ -512,7 +512,7 @@ configurazioni e misure.
 ```sh
 .venv/bin/python -m desnivel.cli.analyze_trips \
   --track-dir fit \
-  --config presets/analisi-percorso.json \
+  --settings settings/desnivel.toml \
   --grouping presets/macrosezioni-percorso.json \
   --pause-context ascent level \
   --pause-context descent level \

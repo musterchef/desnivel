@@ -29,6 +29,30 @@ stationary_duration_s = 30.0
 stationary_radius_m = 10.0
 resume_distance_m = 50.0
 
+[trip.analysis]
+sample_distance_m = 100.0
+slope_window_m = 300.0
+min_zone_distance_m = 300.0
+
+[[trip.analysis.bands]]
+name = "steep_descent"
+
+[[trip.analysis.bands]]
+name = "descent"
+from_slope_ratio = -0.06
+
+[[trip.analysis.bands]]
+name = "level"
+from_slope_ratio = -0.015
+
+[[trip.analysis.bands]]
+name = "climb"
+from_slope_ratio = 0.015
+
+[[trip.analysis.bands]]
+name = "steep_climb"
+from_slope_ratio = 0.06
+
 [trip.route_structure]
 merge_reversals = true
 max_relative_elevation = 0.2
