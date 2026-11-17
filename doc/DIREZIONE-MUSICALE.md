@@ -98,6 +98,20 @@ melodia durante l'esecuzione.
 Il risultato è esposto in `decisions.coordinator.local_trip`.
 Alimenta le politiche adattive dei generatori nella sessione guidata dal GPX.
 
+## Adattamento locale e meteo
+
+`automatic_music.adaptation` definisce la trasformazione delle misure in
+intenzioni musicali. `terrain.slope_intensity_reference` e
+`terrain.slope_change_reference` normalizzano rispettivamente l'intensità e
+il cambiamento della pendenza. `weather.wind_speed_reference_kmh`,
+`weather.rain_change_start_mm` e `weather.rain_change_span_mm` definiscono la
+pressione dinamica del vento e la variazione di materiale dovuta alla pioggia.
+
+Le misure GPX e meteo restano neutre; questi valori sono scelte della
+direzione musicale. Il contesto meteo può essere acquisito anche senza una
+direzione, ma in quel caso resta osservabile e non viene trasformato in
+automazione musicale.
+
 - **Allocated:** la distanza di una macrosezione è distribuita uniformemente
   fra le finestre assegnate. `Timeline.position` fornisce sezione e frazione
   interna, usate anche dalla progressione del runtime. Il report di analisi

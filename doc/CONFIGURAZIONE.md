@@ -88,7 +88,7 @@ copre la fine del viaggio.
 | Campo | Significato |
 |---|---|
 | `families` | Un assetto musicale per ogni famiglia configurata, senza famiglie aggiuntive |
-| `automatic_music` | Profilo della tappa → tavolozza armonica e motivo, con override facoltativi; [contratto completo](DIREZIONE-MUSICALE.md) |
+| `automatic_music` | Profilo della tappa → tavolozza armonica, motivo e adattamento locale/meteo, con override facoltativi; [contratto completo](DIREZIONE-MUSICALE.md) |
 
 Ogni assetto di famiglia richiede `assignments`. Con `automatic_music`, root e scala sono risolte
 dal profilo; eventuali valori nella famiglia sono override espliciti.

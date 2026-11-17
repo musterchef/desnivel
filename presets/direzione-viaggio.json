@@ -101,6 +101,17 @@
     }
   },
   "automatic_music": {
+    "adaptation": {
+      "terrain": {
+        "slope_intensity_reference": 0.08,
+        "slope_change_reference": 0.04
+      },
+      "weather": {
+        "wind_speed_reference_kmh": 40,
+        "rain_change_start_mm": 0.2,
+        "rain_change_span_mm": 1.8
+      }
+    },
     "palettes": [
       {
         "id": "gentle",

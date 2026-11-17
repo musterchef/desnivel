@@ -4,7 +4,7 @@ from dataclasses import replace
 from desnivel.music.automation import AdaptiveContext, bounded
 
 
-def weather_intent(context, description):
+def weather_intent(context, description, settings):
     """Vento assoluto per la dinamica, variazione oraria della pioggia per lo sviluppo.
 
     Nessuna normalizzazione relativa alla singola tappa: condizioni uguali danno
@@ -23,5 +23,7 @@ def weather_intent(context, description):
         weight = sum(r['weight'] for r in records)
         rain = sum(r['weight']*abs(r['values']['precipitation_change_mm']) for r in records)/weight
     return replace(context or AdaptiveContext(),
-                   dynamic_pressure=None if wind is None else bounded(wind/40., 0, 1),
-                   material_change=None if rain is None else bounded((rain-.2)/1.8, 0, 1))
+                   dynamic_pressure=None if wind is None else bounded(
+                       wind/settings['wind_speed_reference_kmh'], 0, 1),
+                   material_change=None if rain is None else bounded(
+                       (rain-settings['rain_change_start_mm'])/settings['rain_change_span_mm'], 0, 1))

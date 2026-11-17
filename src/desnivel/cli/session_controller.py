@@ -25,7 +25,11 @@ def apply_control(runtime, action):
 
 class SessionController:
     def __init__(self, runtime, source_config, path, server, library, components, *,
-                 direction=None, settings_path=None, port=9006, connect_port=9101, clock=time.monotonic):
+                 direction=None, settings_path=None, port=None, connect_port=None, clock=time.monotonic):
+        if port is None or connect_port is None:
+            from desnivel.settings import DEFAULT_SETTINGS
+            port = DEFAULT_SETTINGS.transport.session.voice_port if port is None else port
+            connect_port = DEFAULT_SETTINGS.transport.session.connect_port if connect_port is None else connect_port
         self.runtime, self.server, self.library, self.components = runtime, server, library, components
         self.direction, self.settings_path = direction, settings_path
         self.port, self.connect_port, self.clock = port, connect_port, clock

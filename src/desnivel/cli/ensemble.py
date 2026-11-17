@@ -1,5 +1,6 @@
 """Avvio da terminale della sessione musicale e delle integrazioni locali."""
 from copy import deepcopy
+from functools import partial
 import json
 from pathlib import Path
 
@@ -33,9 +34,9 @@ def main(argv=None):
     parser.add_argument('--speed', type=float, default=None, help='Velocità del replay lineare (default: 1).')
     parser.add_argument('--timing', choices=('linear', 'allocated'), default='linear',
                         help='Tempo lineare del viaggio oppure timeline musicale in beat.')
-    parser.add_argument('--port', type=int, default=9006)
-    parser.add_argument('--connect-port', type=int, default=9101,
-                        help='Porta Receive di una Voice per il comando C: Collega tutte (default: 9101).')
+    parser.add_argument('--port', type=int, help='Porta OSC del backend delle voci.')
+    parser.add_argument('--connect-port', type=int,
+                        help='Porta Receive di una Voice per il comando C: Collega tutte.')
     parser.add_argument('--status-file', type=Path, default=Path('/tmp/desnivel-session/state.json'))
     parser.add_argument('--view-port', type=int,
                         help='Attiva il pannello della sessione e la mappa su http://127.0.0.1:PORTA (es. 8765).')
@@ -50,6 +51,10 @@ def main(argv=None):
     server = None
     viewer = None
     try:
+        application_settings = load_settings(args.settings)
+        session_transport = application_settings.transport.session
+        args.port = session_transport.voice_port if args.port is None else args.port
+        args.connect_port = session_transport.connect_port if args.connect_port is None else args.connect_port
         if args.view_port is not None and not 1024 <= args.view_port <= 65535:
             raise ValueError('la porta della vista deve essere tra 1024 e 65535')
         if not 1024 <= args.connect_port <= 65535:
@@ -62,8 +67,8 @@ def main(argv=None):
         args.gpx, args.timing_reference, args.infer_fit_pauses = resolve_journey(
             config, args.config, track=args.gpx, timing_reference=args.timing_reference,
             infer_fit_pauses=args.infer_fit_pauses)
-        if 'arrangement' in config and args.port != 9006:
-            raise ValueError('il rilevamento dei device della sessione guidata usa la porta Python 9006')
+        if 'arrangement' in config and args.port != session_transport.voice_port:
+            raise ValueError('il rilevamento dei device della sessione guidata usa la porta Python configurata')
         if 'arrangement' in config and 'direction' in config:
             config['direction'] = str((config_origin.parent/config['direction']).resolve())
         source_config = deepcopy(config)
@@ -81,7 +86,6 @@ def main(argv=None):
         speed = args.speed if args.speed is not None else 1.
         if not math.isfinite(speed) or speed <= 0 or not 1024 <= args.port <= 65535:
             raise ValueError('velocità positiva e porta tra 1024 e 65535 richieste')
-        application_settings = load_settings(args.settings)
         track = load_track(args.gpx, timing_reference=args.timing_reference,
                            infer_missing_fit_timer=args.infer_fit_pauses,
                            config=application_settings.config)
@@ -101,8 +105,11 @@ def main(argv=None):
         from desnivel.music.environment import weather_intent
         context_sources = []
         surface_source = ContextSource.load(args.surface_context, track) if args.surface_context is not None else None
+        weather_interpret = (partial(weather_intent, settings=config['music_adaptation']['weather'])
+                             if 'music_adaptation' in config else None)
         for name, source, interpret, enabled in (
-                ('weather', weather_source, weather_intent, not args.without_weather),
+                ('weather', weather_source, weather_interpret,
+                 not args.without_weather and weather_interpret is not None),
                 ('surface', surface_source, None, False)):
             if source is not None:
                 if source.data['source'] != name:

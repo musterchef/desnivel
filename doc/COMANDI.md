@@ -42,14 +42,15 @@ Opzioni utili:
 | **9003** | Telemetria dello stato di Snake (`/desnivel/v1/snake/state`) e controlli live del basso (`/desnivel/v1/bass/control`). | [Snake](SNAKE.md), [Basso](BASSO.md) |
 | **9004** | Piani di esecuzione per il basso sincronizzato al trasporto di Live. | [Basso in Live](BASSO.md) |
 | **9007** | Controllo dei componenti Snake, con Receive iniziale 9201 per il primo componente. | [Snake multiruolo](SNAKE.md#componente-multiruolo) |
-| **9006** | Server della sessione multivoce e ricevitore diagnostico Voice, da usare separatamente. | [Sessione multivoce](SESSIONE-MULTIVOCE.md) |
-| **9101–9104** | Ricezione manuale delle quattro istanze Voice nel banco di esempio. | [Device Voice](VOCE-M4L.md) |
+| **9006** | Server della sessione multivoce e ricevitore diagnostico Voice, da usare separatamente. Valore modificabile in `transport.session.voice_port`. | [Sessione multivoce](SESSIONE-MULTIVOCE.md) |
+| **9101** | Porta Receive proposta per il collegamento delle Voice. Valore modificabile in `transport.session.connect_port`; ogni istanza può poi annunciare una porta distinta. | [Device Voice](VOCE-M4L.md) |
 
 Nella sessione guidata i controlli annunciano la presenza sulla porta **9006**
 e scelgono una porta Receive per istanza; le associazioni sono gestite dal terminale.
 
-Il pannello web e la mappa usano HTTP sulla porta **8765** quando avviati dal launcher
-multitappa; `--view-port` permette di cambiarla.
+Il pannello web e la mappa usano la porta indicata da
+`transport.session.viewer_port` quando avviati dal launcher multitappa;
+`--view-port` permette di cambiarla.
 
 ---
 
@@ -75,7 +76,7 @@ Il menu elenca le configurazioni in `output/sessioni/` e il file
 e **V** le salva in `output/sessioni/<nome>.json`. `--config <file>` carica
 direttamente una configurazione; **A: apri file…** nel menu permette
 di sceglierla dal dialogo macOS. Il launcher usa il timing `allocated`
-e la mappa sulla porta `8765`. Dal terminale, nella radice del progetto:
+e la porta della mappa configurata. Dal terminale, nella radice del progetto:
 
 ```sh
 .venv/bin/python -m desnivel.cli.launch_stage --tappa 05
@@ -87,8 +88,8 @@ attivo. `--tappa O` permette di aprire un altro FIT/GPX per la sessione.
 Gli altri argomenti sono inoltrati
 a `desnivel.cli.ensemble`; per esempio `--view-port 8766` cambia la porta
 dell'interfaccia web. `--no-terminal` disabilita tastiera e pannello del terminale
-durante l'esecuzione. Il controllo web è su <http://127.0.0.1:8765/session/>,
-la mappa su <http://127.0.0.1:8765/>.
+durante l'esecuzione. L'avvio stampa gli indirizzi effettivi del controllo web
+e della mappa.
 La selezione della traccia è gestita da `cli.launch_stage`;
 il `.command` imposta la directory del progetto e avvia il comando Python.
 Collegamento dei device, controlli e comportamento del replay sono descritti

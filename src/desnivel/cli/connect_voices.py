@@ -8,7 +8,10 @@ from desnivel.sinks.osc import UdpOscClient
 CONNECT_ALL_ADDRESS = '/desnivel/v1/voice/connect-all'
 
 
-def connect_all(port=9101):
+def connect_all(port=None):
+    if port is None:
+        from desnivel.settings import DEFAULT_SETTINGS
+        port = DEFAULT_SETTINGS.transport.session.connect_port
     """Invia la richiesta a una Voice che la distribuisce alle altre in Max."""
     if not 1024 <= port <= 65535:
         raise ValueError('porta richiesta tra 1024 e 65535')
@@ -17,8 +20,9 @@ def connect_all(port=9101):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--port', type=int, default=9101,
-                        help='Porta Receive di una Voice caricata in Live (default: 9101).')
+    from desnivel.settings import DEFAULT_SETTINGS
+    parser.add_argument('--port', type=int, default=DEFAULT_SETTINGS.transport.session.connect_port,
+                        help='Porta Receive di una Voice caricata in Live.')
     args = parser.parse_args(argv)
     try:
         connect_all(args.port)

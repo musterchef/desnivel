@@ -13,7 +13,7 @@ except ModuleNotFoundError:  # Python 3.9–3.10
     import tomli as tomllib
 
 
-DEFAULT_SETTINGS_PATH = Path('settings/desnivel.toml')
+DEFAULT_SETTINGS_PATH = Path(__file__).resolve().parents[2]/'settings/desnivel.toml'
 
 
 def _require_fields(section, model, name):
@@ -112,6 +112,14 @@ class TripSettings:
 @dataclass(frozen=True)
 class TransportSettings:
     osc: OscConfig
+    session: 'SessionTransportSettings'
+
+
+@dataclass(frozen=True)
+class SessionTransportSettings:
+    voice_port: int
+    connect_port: int
+    viewer_port: int
 
 
 @dataclass(frozen=True)
@@ -179,6 +187,15 @@ def _validate_config(config):
     if type(config.osc.port) is not int or not 1 <= config.osc.port <= 65535:
         raise ValueError('transport.osc.port deve essere un intero tra 1 e 65535')
     _positive(config.osc, ('trip_metrics_rate_hz',), 'transport.osc')
+
+
+def _validate_session_transport(settings):
+    for name in ('voice_port', 'connect_port', 'viewer_port'):
+        value = getattr(settings, name)
+        if type(value) is not int or not 1024 <= value <= 65535:
+            raise ValueError(f'transport.session.{name} deve essere un intero tra 1024 e 65535')
+    if len({settings.voice_port, settings.connect_port, settings.viewer_port}) != 3:
+        raise ValueError('le porte di transport.session devono essere distinte')
 
 
 def _analysis_settings(section):
@@ -270,8 +287,8 @@ def load_settings(path=DEFAULT_SETTINGS_PATH):
     if not isinstance(trip, dict) or set(trip) != {
             'timing', 'gpx', 'quality', 'analysis', 'grouping', 'route_structure'}:
         raise ValueError('trip richiede timing, gpx, quality, analysis, grouping e route_structure')
-    if not isinstance(transport, dict) or set(transport) != {'osc'}:
-        raise ValueError('transport richiede soltanto la sezione osc')
+    if not isinstance(transport, dict) or set(transport) != {'osc', 'session'}:
+        raise ValueError('transport richiede osc e session')
     if not isinstance(context, dict) or set(context) != {'weather', 'surface'}:
         raise ValueError('context richiede weather e surface')
     analysis = _analysis_settings(trip['analysis'])
@@ -287,6 +304,7 @@ def load_settings(path=DEFAULT_SETTINGS_PATH):
         ),
         transport=TransportSettings(
             osc=_require_fields(transport['osc'], OscConfig, 'transport.osc'),
+            session=_require_fields(transport['session'], SessionTransportSettings, 'transport.session'),
         ),
         context=ContextSettings(
             weather=_require_fields(context['weather'], WeatherContextSettings, 'context.weather'),
@@ -295,6 +313,7 @@ def load_settings(path=DEFAULT_SETTINGS_PATH):
         network=_require_fields(data['network'], NetworkSettings, 'network'),
     )
     _validate_config(settings.config)
+    _validate_session_transport(settings.transport.session)
     _validate_external_settings(settings)
     return settings
 

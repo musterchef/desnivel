@@ -1,6 +1,7 @@
 """Collega analisi neutra del percorso, direzione musicale e configurazione."""
 from copy import deepcopy
 import json
+import math
 from pathlib import Path
 
 from desnivel.trip.analysis import analyze_track
@@ -13,7 +14,7 @@ from desnivel.music.melodic.route import route_motif, validate_motif
 from desnivel.music.automation import AdaptiveContext, bounded
 
 
-def adaptive_context(local_trip):
+def adaptive_context(local_trip, settings):
     """Interpreta le misure locali come indicazioni musicali normalizzate."""
     profile = local_trip.get('profile', {})
     if local_trip.get('status') != 'available' or profile.get('status') != 'available':
@@ -21,9 +22,34 @@ def adaptive_context(local_trip):
     change = profile['slope_change_ratio']
     persistence = profile['zone_persistence_m']
     return AdaptiveContext(
-        bounded(profile['mean_absolute_slope_ratio']/.08, 0, 1),
-        bounded(abs(change)/.04, 0, 1) if change is not None else None,
+        bounded(profile['mean_absolute_slope_ratio']/settings['slope_intensity_reference'], 0, 1),
+        bounded(abs(change)/settings['slope_change_reference'], 0, 1) if change is not None else None,
         bounded(persistence/profile['slope_window_m'], 0, 1) if persistence is not None else None)
+
+
+def _validate_adaptation(settings):
+    if not isinstance(settings, dict) or set(settings) != {'terrain', 'weather'}:
+        raise ValueError('adaptation richiede terrain e weather')
+    terrain, weather = settings['terrain'], settings['weather']
+    expected_terrain = {'slope_intensity_reference', 'slope_change_reference'}
+    expected_weather = {'wind_speed_reference_kmh', 'rain_change_start_mm', 'rain_change_span_mm'}
+    if not isinstance(terrain, dict) or set(terrain) != expected_terrain:
+        raise ValueError(f'adaptation.terrain richiede {sorted(expected_terrain)}')
+    if not isinstance(weather, dict) or set(weather) != expected_weather:
+        raise ValueError(f'adaptation.weather richiede {sorted(expected_weather)}')
+    for section, values, names in (
+            ('adaptation.terrain', terrain, expected_terrain),
+            ('adaptation.weather', weather, expected_weather)):
+        for name in names:
+            value = values[name]
+            if type(value) not in (int, float) or not math.isfinite(value):
+                raise ValueError(f'{section}.{name} deve essere finito')
+    if terrain['slope_intensity_reference'] <= 0 or terrain['slope_change_reference'] <= 0:
+        raise ValueError('i riferimenti terrain devono essere positivi')
+    if weather['wind_speed_reference_kmh'] <= 0 or weather['rain_change_span_mm'] <= 0:
+        raise ValueError('i riferimenti weather devono essere positivi')
+    if weather['rain_change_start_mm'] < 0:
+        raise ValueError('adaptation.weather.rain_change_start_mm deve essere non negativo')
 
 
 def _validate_override(data, palette_ids):
@@ -70,11 +96,12 @@ def _resolve(track, path, settings_path=DEFAULT_SETTINGS_PATH):
             sections.append({**deepcopy(arrangements[source['kind']]), 'name': source['kind'],
                              'from_progress': source['from_progress'], 'trip': trip})
         return sections, None, analysis, route_form
-    required = {'palettes', 'switch_margin', 'motif'}
+    required = {'palettes', 'switch_margin', 'motif', 'adaptation'}
     if (not isinstance(automatic, dict) or required-automatic.keys()
             or automatic.keys()-required-{'override', 'stage_overrides'}):
         raise ValueError('automatic_music richiede palettes, switch_margin e motif; override facoltativi')
     validate_palettes(automatic['palettes'], automatic['switch_margin'])
+    _validate_adaptation(automatic['adaptation'])
     motif = automatic['motif']
     if not isinstance(motif, dict) or set(motif) != {'generators', 'points', 'span_degrees'}:
         raise ValueError('motif richiede generators, points e span_degrees')
@@ -100,7 +127,8 @@ def _resolve(track, path, settings_path=DEFAULT_SETTINGS_PATH):
                 'threshold': palette['from_mean_absolute_slope_ratio'],
                 'motif_degrees': degrees, 'generated_motif_degrees': generated_motif,
                 'motif_source': 'override' if 'motif_degrees' in effective_override else 'profile',
-                'motif_generators': list(targets), 'overrides': deepcopy(effective_override)}
+                'motif_generators': list(targets), 'overrides': deepcopy(effective_override),
+                'adaptation': deepcopy(automatic['adaptation'])}
     sections, previous, previous_effective = [], None, None
     for source, span in zip(grouping['sections'], route_form['spans']):
         local = section_intensity(analysis, source)
@@ -148,6 +176,7 @@ def prepare_trip_config(track, config, path, settings_path=DEFAULT_SETTINGS_PATH
             decision['motif_generators'] = [name for name, spec in config['generators'].items()
                                             if spec['type'] == 'motif']
     if decision is not None:
+        resolved['music_adaptation'] = deepcopy(decision['adaptation'])
         for name in decision['motif_generators']:
             if name not in resolved['generators'] or resolved['generators'][name]['type'] != 'motif':
                 raise ValueError(f'generatore del motivo automatico sconosciuto o non supportato: {name}')

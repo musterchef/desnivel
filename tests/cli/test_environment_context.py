@@ -1,4 +1,5 @@
 from copy import deepcopy
+from functools import partial
 import json
 from pathlib import Path
 
@@ -23,13 +24,15 @@ def setup(enabled=True, *, missing_wind=False, missing_rain=False):
             values={'wind_speed_kmh': None if missing_wind else 40., 'precipitation_mm': 2.,
                     'precipitation_change_mm': None if missing_rain else 2.}, details={})]))
     config = json.loads(Path('presets/organico.json').read_text())
+    adaptation = json.loads(Path('presets/direzione-viaggio.json').read_text())['automatic_music']['adaptation']
+    config['music_adaptation'] = adaptation
     # Un'unica sezione rende confrontabili le due esecuzioni per tutta la prova.
     config['sections'] = [config['sections'][0]]
     for assignment in config['sections'][0]['assignments'].values():
         assignment['presence'] = 1
     bridge = VoiceDeviceBridge({}, lambda *args: None, clock=lambda: 0.)
     runtime = EnsembleRuntime(track, config, bridge, clock=lambda: 0.,
-                              context_sources=[(source, weather_intent, enabled)])
+                              context_sources=[(source, partial(weather_intent, settings=adaptation['weather']), enabled)])
     def tick(beat):
         for name in config['voices']:
             msg = dict(version=1, voice=name, instance=name, reply_port=9101+list(config['voices']).index(name),
@@ -77,7 +80,8 @@ def test_missing_channels_remain_independent_and_missing_context_is_not_zero():
     decision = tick(0)
     assert decision['adaptive_context']['dynamic_pressure'] is None
     assert decision['adaptive_context']['material_change'] == 1
-    intent = weather_intent(AdaptiveContext(.6), source.describe([]))
+    settings = json.loads(Path('presets/direzione-viaggio.json').read_text())['automatic_music']['adaptation']['weather']
+    intent = weather_intent(AdaptiveContext(.6), source.describe([]), settings)
     assert intent.intensity == .6
     assert intent.dynamic_pressure is None and intent.material_change is None
 
@@ -141,11 +145,12 @@ def test_opposite_precipitation_changes_do_not_cancel_and_small_changes_are_igno
     definition['records'].append(second)
     description = ContextSource(definition).describe([dict(travel_segment_index=0, start_active_s=0, end_active_s=1000)])
     assert description['channels']['precipitation_change_mm']['value'] == 0
-    assert weather_intent(None, description).material_change == 1
+    settings = json.loads(Path('presets/direzione-viaggio.json').read_text())['automatic_music']['adaptation']['weather']
+    assert weather_intent(None, description, settings).material_change == 1
     for record in definition['records']:
         record['values']['precipitation_change_mm'] = .1
     description = ContextSource(definition).describe([dict(travel_segment_index=0, start_active_s=0, end_active_s=1000)])
-    assert weather_intent(None, description).material_change == 0
+    assert weather_intent(None, description, settings).material_change == 0
 
 
 @pytest.mark.parametrize('field', ['dynamic_pressure', 'material_change'])

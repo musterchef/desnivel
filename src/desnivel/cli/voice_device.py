@@ -16,7 +16,10 @@ from desnivel.sinks.voice_wire import voice_packets, VoiceDecoder
 class VoiceDeviceServer:
     """Server locale da usare nel thread che governa la sessione musicale."""
 
-    def __init__(self, voices, port=9006, on_message=None, on_error=None):
+    def __init__(self, voices, port=None, on_message=None, on_error=None):
+        if port is None:
+            from desnivel.settings import DEFAULT_SETTINGS
+            port = DEFAULT_SETTINGS.transport.session.voice_port
         from pythonosc.dispatcher import Dispatcher
         from pythonosc.osc_server import BlockingOSCUDPServer
         from pythonosc.udp_client import SimpleUDPClient
@@ -90,7 +93,8 @@ class VoiceDeviceServer:
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--voice', action='append', required=True, help='Identificativo ammesso; ripetibile.')
-    parser.add_argument('--port', type=int, default=9006)
+    from desnivel.settings import DEFAULT_SETTINGS
+    parser.add_argument('--port', type=int, default=DEFAULT_SETTINGS.transport.session.voice_port)
     parser.add_argument('--phrase', type=Path, help='Prova di esecuzione: invia questa frase una volta per avvio del trasporto.')
     args = parser.parse_args(argv)
     if not 1024 <= args.port <= 65535:

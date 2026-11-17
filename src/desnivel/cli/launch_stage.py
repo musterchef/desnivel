@@ -74,6 +74,9 @@ def main(argv=None):
                'sostituire i valori predefiniti di config, timing e view-port.')
     parser.add_argument('--tappa', help='01–12 oppure O per aprire un file; se omessa riusa il viaggio salvato nella sessione.')
     parser.add_argument('--config', type=Path, help='Carica direttamente una configurazione, senza mostrare il menu delle sessioni.')
+    from desnivel.settings import DEFAULT_SETTINGS_PATH, load_settings
+    parser.add_argument('--settings', type=Path, default=DEFAULT_SETTINGS_PATH,
+                        help='Impostazioni TOML applicative.')
     args, session_args = parser.parse_known_args(argv)
     try:
         selection = (args.config, False) if args.config is not None else choose_session(Path.cwd())
@@ -117,7 +120,8 @@ def main(argv=None):
         *(['--setup'] if create else []),
         *(['--manual-sections'] if manual_sections else []),
         '--timing', 'linear' if manual_sections else 'allocated',
-        '--view-port', '8765',
+        '--view-port', str(load_settings(args.settings).transport.session.viewer_port),
+        '--settings', str(args.settings),
         *session_args,
     ])
 

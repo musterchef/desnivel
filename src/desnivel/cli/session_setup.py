@@ -98,7 +98,10 @@ def _guided_behavior_options(role):
 
 
 class SessionSetup:
-    def __init__(self, config, path, devices, apply, can_edit, *, port=9006):
+    def __init__(self, config, path, devices, apply, can_edit, *, port=None):
+        if port is None:
+            from desnivel.settings import DEFAULT_SETTINGS
+            port = DEFAULT_SETTINGS.transport.session.voice_port
         self.config, self.path = deepcopy(config), Path(path)
         self.devices, self.apply, self.can_edit, self.port = devices, apply, can_edit, port
         self.step = None

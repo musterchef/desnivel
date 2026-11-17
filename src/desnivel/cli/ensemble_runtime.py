@@ -87,6 +87,7 @@ class EnsembleRuntime:
         self.voice_descriptions.update({name: dict(name=name, generator=None, dependencies=[], optional_dependencies=[])
                                        for name in external_voices})
         self.window_context = WindowContext(track, config.get('trip_analysis'))
+        self.music_adaptation = config.get('music_adaptation')
         self.context_sources = tuple(context_sources)
         names = set()
         for source, interpret, enabled in self.context_sources:
@@ -317,7 +318,8 @@ class EnsembleRuntime:
         # I cambi di organico si applicano alla prossima finestra, con frasi vuote
         # per le parti uscenti: la finestra già iniziata può concludersi.
         from desnivel.cli.trip_direction import adaptive_context
-        intent = adaptive_context(source_context) if self.adaptation_enabled else None
+        intent = (adaptive_context(source_context, self.music_adaptation['terrain'])
+                  if self.adaptation_enabled and self.music_adaptation is not None else None)
         if self.context_sources:
             source_context['environment'] = {}
             for source, interpret, enabled in self.context_sources:

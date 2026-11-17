@@ -4,14 +4,17 @@ from copy import deepcopy
 from desnivel.cli.snake_control import SnakeControlSession
 
 
-def snake_session(config, *, previous=None):
+def snake_session(config, port=None, *, previous=None):
     definition = config.get('snake')
     if definition is None:
         return None
+    if port is None:
+        from desnivel.settings import DEFAULT_SETTINGS
+        port = DEFAULT_SETTINGS.transport.session.voice_port
     if not isinstance(definition, dict) or set(definition) != {'components', 'music', 'paths'}:
         raise ValueError('Snake nella sessione richiede components, music e paths')
     sources = {name: {'name': spec.get('name', name)} for name, spec in config['voices'].items()}
-    session = SnakeControlSession({'port': 9006, **definition}, sources, server_factory=None)
+    session = SnakeControlSession({'port': port, **definition}, sources, server_factory=None)
     if previous:
         for name in session.components.keys() & previous.components.keys():
             old = previous.components[name]
@@ -27,8 +30,8 @@ class LiveComponents:
 
     def __init__(self, config, config_path, port, *, previous=None, guide=None):
         from pathlib import Path
-        self.session = snake_session(config, previous=previous)
         self.config_path, self.port = Path(config_path), port
+        self.session = snake_session(config, port, previous=previous)
         self.guided = 'arrangement' in config
         self.guide = guide
         self.names = dict(config.get('component_names', {}))
