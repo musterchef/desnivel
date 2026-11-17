@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+from pathlib import Path
 
 import pytest
 
@@ -98,6 +99,10 @@ def test_normal_ensemble_guides_setup_and_stops_an_unexpected_play_without_advan
     from desnivel.trip import loader
     from tests.cli.test_journey_view import track
 
+    config = tmp_path/'session.json'
+    config.write_text(Path('tests/fixtures/snake_setup_session.json').read_text())
+    (tmp_path/'snake.json').write_text(Path('presets/snake.json').read_text())
+
     source=track();source.samples['cum_dist_m']=np.array([0.,10.,10.,20.])
     monkeypatch.setattr(loader,'load_track',lambda *args,**kwargs:source)
     monkeypatch.setattr('desnivel.cli.weather_context.prepare_weather_context',lambda *args,**kwargs:None)
@@ -146,7 +151,7 @@ def test_normal_ensemble_guides_setup_and_stops_an_unexpected_play_without_advan
         def __exit__(self, *args): pass
         def update(self,state):frames.append(deepcopy(state))
     monkeypatch.setattr('desnivel.cli.session_view.TerminalSessionView',View)
-    assert ensemble.main(['--track','unused.gpx','--config','presets/organico.json',
+    assert ensemble.main(['--track','unused.gpx','--config',str(config),
                           '--manual-sections','--status-file',str(tmp_path/'state.json')])==0
     assert [s.port for s in servers]==[9006,9007]
     expected='ready' if complete else 'cancelled'

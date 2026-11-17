@@ -32,7 +32,7 @@ esistente; il trasferimento al confine adattatore accompagna il compositore a re
 | `music/percussion/catalog.py` | Identificativi dei ruoli percussivi, materiali di riferimento e profili stilistici. Un solo catalogo Python, senza numeri MIDI o nomi di device |
 | `music/percussion/` | Generazione, memoria musicale, dialogo e transizioni. Legge il catalogo, senza ridefinirne i dati in altri moduli |
 | `adapters/percussion.py` | Unica mappa dei ruoli verso i pad della destinazione attuale e conversione degli eventi musicali in `Phrase` |
-| `presets/organico.json` | Voci, dipendenze, destinazioni, valori iniziali e riferimenti ai materiali necessari durante la migrazione. Nessuna lista di colpi o copia della mappa MIDI |
+| `doc/archivio/organico.json` | Voci, dipendenze, destinazioni, valori iniziali e riferimenti ai materiali necessari durante la migrazione. Nessuna lista di colpi o copia della mappa MIDI |
 | `presets/direzione-viaggio.json` | Politiche musicali delle sezioni e collegamento ai dati del percorso. Nessuna sequenza di colpi |
 
 `styles.py` deve importare le definizioni dal catalogo; non deve conservarne

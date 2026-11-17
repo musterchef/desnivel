@@ -1,0 +1,68 @@
+{
+  "selection_mode": "manual",
+  "transport_voice": "voice_01",
+  "window_beats": 4,
+  "lead_beats": 2,
+  "generators": {
+    "motif": {
+      "type": "motif",
+      "degrees": [0, 2, 4, 1]
+    },
+    "bass": {
+      "type": "responsive_line"
+    },
+    "texture": {
+      "type": "sustained_texture",
+      "degree": 0
+    },
+    "percussion": {
+      "type": "percussion_phrase",
+      "material": "spaced_impacts",
+      "standard_material": "regular_pulse_eighths",
+      "interaction": {
+        "support_source": "voice_02",
+        "answer_source": "voice_01"
+      }
+    }
+  },
+  "voices": {
+    "voice_01": {
+      "name": "Synth",
+      "generator": "motif",
+      "destination": "device_01"
+    },
+    "voice_02": {
+      "name": "Bass",
+      "generator": "bass",
+      "destination": "device_02",
+      "dependencies": ["voice_01"]
+    },
+    "voice_03": {
+      "name": "Texture",
+      "generator": "texture",
+      "destination": "device_03",
+      "optional_dependencies": ["voice_01"]
+    },
+    "voice_04": {
+      "name": "Drums",
+      "generator": "percussion",
+      "destination": "device_04",
+      "dependencies": ["voice_01"],
+      "optional_dependencies": ["voice_02"]
+    }
+  },
+  "sections": [
+    {
+      "name": "opening",
+      "from_progress": 0,
+      "root": 57,
+      "scale": "minor",
+      "assignments": {
+        "voice_01": {"role": "melody"},
+        "voice_02": {"role": "bass_line"},
+        "voice_03": {"role": "harmony"},
+        "voice_04": {"role": "rhythm"}
+      }
+    }
+  ]
+}

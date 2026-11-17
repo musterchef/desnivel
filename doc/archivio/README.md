@@ -2,6 +2,8 @@
 
 Documenti dei percorsi e delle decisioni precedenti. Conservati per consultazione e riuso; non definiscono l'architettura corrente.
 
+- `organico.json`: banco statico a quattro voci ritirato dai preset applicativi; il riferimento alla direzione mantiene il percorso relativo verso `presets/direzione-viaggio.json`.
+
 - [PASSAGGIO-CONSEGNE.md](PASSAGGIO-CONSEGNE.md): riepilogo operativo del 19 ottobre 2026, precedente a direzione adattiva, dashboard e contesto ambientale.
 - [DECISIONE-ARCHITETTURA-AUDIO.md](DECISIONE-ARCHITETTURA-AUDIO.md): decisione del 2 ottobre 2026, sostituita dall’architettura musicale corrente.
 - [ROADMAP-PRECEDENTE.md](ROADMAP-PRECEDENTE.md): vecchie priorità e completamenti.

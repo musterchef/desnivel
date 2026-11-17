@@ -1,5 +1,7 @@
 # Dialogo ritmico multivoce
 
+> I riferimenti a `organico.json` descrivono il banco storico archiviato in `doc/archivio/organico.json`. Per creare e salvare le sessioni correnti consultare [Sessione guidata](SESSIONE-GUIDATA.md).
+
 La sessione può usare le drums come riferimento ritmico e conservare gesti
 musicali per influenzare le frasi successive. I generatori mantengono il
 proprio materiale, le altezze e le regole di sviluppo.
@@ -181,7 +183,7 @@ ed `empty_fragment`.
 
 ## Configurazione d'ascolto
 
-[`presets/organico.json`](../presets/organico.json) collega quattro voci:
+[`doc/archivio/organico.json`](../doc/archivio/organico.json) collega quattro voci:
 guida percussiva, adesione melodica 0,3, adesione del basso 0,7 e relazione
 storica drums → melodia con peso 0,4. La tessitura segue la sezione oppure
 la melodia secondo lo switch **Segui sorgente**. La mappa dei pad è unica
@@ -190,7 +192,7 @@ in `adapters/percussion.py`; i device usano `voice_01`…`voice_04`.
 ```sh
 .venv/bin/python -m desnivel.cli.ensemble \
   --gpx gpx/tappa05_Firenze_San_Gimignano.gpx \
-  --config presets/organico.json --speed 50
+  --config doc/archivio/organico.json --speed 50
 ```
 
 La configurazione carica la [direzione musicale GPX](DIREZIONE-MUSICALE.md).

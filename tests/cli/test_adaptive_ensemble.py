@@ -15,7 +15,13 @@ def setup(adaptive=True, timing='allocated'):
     distances = np.arange(len(slopes)+1)*100.
     track = Track('adaptive', np.arange(len(distances))*10.,
                   {'cum_dist_m': distances, 'ele': np.r_[100., 100+np.cumsum(slopes)*100]})
-    config = json.loads(Path('presets/organico.json').read_text())
+    config = json.loads(Path('tests/fixtures/transport_runtime_session.json').read_text())
+    config['generators']['percussion'] = json.loads(Path('tests/fixtures/percussion_phrase.json').read_text())
+    config['voices']['voice_04'] = {
+        'name': 'Drums', 'generator': 'percussion', 'destination': 'device_04',
+        'dependencies': ['voice_01'], 'optional_dependencies': ['voice_02'],
+    }
+    config['rhythm_voice'] = 'voice_04'
     config['timeline'] = dict(target_beats=128, min_windows=2, distance_exponent=.5)
     config = prepare_trip_config(track, config, Path('presets/direzione-viaggio.json'))
     now, serial = [0.], [0]

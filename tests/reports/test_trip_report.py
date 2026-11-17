@@ -94,12 +94,12 @@ def test_timeline_report_and_json_use_same_beat_allocation_without_changing_anal
             '--output', str(result_path), '--html', str(html)]
     assert main(args) == 0
     original = json.loads(result_path.read_text())
-    assert main(args+['--timeline-session', 'presets/organico.json']) == 0
+    assert main(args+['--timeline-session', 'tests/fixtures/timeline_session.json']) == 0
     result = json.loads(result_path.read_text())
     assert {k: v for k, v in result.items() if k != 'timeline'} == original
     assert json.loads(EmbeddedAnalysis(html.read_text()).payload) == result
     distances = [s['end_distance_m']-s['start_distance_m'] for s in result['grouping']['sections']]
-    session = json.loads(Path('presets/organico.json').read_text())
+    session = json.loads(Path('tests/fixtures/timeline_session.json').read_text())
     expected = allocate_timeline(distances, window_beats=session['window_beats'], **session['timeline']).to_dict()
     assert {k: result['timeline'][k] for k in expected} == expected
     assert result['timeline']['position']['source_index'] == 0

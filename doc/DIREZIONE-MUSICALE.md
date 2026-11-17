@@ -1,5 +1,7 @@
 # Direzione musicale dal percorso
 
+> I riferimenti a `organico.json` descrivono il banco storico archiviato in `doc/archivio/organico.json`. Per creare e salvare le sessioni correnti consultare [Sessione guidata](SESSIONE-GUIDATA.md).
+
 La direzione automatica sceglie tavolozza armonica e materiale melodico
 prima della sessione, usando il profilo GPX analizzato. Le macrosezioni
 conservano organico, presenza e parametri delle famiglie configurate;
@@ -21,7 +23,7 @@ La direzione viene quindi caricata anche senza un'opzione aggiuntiva:
 ```sh
 .venv/bin/python -m desnivel.cli.ensemble \
   --gpx gpx/tappa05_Firenze_San_Gimignano.gpx \
-  --config presets/organico.json --speed 50
+  --config doc/archivio/organico.json --speed 50
 ```
 
 `--direction altro.json` prevale sul percorso configurato.

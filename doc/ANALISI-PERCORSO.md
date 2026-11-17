@@ -1,5 +1,7 @@
 # Analisi delle zone del percorso
 
+> I riferimenti a `organico.json` descrivono il banco storico archiviato in `doc/archivio/organico.json`. Per creare e salvare le sessioni correnti consultare [Sessione guidata](SESSIONE-GUIDATA.md).
+
 `desnivel.trip.analysis.analyze_track` analizza quota e distanza cumulata di un
 `Track`. Il comando `desnivel.cli.analyze_trip` carica FIT o GPX tramite il loader
 esistente, stampa le zone e può esportare l'analisi in JSON e come report HTML. Non genera musica
@@ -449,7 +451,7 @@ macrosezione, zona e fascia osservata. La configurazione delle famiglie è
 consultabile accanto ai criteri di analisi. Il report visualizza il
 raggruppamento ricevuto senza ricalcolarlo nel browser.
 
-L'opzione `--timeline-session presets/organico.json` aggiunge al report
+L'opzione `--timeline-session doc/archivio/organico.json` aggiunge al report
 l'[anteprima della timeline musicale in beat](TIMELINE.md), utilizzando le
 stesse macrosezioni e non modifica zone o profilo.
 
@@ -487,7 +489,7 @@ Il confronto serve a valutare una futura soglia per le pause interne.
   --settings settings/desnivel.toml \
   --pause-context ascent level \
   --pause-context descent level \
-  --timeline-session presets/organico.json \
+  --timeline-session doc/archivio/organico.json \
   --output output/analisi-percorso.json \
   --html output/analisi-percorso.html
 ```
@@ -508,7 +510,7 @@ configurazioni e misure.
   --settings settings/desnivel.toml \
   --pause-context ascent level \
   --pause-context descent level \
-  --timeline-session presets/organico.json \
+  --timeline-session doc/archivio/organico.json \
   --output-dir output/tappe-fit
 ```
 

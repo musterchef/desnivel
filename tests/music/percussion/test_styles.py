@@ -11,7 +11,7 @@ from desnivel.music.phrases import Note, Phrase
 
 
 def definition():
-    spec = json.loads(Path('presets/organico.json').read_text())['generators']['percussion']
+    spec = json.loads((Path(__file__).parents[2] / 'fixtures' / 'percussion_phrase.json').read_text())
     spec.update(material='spaced_dialogue', standard_material='regular_pulse_offbeats')
     spec['settings']['displacement_beats'] = .25
     return spec

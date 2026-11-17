@@ -1,5 +1,7 @@
 # Sessione multivoce Python
 
+> I riferimenti a `organico.json` descrivono il banco storico archiviato in `doc/archivio/organico.json`. Per creare e salvare le sessioni correnti consultare [Sessione guidata](SESSIONE-GUIDATA.md).
+
 Il comando `desnivel.cli.ensemble` esegue nello stesso processo il replay FIT/GPX, il Music Director, il Music Coordinator, i generatori e il server dei dispositivi di voce. La configurazione seleziona esplicitamente generatori, ruoli, parametri e organico delle sezioni.
 
 Il loader usa gli eventi timer del FIT, oppure stima le soste dal GPX,
@@ -26,7 +28,7 @@ Accetta `01`–`12` e `O` per aprire un file FIT o GPX.
 La [sessione guidata](SESSIONE-GUIDATA.md) permette di aggiungere voci,
 associare i controlli presenti in Live e salvare la configurazione.
 
-La configurazione di esempio `presets/organico.json` contiene quattro voci.
+La configurazione di esempio `doc/archivio/organico.json` contiene quattro voci.
 Con questo banco, **N** apre la preparazione Snake dedicata: controlli
 periodici, **Invio** per verificare ed **Esc** per annullare.
 
@@ -35,7 +37,7 @@ Per scegliere direttamente sorgente e modalità:
 ```sh
 .venv/bin/python -m desnivel.cli.ensemble \
   --track gpx/tappa05_Firenze_San_Gimignano.gpx \
-  --config presets/organico.json \
+  --config doc/archivio/organico.json \
   --timing allocated --view-port 8765
 ```
 
@@ -131,7 +133,7 @@ Il [riferimento dei campi e dei parametri](CONFIGURAZIONE.md) riporta unità,
 limiti e precedenze. L'[indice dei preset](../presets/README.md) distingue
 i file per responsabilità e comando che li utilizza.
 
-`presets/organico.json` contiene:
+`doc/archivio/organico.json` contiene:
 
 - `transport_voice`, `window_beats`, `lead_beats`;
 - `generators`: definizioni dei generatori con tipo, impostazioni e preset;

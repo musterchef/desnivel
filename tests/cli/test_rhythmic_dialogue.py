@@ -11,8 +11,30 @@ from desnivel.cli.ensemble_runtime import EnsembleRuntime
 from desnivel.trip.track import Track
 
 
+def base_configuration():
+    config = json.loads(Path('tests/fixtures/transport_runtime_session.json').read_text())
+    config['generators']['percussion'] = json.loads(Path('tests/fixtures/percussion_phrase.json').read_text())
+    config['voices']['voice_04'] = {
+        'name': 'Drums', 'generator': 'percussion', 'destination': 'device_04',
+        'dependencies': ['voice_01'], 'optional_dependencies': ['voice_02'],
+    }
+    config['rhythm_voice'] = 'voice_04'
+    config['history_beats'] = 64
+    config['relations'] = [{
+        'id': 'drums_to_melody', 'source': 'voice_04', 'target': 'voice_01',
+        'scope': 'history', 'aspects': ['rhythm'], 'roles': ['melody'],
+        'lookback_beats': 32, 'fragment_beats': 4, 'strength': .4,
+        'on_unavailable': 'independent',
+    }]
+    for section in config['sections']:
+        section['assignments']['voice_04'] = {'role': 'rhythm'}
+    config['generators']['motif']['settings']['groove_follow'] = .3
+    config['generators']['accompaniment']['settings']['groove_follow'] = .7
+    return config
+
+
 def configuration():
-    config = json.loads(Path('presets/organico.json').read_text())
+    config = base_configuration()
     config['generators']['percussion'].update(material='spaced_dialogue', standard_material='regular_pulse_offbeats')
     config['generators']['percussion']['settings']['displacement_beats'] = .25
     config['generators']['atmosphere']['settings']['follow_source'] = 1
@@ -102,7 +124,7 @@ def test_reference_required_for_settings_sections_and_live_controls():
     del c['rhythm_voice']
     with pytest.raises(ValueError, match='rhythm_voice'):
         runtime(c)
-    c = json.loads(Path('presets/organico.json').read_text())
+    c = base_configuration()
     del c['rhythm_voice']
     for name in ('motif', 'accompaniment'):
         c['generators'][name]['settings']['groove_follow'] = 0
@@ -182,7 +204,7 @@ def test_old_drum_presets_get_explicit_none_migration(tmp_path):
 
 
 def test_single_controls_keep_section_changes_and_other_manual_overrides():
-    config = json.loads(Path('presets/organico.json').read_text())
+    config = base_configuration()
     families = json.loads(Path('presets/direzione-viaggio.json').read_text())['families']
     for family in families.values():
         family.update(root=57, scale='minor')
@@ -245,7 +267,7 @@ def test_bass_density_hint_uses_only_accepted_composition_and_clears_on_reset():
 
 
 def test_main_configuration_connects_rhythm_and_historical_dialogue():
-    r = runtime(json.loads(Path('presets/organico.json').read_text()))
+    r = runtime(base_configuration())
     assert r.session.coordinator.rhythm_source == 'voice_04'
     assert r.bridge.status()['voice_01']['controls']['groove_follow']['value'] == .3
     assert r.bridge.status()['voice_02']['controls']['groove_follow']['value'] == .7

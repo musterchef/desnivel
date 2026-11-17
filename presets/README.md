@@ -2,17 +2,16 @@
 
 ## Sessione multivoce
 
-La sessione e il banco di esempio usano questi file, con responsabilità distinte:
+La sessione usa questi file, con responsabilità distinte:
 
 | File | Cosa contiene | Chi lo legge |
 |---|---|---|
 | `sessione.json` | Base vuota per le sessioni create dal launcher; ogni configurazione utente è salvata in `output/sessioni/<nome>.json` | `cli.ensemble --setup`, tramite il launcher |
-| `organico.json` | Voci, generatori, impostazioni e preset; sezioni manuali; parametri della timeline in beat | `cli.ensemble`; `cli.analyze_trip --timeline-session` per l'anteprima |
 | `direzione-viaggio.json` | Tavolozze e motivo automatici, override e assetti delle famiglie | `cli.trip_direction`, tramite `direction` della sessione o `--direction` |
 
 Nella [sessione guidata](../doc/SESSIONE-GUIDATA.md) le voci si aggiungono
 dal terminale e la configurazione si conserva con `:salva`.
-Per modificare il banco di esempio o i suoi preset si interviene su `organico.json`.
+Il banco statico è archiviato in `doc/archivio/organico.json` e non è una base per nuove sessioni.
 Questo organico abilita la guida delle drums, l'adesione regolabile
 di melodia e basso e l'influenza ritmica dalle drums precedenti verso la
 melodia. Le configurazioni di direzione possono cambiare i parametri

@@ -100,8 +100,8 @@ Desnivel e creare la voce; **B** ricollega una voce esistente, **T** ripete
 la ricerca e **V** salva. La schermata mostra tracce e domanda corrente;
 **D** apre i dettagli. I comandi testuali con `:` e il tasto **N** restano disponibili.
 Comandi, costruzione dei device e configurazione sono descritti in
-[Sessione guidata](SESSIONE-GUIDATA.md). L’organico a quattro voci resta
-caricabile con `--config presets/organico.json`.
+[Sessione guidata](SESSIONE-GUIDATA.md). Il banco statico a quattro voci è
+conservato come riferimento storico in `doc/archivio/organico.json`.
 
 ### Banchi di prova separati
 

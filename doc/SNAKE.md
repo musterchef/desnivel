@@ -1,5 +1,7 @@
 # Sequencer Snake
 
+> I riferimenti a `organico.json` descrivono il banco storico archiviato in `doc/archivio/organico.json`. Per creare e salvare le sessioni correnti consultare [Sessione guidata](SESSIONE-GUIDATA.md).
+
 Snake può essere controllato come componente della sessione multivoce,
 con un ruolo e una modalità di relazione scelti dall'utente. Continua a
 produrre il MIDI attraverso i propri banchi e percorsi.
@@ -12,9 +14,9 @@ scegliere ruolo, modalità e sorgente. Il terminale imposta l'associazione;
 Snake può essere l'unica traccia e fornire il trasporto sulla porta comune 9006.
 
 La procedura seguente riguarda il banco di esempio a quattro voci,
-avviato con `--config presets/organico.json`:
+avviato con `--config doc/archivio/organico.json`:
 
-1. Avviare `.venv/bin/python -m desnivel.cli.launch_stage --config presets/organico.json` e scegliere la tappa.
+1. Avviare `.venv/bin/python -m desnivel.cli.launch_stage --config doc/archivio/organico.json` e scegliere la tappa.
    La sessione parte con le quattro voci della prova.
 2. Prima del Play, premere **N** nel terminale per preparare Snake.
 3. In Live creare una traccia MIDI con `MDD_SNAKE_LengthBank.amxd`,

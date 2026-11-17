@@ -1,5 +1,7 @@
 # Contesto ambientale del viaggio
 
+> I riferimenti a `organico.json` descrivono il banco storico archiviato in `doc/archivio/organico.json`. Per creare e salvare le sessioni correnti consultare [Sessione guidata](SESSIONE-GUIDATA.md).
+
 Il contesto ambientale associa informazioni esterne ai tratti osservati
 del viaggio. Il meteo storico può modificare la musica; il fondo stradale
 è acquisibile e consultabile nello stato della sessione, senza una
@@ -173,12 +175,12 @@ ripartendo dall'inizio con gli stessi suoni, preset, BPM e valori manuali:
 ```sh
 # A: contributo meteorologico attivo
 python -m desnivel.cli.ensemble \
-  --track gpx/tappa04_Levanto_La_Spezia.gpx --config presets/organico.json \
+  --track gpx/tappa04_Levanto_La_Spezia.gpx --config doc/archivio/organico.json \
   --weather-context /tmp/desnivel-weather.json
 
 # B: stessi dati e politiche adattive, contributo meteorologico escluso
 python -m desnivel.cli.ensemble \
-  --track gpx/tappa04_Levanto_La_Spezia.gpx --config presets/organico.json \
+  --track gpx/tappa04_Levanto_La_Spezia.gpx --config doc/archivio/organico.json \
   --weather-context /tmp/desnivel-weather.json --without-weather
 ```
 

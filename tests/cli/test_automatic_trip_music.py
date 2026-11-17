@@ -19,7 +19,16 @@ DIRECTION = Path('presets/direzione-viaggio.json')
 
 
 def config():
-    return json.loads(Path('presets/organico.json').read_text())
+    session = json.loads(Path('tests/fixtures/transport_runtime_session.json').read_text())
+    session['generators']['percussion'] = json.loads(Path('tests/fixtures/percussion_phrase.json').read_text())
+    session['voices']['voice_04'] = {
+        'name': 'Drums', 'generator': 'percussion', 'destination': 'device_04',
+        'dependencies': ['voice_01'], 'optional_dependencies': ['voice_02'],
+    }
+    session['rhythm_voice'] = 'voice_04'
+    session['generators']['motif']['settings']['groove_follow'] = .3
+    session['generators']['accompaniment']['settings']['groove_follow'] = .7
+    return session
 
 
 def track(stage='test', amplitude=1.):
@@ -169,9 +178,13 @@ def test_flat_profile_has_defined_material_and_distance_weighting():
     assert profile['shape_normalized'] == [.5]*8
 
 
-def test_default_direction_and_explicit_manual_sections_are_both_operational(capsys):
+def test_default_direction_and_explicit_manual_sections_are_both_operational(tmp_path, capsys):
     from desnivel.cli.ensemble import main
-    args = ['--gpx', 'gpx/tappa05_Firenze_San_Gimignano.gpx', '--config', 'presets/organico.json', '--dry-run']
+    session = config()
+    session['direction'] = str(DIRECTION.resolve())
+    path = tmp_path/'session.json'
+    path.write_text(json.dumps(session))
+    args = ['--gpx', 'gpx/tappa05_Firenze_San_Gimignano.gpx', '--config', str(path), '--dry-run']
     assert main(args) == 0
     automatic = capsys.readouterr().out
     assert 'Direzione GPX: rolling' in automatic

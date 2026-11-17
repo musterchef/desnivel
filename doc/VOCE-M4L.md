@@ -1,5 +1,7 @@
 # Dispositivo MIDI di voce
 
+> I riferimenti a `organico.json` descrivono il banco storico archiviato in `doc/archivio/organico.json`. Per creare e salvare le sessioni correnti consultare [Sessione guidata](SESSIONE-GUIDATA.md).
+
 `Desnivel_Voice.amxd` è un effetto MIDI da collocare prima dello strumento su una traccia Live. Il dispositivo riceve frasi dal motore Python e le esegue sul trasporto di Live. La logica compositiva rimane in Python.
 
 La riga superiore mostra lo stato `meteo` della voce: caricamento,
@@ -92,7 +94,7 @@ create con il precedente parametro numerico, sostituire il device nel Set,
 impostare identificativo e porte su ogni istanza e salvare il Live Set.
 
 La sessione usa una libreria JSON accanto alla configurazione: con
-`--config presets/organico.json`, il percorso predefinito è
+`--config doc/archivio/organico.json`, il percorso predefinito è
 `presets/organico.voice-presets.json`. `--voice-presets percorso.json`
 permette di sceglierne un altro. Il file viene creato al primo salvataggio.
 Contiene versione 1 e una mappa `voices`, indicizzata per identificativo

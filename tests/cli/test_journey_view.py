@@ -107,7 +107,7 @@ def test_ensemble_starts_view_with_initial_state_and_closes_it_on_interrupt(tmp_
     monkeypatch.setattr(view_module, 'JourneyViewServer', create_view)
     monkeypatch.setattr(voice_device, 'VoiceDeviceServer', DeviceServer)
     status = tmp_path / 'state.json'
-    assert ensemble.main(['--track', 'unused.gpx', '--config', 'presets/organico.json', '--manual-sections',
+    assert ensemble.main(['--track', 'unused.gpx', '--config', 'tests/fixtures/journey_view_session.json', '--manual-sections',
                           '--view-port', '8765', '--status-file', str(status)]) == 0
     assert json.loads(status.read_text())['state'] == 'closed'
     assert not views[0].thread.is_alive()

@@ -11,11 +11,9 @@ from desnivel.trip.track import Track
 
 
 def transport_config():
-    config = json.loads(Path('presets/organico.json').read_text())
-    config.pop('rhythm_voice')
-    config.pop('relations')
-    for name in ('motif', 'accompaniment'):
-        config['generators'][name]['settings']['groove_follow'] = 0
+    config = json.loads(Path('tests/fixtures/transport_runtime_session.json').read_text())
+    config['music_adaptation'] = json.loads(
+        Path('presets/direzione-viaggio.json').read_text())['automatic_music']['adaptation']
     return config
 
 

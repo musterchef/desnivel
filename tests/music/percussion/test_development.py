@@ -13,7 +13,7 @@ from desnivel.music.percussion.development import PercussionPhraseGenerator
 
 
 def configuration():
-    return json.loads(Path('presets/organico.json').read_text())['generators']['percussion']
+    return json.loads((Path(__file__).parents[2] / 'fixtures' / 'percussion_phrase.json').read_text())
 
 
 def definition():

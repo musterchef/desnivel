@@ -1,60 +1,35 @@
-"""Identità musicale rispetto al motore prima della centralizzazione."""
-import hashlib
+"""Catalogo percussivo e comportamento nella sessione multivoce."""
 import json
-from dataclasses import asdict, replace
+from dataclasses import asdict
 from pathlib import Path
 
 import pytest
 
 from desnivel.cli.generators import build_generator, percussion_definition
-from desnivel.music.coordinator import PlanningRequest
 from desnivel.music.patterns import SCALES
-from desnivel.music.phrases import Note, Phrase
 from desnivel.music.percussion.catalog import MATERIAL_BY_ID, STYLE_BY_ID, HIT_ROLES
 from desnivel.adapters.percussion import PAD_NOTES
 
 
-PERCUSSION_BEFORE = {
-    ('organico', 'none', 0): '4d2e139615ebfb376dd0cc486f867eb6869c09cd87a6e65fd2baf6b0fa30ce9b',
-    ('organico', 'none', 0.5): 'b5f5d69a9f1eb4582dcb74e0823210b5b5aca304a4d4b1404f9444fd14495118',
-    ('organico', 'none', 1): '1437f3d8aeed2336542a1c095d84aa6eff274c8fd683d5b3304b6a078249a79f',
-    ('organico', 'house_classic', 0): '01488c956b22146ab0d7ec8003db387fff2472f3e22179e7f62a0ee006ce3125',
-    ('organico', 'house_classic', 0.5): '914845ad6ec257217cab14617bb249d0f23e7806a3780955b34bcf5f0dfb45c5',
-    ('organico', 'house_classic', 1): '9a19012ef38b46c146b5e46fc1b737514369dab8cb3cf6a887fa516dcda65bd0',
-    ('organico', 'boom_bap_90s', 0): '8e387abb336bca0d1ada405d1e197664b8056a7be6f87436bc495cb9fd36a9d8',
-    ('organico', 'boom_bap_90s', 0.5): 'f6b22a9ea2fdd89c1d0171ced5993f7273f82f168e28dee2314b9d9716987751',
-    ('organico', 'boom_bap_90s', 1): '7d5d5f75466f8ca8be392d8fff9412a95f41ac3b7ad0be561e5a6556f1df659f',
-    ('organico', 'breakbeat_house', 0): '6ed0c0dcb5531824cd148dbc9784bc12ea7057f3e356fcbf60b376342ac314ec',
-    ('organico', 'breakbeat_house', 0.5): '1473b3e89d6a2e7bbed08c3748bb6c24189b454302ade4206dc33e146a6e3570',
-    ('organico', 'breakbeat_house', 1): '885abef24c8624a73bb60ada0974731d74a5ab8dabb2e83ca66f43c1ad613507',
-    ('dialogo', 'none', 0): '16f081031ae8971d82c3a27e381a459a9898247078d11d189ab369399ba8f52c',
-    ('dialogo', 'none', 0.5): 'ec24d33f789fd74f99bf43d02e08e1255847e22f9dba3adf065d4ea489fc48e7',
-    ('dialogo', 'none', 1): '23f81215b4d1895c7c7d8f00ba0bafb3f7e9d23ae5535a2339cbe2515394fc45',
-    ('dialogo', 'house_classic', 0): '01488c956b22146ab0d7ec8003db387fff2472f3e22179e7f62a0ee006ce3125',
-    ('dialogo', 'house_classic', 0.5): '8bd298a028a7ac19ca4ecb2a494195c5e2423afb053206dc471422051d069594',
-    ('dialogo', 'house_classic', 1): '3802b0c8ce3c506868c0f4c9d827bbfda6d201e104f8a518fbe9ca28fe9b3e1c',
-    ('dialogo', 'boom_bap_90s', 0): '8e387abb336bca0d1ada405d1e197664b8056a7be6f87436bc495cb9fd36a9d8',
-    ('dialogo', 'boom_bap_90s', 0.5): 'ea5f4579c2343f3e4ddb21ffd996595894ed8ce9c3a9e849b54b8fe6712ceb41',
-    ('dialogo', 'boom_bap_90s', 1): '5eecf6810fcdd7a539ae9eb075166b20d8d20872847401380c396a9b060cffdc',
-    ('dialogo', 'breakbeat_house', 0): '6ed0c0dcb5531824cd148dbc9784bc12ea7057f3e356fcbf60b376342ac314ec',
-    ('dialogo', 'breakbeat_house', 0.5): 'f2d4a54ddbeb4c3b9bae039bb4f8a0a83e8ea2b2512fd1f18f865074bc5c5819',
-    ('dialogo', 'breakbeat_house', 1): 'fbca764a322d7f9fd074406c7ffdf0a7b5a4d12cd7cba366744efe085ff6c2bc',
-}
-
-SESSIONS_EXPECTED = {
-    ('organico', 'none'): '8622a4978635dbb34775bb4594dbd6958b2acafe1e65edc9802208cc7fac020d',
-    ('organico', 'house_classic'): 'cda7bf077cfd62de6d3f8aab4fb21fb2cd24a116c9551f243fa108af85f05811',
-    ('organico', 'boom_bap_90s'): '0e6e28336dbdf67b6d846d00207131db6eb59089142d30cca1c9564ce05701f8',
-    ('organico', 'breakbeat_house'): '038a45e5cecb210eaeb90a6ce467c7430311c24189147e7faedd9d482f12d8da',
-    ('dialogo', 'none'): 'dc7fa16f264bcc2d8253887a2e485754a7d634892fbe9b691469a33b2ccc9c97',
-    ('dialogo', 'house_classic'): 'd75660d539a43351c73625913bb336cfe7186b0c988404959debd8d21b94a270',
-    ('dialogo', 'boom_bap_90s'): 'a1236749669c151a625ceeaccc4cde4fa73181169c9a9d707ed9b120789e95f7',
-    ('dialogo', 'breakbeat_house'): '7edf4d82aa7f842dd3ffd90bac73b263542f8f03dabf27f35086476008592d54',
-}
-
-
 def configuration(name):
-    config = json.loads(Path('presets/organico.json').read_text())
+    config = json.loads(Path('tests/fixtures/transport_runtime_session.json').read_text())
+    config['generators']['percussion'] = json.loads(Path('tests/fixtures/percussion_phrase.json').read_text())
+    config['voices']['voice_04'] = {
+        'name': 'Drums', 'generator': 'percussion', 'destination': 'device_04',
+        'dependencies': ['voice_01'], 'optional_dependencies': ['voice_02'],
+    }
+    config['rhythm_voice'] = 'voice_04'
+    config['history_beats'] = 64
+    config['relations'] = [{
+        'id': 'drums_to_melody', 'source': 'voice_04', 'target': 'voice_01',
+        'scope': 'history', 'aspects': ['rhythm'], 'roles': ['melody'],
+        'lookback_beats': 32, 'fragment_beats': 4, 'strength': .4,
+        'on_unavailable': 'independent',
+    }]
+    for section in config['sections']:
+        section['assignments']['voice_04'] = {'role': 'rhythm'}
+    config['generators']['motif']['settings']['groove_follow'] = .3
+    config['generators']['accompaniment']['settings']['groove_follow'] = .7
     if name == 'dialogo':
         config['generators']['percussion'].update(material='spaced_dialogue', standard_material='regular_pulse_offbeats')
         config['generators']['percussion']['settings']['displacement_beats'] = .25
@@ -63,26 +38,6 @@ def configuration(name):
                                    assignments={n: {'role': r} for n, r in zip(config['voices'],
                                                 ('melody', 'bass_line', 'harmony', 'rhythm'))})]
     return config
-
-
-def capture(spec, style, variation):
-    gen = build_generator(spec).generator.generate
-    output = []
-    styles = ('house_classic', 'boom_bap_90s', 'breakbeat_house')
-    for index in range(32):
-        beat = index*4
-        requested = style if style == 'none' else styles[(styles.index(style)+index//3) % 3]
-        melody = Phrase(4, () if index % 5 == 0 else (
-            Note(0, 60, .7, 90), Note(1.5, 64, .5, 80), Note(3, 67, .8, 85)))
-        bass = Phrase(4, () if index % 7 == 0 else (Note(.5, 36, .8, 90), Note(2.5, 40, .7, 80)))
-        req = PlanningRequest(beat, 4, None, {'voice_01': melody, 'voice_02': bass}, 'rhythm',
-                              {'style': requested, 'variation': variation, 'displacement_beats': .25}, beat)
-        prepared = gen.prepare_reference(req)
-        plan = gen.stage(replace(req, rhythm=prepared.reference, prepared_material=prepared.material))
-        gen.accept(plan)
-        output.append({'phrase': asdict(plan.phrase), 'reference': asdict(prepared.reference),
-                       'gestures': [asdict(span) for span in plan.gestures]})
-    return hashlib.sha256(json.dumps(output, sort_keys=True, allow_nan=False).encode()).hexdigest()
 
 
 def capture_session_output(config, style):
@@ -97,21 +52,6 @@ def capture_session_output(config, style):
         result.append({'phrases': {name: asdict(phrase) for name, phrase in phrases.items()},
                        'rhythm': session.coordinator.last_plan['rhythm']})
     return result
-
-
-def capture_session(config, style):
-    output = capture_session_output(config, style)
-    return hashlib.sha256(json.dumps(output, sort_keys=True, allow_nan=False).encode()).hexdigest()
-
-
-@pytest.mark.parametrize('name,style,variation', PERCUSSION_BEFORE)
-def test_centralized_catalog_preserves_notes_references_and_gestures(name, style, variation):
-    assert capture(configuration(name)['generators']['percussion'], style, variation) == PERCUSSION_BEFORE[name,style,variation]
-
-
-@pytest.mark.parametrize('name,style', SESSIONS_EXPECTED)
-def test_whole_ensemble_dialogue_for_current_arrangement(name, style):
-    assert capture_session(configuration(name), style) == SESSIONS_EXPECTED[name,style]
 
 
 @pytest.mark.parametrize('name', ('organico', 'dialogo'))

@@ -9,7 +9,7 @@ dichiara i ruoli `melody`,
 `bass_line` e `harmony`. Nel codice attuale sviluppa il motivo per `melody`,
 mantiene la forma letterale per `bass_line` e delega `harmony` a
 [`TextureGenerator`](../../../../../src/desnivel/music/texture/generator.py).
-I preset [`organico.json`](../../../../../presets/organico.json) e
+I preset [`organico.json`](../../../../../doc/archivio/organico.json) e
 [`direzione-viaggio.json`](../../../../../presets/direzione-viaggio.json)
 assegnano effettivamente questi ruoli.
 

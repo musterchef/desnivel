@@ -37,7 +37,7 @@ def test_collection_has_sorted_working_reports_with_same_analysis_as_single_comm
     output = tmp_path/'report'
     assert main(['--gpx-dir', str(sources), '--settings', 'settings/desnivel.toml',
                  '--pause-context', 'ascent', 'level',
-                 '--pause-context', 'descent', 'level', '--timeline-session', 'presets/organico.json',
+                 '--pause-context', 'descent', 'level', '--timeline-session', 'tests/fixtures/timeline_session.json',
                  '--output-dir', str(output)]) == 0
     index = IndexLinks((output/'index.html').read_text())
     assert index.options == ['report-tappa01_uno.html', 'report-tappa02_due.html']
@@ -56,7 +56,7 @@ def test_collection_has_sorted_working_reports_with_same_analysis_as_single_comm
             assert f'{stage["stage"]}:{segment["id"]}' in page
     expected = analyze_trip(sources/'tappa01_uno.gpx', Path('settings/desnivel.toml'),
                             pause_context=[['ascent', 'level'], ['descent', 'level']],
-                            timeline_session=Path('presets/organico.json'))
+                            timeline_session=Path('tests/fixtures/timeline_session.json'))
     assert json.loads((output/'report-tappa01_uno.json').read_text()) == expected
 
 

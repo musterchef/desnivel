@@ -23,7 +23,7 @@ def setup(enabled=True, *, missing_wind=False, missing_rain=False):
         provenance={'provider': 'fixture'}, records=[dict(segment=0, start=0, end=1000,
             values={'wind_speed_kmh': None if missing_wind else 40., 'precipitation_mm': 2.,
                     'precipitation_change_mm': None if missing_rain else 2.}, details={})]))
-    config = json.loads(Path('presets/organico.json').read_text())
+    config = json.loads(Path('tests/fixtures/transport_runtime_session.json').read_text())
     adaptation = json.loads(Path('presets/direzione-viaggio.json').read_text())['automatic_music']['adaptation']
     config['music_adaptation'] = adaptation
     # Un'unica sezione rende confrontabili le due esecuzioni per tutta la prova.

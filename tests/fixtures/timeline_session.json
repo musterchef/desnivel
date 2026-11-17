@@ -1,0 +1,8 @@
+{
+  "window_beats": 4,
+  "timeline": {
+    "beats_per_km": 12,
+    "min_windows": 2,
+    "distance_exponent": 0.5
+  }
+}

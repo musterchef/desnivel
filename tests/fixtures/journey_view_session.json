@@ -1,0 +1,32 @@
+{
+  "selection_mode": "manual",
+  "transport_voice": "voice_01",
+  "window_beats": 4,
+  "lead_beats": 2,
+  "generators": {
+    "motif": {
+      "type": "motif",
+      "degrees": [0, 2, 4, 1]
+    }
+  },
+  "voices": {
+    "voice_01": {
+      "name": "Synth",
+      "generator": "motif",
+      "destination": "device_01"
+    }
+  },
+  "sections": [
+    {
+      "name": "opening",
+      "from_progress": 0,
+      "root": 57,
+      "scale": "minor",
+      "assignments": {
+        "voice_01": {
+          "role": "melody"
+        }
+      }
+    }
+  ]
+}

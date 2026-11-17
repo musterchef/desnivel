@@ -1,5 +1,7 @@
 # Configurazione della sessione multivoce
 
+> I riferimenti a `organico.json` descrivono il banco storico archiviato in `doc/archivio/organico.json`. Per creare e salvare le sessioni correnti consultare [Sessione guidata](SESSIONE-GUIDATA.md).
+
 L'[indice dei preset](../presets/README.md) distingue tutti i JSON operativi
 per funzione e comando. Questa guida descrive i campi della sessione
 `desnivel.cli.ensemble` e dei generatori registrati in `cli/generators.py`.
@@ -14,7 +16,7 @@ Gli altri campi della procedura sono descritti nella guida.
 
 ## Organico e pianificazione
 
-In `presets/organico.json`:
+In `doc/archivio/organico.json`:
 
 | Campo | Significato e vincoli |
 |---|---|
@@ -32,7 +34,7 @@ In `presets/organico.json`:
 | `relations` | Lista facoltativa delle influenze storiche; campi, limiti e politiche in [Dialogo ritmico](DIALOGO-MUSICALE.md#relazioni-storiche) |
 
 Un beat è una semiminima. `window_beats: 4` non definisce da solo un metro.
-`presets/organico.json` abilita `rhythm_voice: "voice_04"`, storia
+`doc/archivio/organico.json` abilita `rhythm_voice: "voice_04"`, storia
 di 64 beat e relazione ritmica dalle drums precedenti verso la melodia.
 L'adesione iniziale al groove è 0,3 per la melodia e 0,7 per il basso.
 I parametri di sezione e gli override mantengono la precedenza.

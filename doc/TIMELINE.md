@@ -1,5 +1,7 @@
 # Timeline musicale e anteprima dell'allocazione
 
+> I riferimenti a `organico.json` descrivono il banco storico archiviato in `doc/archivio/organico.json`. Per creare e salvare le sessioni correnti consultare [Sessione guidata](SESSIONE-GUIDATA.md).
+
 `music/timeline.py` implementa un'allocazione pura, un piano immutabile e
 un manager della posizione logica. L'unità temporale è il beat: non sono
 richiesti BPM o durate in secondi. Cambiare il BPM cambia la durata reale
@@ -97,7 +99,7 @@ al chiamante che ne governa l'avanzamento.
 
 ## Configurazione e report
 
-In `presets/organico.json` la sezione `timeline` contiene:
+In `doc/archivio/organico.json` la sezione `timeline` contiene:
 
 ```json
 {
@@ -122,7 +124,7 @@ rapporto beat/km. Il report mostra la scala e la durata effettiva.
 .venv/bin/python -m desnivel.cli.analyze_trip \
   --gpx gpx/tappa05_Firenze_San_Gimignano.gpx \
   --settings settings/desnivel.toml \
-  --timeline-session presets/organico.json \
+  --timeline-session doc/archivio/organico.json \
   --output output/analisi-percorso.json \
   --html output/analisi-percorso.html
 ```
@@ -162,7 +164,7 @@ Dalla cartella del progetto, per il replay lineare:
 ```sh
 .venv/bin/python -m desnivel.cli.ensemble \
   --gpx gpx/tappa05_Firenze_San_Gimignano.gpx \
-  --config presets/organico.json \
+  --config doc/archivio/organico.json \
   --direction presets/direzione-viaggio.json \
   --timing linear --speed 200
 ```
@@ -172,7 +174,7 @@ Per la timeline allocata:
 ```sh
 .venv/bin/python -m desnivel.cli.ensemble \
   --gpx gpx/tappa05_Firenze_San_Gimignano.gpx \
-  --config presets/organico.json \
+  --config doc/archivio/organico.json \
   --direction presets/direzione-viaggio.json \
   --timing allocated
 ```

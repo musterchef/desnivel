@@ -251,12 +251,14 @@ Il comando diretto `desnivel.cli.ensemble --config <file>` usa questo
 riferimento quando `--track` è omesso. Una traccia esplicita lo sostituisce;
 cambiando file, il precedente riferimento timer non viene riutilizzato.
 
-## Organico di esempio
+## Banco statico archiviato
 
-La configurazione `presets/organico.json` mantiene il banco a quattro voci:
+La configurazione `doc/archivio/organico.json` conserva il banco storico a quattro voci.
+Per le sessioni correnti usare il launcher e salvare la propria formazione.
+Il comando seguente serve soltanto a riprodurre il banco archiviato:
 
 ```sh
-.venv/bin/python -m desnivel.cli.launch_stage --config presets/organico.json
+.venv/bin/python -m desnivel.cli.launch_stage --config doc/archivio/organico.json
 ```
 
 Questo percorso conserva i comandi di collegamento e la preparazione Snake

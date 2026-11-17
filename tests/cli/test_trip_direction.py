@@ -48,8 +48,27 @@ def track():
                  {'cum_dist_m': distance, 'ele': 200+np.r_[0, np.cumsum(slopes)*100]})
 
 
+def configuration():
+    config = json.loads(Path('tests/fixtures/transport_runtime_session.json').read_text())
+    config['generators']['percussion'] = json.loads(Path('tests/fixtures/percussion_phrase.json').read_text())
+    config['voices']['voice_04'] = {
+        'name': 'Drums', 'generator': 'percussion', 'destination': 'device_04',
+        'dependencies': ['voice_01'], 'optional_dependencies': ['voice_02'],
+    }
+    config['rhythm_voice'] = 'voice_04'
+    config['generators']['motif']['settings']['groove_follow'] = .3
+    config['generators']['accompaniment']['settings']['groove_follow'] = .7
+    return config
+
+
+def session_file(tmp_path):
+    path = tmp_path/'session.json'
+    path.write_text(json.dumps(configuration()))
+    return path
+
+
 def make_runtime(direction):
-    config = json.loads(Path('presets/organico.json').read_text())
+    config = configuration()
     config['sections'] = load_trip_sections(track(), direction, settings_for(direction))
     sent = []
     bridge = VoiceDeviceBridge({}, lambda *args: sent.append(args), clock=lambda: 0.)
@@ -249,31 +268,31 @@ def test_family_names_are_configuration_data(direction):
     assert load_trip_sections(track(), direction, settings_path)[0]['name'] == 'incline'
 
 
-def test_dry_run_checks_every_macrosection_without_opening_server(monkeypatch, capsys):
+def test_dry_run_checks_every_macrosection_without_opening_server(tmp_path, monkeypatch, capsys):
     from desnivel.cli.ensemble import main
     import desnivel.cli.voice_device
 
     def no_server(*args, **kwargs):
         raise AssertionError('dry-run non deve aprire il server')
     monkeypatch.setattr(desnivel.cli.voice_device, 'VoiceDeviceServer', no_server)
-    assert main(['--gpx', 'gpx/tappa05_Firenze_San_Gimignano.gpx', '--config', 'presets/organico.json',
+    assert main(['--gpx', 'gpx/tappa05_Firenze_San_Gimignano.gpx', '--config', str(session_file(tmp_path)),
                  '--direction', 'presets/direzione-viaggio.json', '--dry-run']) == 0
     output = capsys.readouterr().out
     assert output.count('[km ') == 44
     assert 'ascent' in output and 'descent' in output and 'level' in output
 
 
-def test_allocated_dry_run_uses_same_budget_as_report(capsys):
+def test_allocated_dry_run_uses_same_budget_as_report(tmp_path, capsys):
     from desnivel.cli.ensemble import main
-    assert main(['--gpx', 'gpx/tappa05_Firenze_San_Gimignano.gpx', '--config', 'presets/organico.json',
+    assert main(['--gpx', 'gpx/tappa05_Firenze_San_Gimignano.gpx', '--config', str(session_file(tmp_path)),
                  '--direction', 'presets/direzione-viaggio.json', '--timing', 'allocated', '--dry-run']) == 0
     assert 'Timeline allocated: 696 beat, 174 finestre (12 beat/km).' in capsys.readouterr().out
 
 
 @pytest.mark.parametrize('extra', [['--manual-sections'], ['--direction', 'presets/direzione-viaggio.json', '--speed', '200']])
-def test_allocated_rejects_missing_direction_or_ambiguous_speed(extra, capsys):
+def test_allocated_rejects_missing_direction_or_ambiguous_speed(tmp_path, extra, capsys):
     from desnivel.cli.ensemble import main
     with pytest.raises(SystemExit):
-        main(['--gpx', 'gpx/tappa05_Firenze_San_Gimignano.gpx', '--config', 'presets/organico.json',
+        main(['--gpx', 'gpx/tappa05_Firenze_San_Gimignano.gpx', '--config', str(session_file(tmp_path)),
               '--timing', 'allocated', '--dry-run', *extra])
     assert 'richiede una direzione GPX' in capsys.readouterr().err

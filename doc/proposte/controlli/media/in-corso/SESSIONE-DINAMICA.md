@@ -2,8 +2,8 @@
 
 ## Stato
 
-Proposta in corso. La creazione guidata delle voci è già operativa; la
-rimozione del banco statico `presets/organico.json` non è ancora completata.
+Proposta in corso. La creazione guidata delle voci è operativa e il banco
+statico è stato archiviato in `doc/archivio/organico.json`.
 
 ## Obiettivo
 
@@ -34,11 +34,11 @@ La procedura guidata costruisce e aggiorna:
 Il catalogo usato dalla procedura guidata è definito in
 `desnivel.cli.session_setup`; non viene copiato da `organico.json`.
 
-`presets/organico.json` è ancora usato come banco a quattro voci avviabile
-direttamente, come esempio nella documentazione e come fixture condivisa da
-test musicali, test della sessione e report del percorso. Questa dipendenza
-rende il banco dimostrativo una sorgente implicita di configurazione per prove
-che dovrebbero dichiarare autonomamente i dati necessari.
+I test musicali, della sessione e dei report dichiarano i propri dati in
+`tests/fixtures/` e nei rispettivi builder. Non leggono il banco dimostrativo.
+Il banco statico è conservato in `doc/archivio/organico.json` come riferimento
+storico. Le guide ne identificano esplicitamente gli esempi; la sessione
+corrente si crea e si salva tramite la procedura guidata.
 
 ## Confini dei dati
 

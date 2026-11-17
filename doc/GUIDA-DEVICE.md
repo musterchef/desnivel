@@ -1,5 +1,7 @@
 # Guida pratica ai device
 
+> I riferimenti a `organico.json` descrivono il banco storico archiviato in `doc/archivio/organico.json`. Per creare e salvare le sessioni correnti consultare [Sessione guidata](SESSIONE-GUIDATA.md).
+
 Per la sessione multivoce con `organico.json`.
 Nel device scegli il controllo dal menu **Parametro**, poi imposta il valore.
 Le tabelle propongono valori di partenza: gli altri controlli restano come sono.

@@ -1,0 +1,18 @@
+{
+  "type": "percussion_phrase",
+  "material": "spaced_impacts",
+  "standard_material": "regular_pulse_eighths",
+  "settings": {
+    "variation": 0.7,
+    "displacement_beats": 0,
+    "velocity_ratio": 0.85,
+    "gate_beats": 0.1,
+    "seed": 7,
+    "support_tolerance_beats": 0.5,
+    "answer_clearance_beats": 0.25
+  },
+  "interaction": {
+    "support_source": "voice_02",
+    "answer_source": "voice_01"
+  }
+}

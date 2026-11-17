@@ -220,5 +220,5 @@
       "on_unavailable": "independent"
     }
   ],
-  "direction": "direzione-viaggio.json"
+  "direction": "../../presets/direzione-viaggio.json"
 }

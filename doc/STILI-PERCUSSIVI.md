@@ -1,5 +1,7 @@
 # Selezione dello stile percussivo
 
+> I riferimenti a `organico.json` descrivono il banco storico archiviato in `doc/archivio/organico.json`. Per creare e salvare le sessioni correnti consultare [Sessione guidata](SESSIONE-GUIDATA.md).
+
 Il generatore `percussion_phrase` espone **Stile**, una scelta nominale
 salvabile nei preset. Ogni profilo definisce un vocabolario ritmico in
 4/4 con quattro figure: due groove principali, una figura di piatti più leggera
@@ -136,7 +138,7 @@ verso `none` sono immediati: `none` usa materiali configurati separatamente.
 
 1. Ricostruire e ricaricare il [device di voce](VOCE-M4L.md#costruzione),
    conservando insieme `.amxd` e i due script JavaScript.
-2. Avviare la sessione con `--config presets/organico.json`, usando il
+2. Avviare la sessione con `--config doc/archivio/organico.json`, usando il
    [comando completo](DIALOGO-MUSICALE.md#configurazione-dascolto).
 3. In `voice_04`, scegliere il parametro **Stile**, poi il profilo nel menu.
 4. Confrontare Variazione a 0, 0,5 e 1 per almeno quattro battute;
