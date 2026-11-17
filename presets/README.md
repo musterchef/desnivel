@@ -9,7 +9,6 @@ La sessione e il banco di esempio usano questi file, con responsabilità distint
 | `sessione.json` | Base vuota per le sessioni create dal launcher; ogni configurazione utente è salvata in `output/sessioni/<nome>.json` | `cli.ensemble --setup`, tramite il launcher |
 | `organico.json` | Voci, generatori, impostazioni e preset; sezioni manuali; parametri della timeline in beat | `cli.ensemble`; `cli.analyze_trip --timeline-session` per l'anteprima |
 | `direzione-viaggio.json` | Tavolozze e motivo automatici, override e assetti delle famiglie | `cli.trip_direction`, tramite `direction` della sessione o `--direction` |
-| `macrosezioni-percorso.json` | Appartenenza delle fasce alle famiglie | `trip.sections`, tramite i comandi di analisi o di sessione |
 
 Nella [sessione guidata](../doc/SESSIONE-GUIDATA.md) le voci si aggiungono
 dal terminale e la configurazione si conserva con `:salva`.
@@ -19,12 +18,11 @@ di melodia e basso e l'influenza ritmica dalle drums precedenti verso la
 melodia. Le configurazioni di direzione possono cambiare i parametri
 delle sezioni senza sostituire queste relazioni.
 Per cambiarne il comportamento in salita, discesa o pianura si interviene su
-`direzione-viaggio.json`. Il raggruppamento e le impostazioni applicative descrivono il percorso e non
+`direzione-viaggio.json`. Le impostazioni applicative descrivono il percorso e non
 contengono decisioni musicali. Aggiungere una voce non richiede un nuovo JSON.
 
-Il percorso `grouping` nella direzione è relativo al file di direzione.
-I criteri altimetrici condivisi fra analisi visuale e ascolto sono in
-`settings/desnivel.toml`, nella sezione `trip.analysis`.
+I criteri altimetrici e le famiglie condivisi fra analisi visuale e ascolto
+sono in `settings/desnivel.toml`, nelle sezioni `trip.analysis` e `trip.grouping`.
 Il riferimento dei campi e delle precedenze è in
 [Configurazione](../doc/CONFIGURAZIONE.md).
 `organico.json` carica la direzione tramite il campo

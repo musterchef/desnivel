@@ -75,6 +75,14 @@ class AnalysisSettings:
 
 
 @dataclass(frozen=True)
+class GroupingSettings:
+    families: tuple[tuple[str, tuple[str, ...]], ...]
+
+    def as_dict(self):
+        return {'families': {name: list(bands) for name, bands in self.families}}
+
+
+@dataclass(frozen=True)
 class RouteStructureSettings:
     merge_reversals: bool
     max_relative_elevation: float
@@ -97,6 +105,7 @@ class TripSettings:
     gpx: GpxConfig
     quality: QualitySettings
     analysis: AnalysisSettings
+    grouping: GroupingSettings
     route_structure: RouteStructureSettings
 
 
@@ -175,6 +184,30 @@ def _analysis_settings(section):
     return settings
 
 
+def _grouping_settings(section, analysis):
+    if not isinstance(section, dict) or set(section) != {'families'}:
+        raise ValueError('trip.grouping richiede soltanto families')
+    families = section['families']
+    if not isinstance(families, dict) or not families:
+        raise ValueError('trip.grouping.families deve contenere almeno una famiglia')
+    parsed, assigned = [], set()
+    for name, bands in families.items():
+        if (not isinstance(name, str) or not name or not isinstance(bands, list) or not bands
+                or any(not isinstance(band, str) or not band for band in bands)
+                or len(set(bands)) != len(bands)):
+            raise ValueError('ogni famiglia richiede un nome e fasce non vuote e distinte')
+        overlap = assigned.intersection(bands)
+        if overlap:
+            raise ValueError(f'fasce assegnate a più famiglie: {sorted(overlap)}')
+        assigned.update(bands)
+        parsed.append((name, tuple(bands)))
+    available = {band.name for band in analysis.bands}
+    if assigned != available:
+        raise ValueError(f'fasce senza famiglia: {sorted(available-assigned)}; '
+                         f'fasce sconosciute: {sorted(assigned-available)}')
+    return GroupingSettings(tuple(parsed))
+
+
 def load_settings(path=DEFAULT_SETTINGS_PATH):
     """Legge e valida un file TOML senza valori sostitutivi impliciti."""
     data = tomllib.loads(Path(path).read_text(encoding='utf-8'))
@@ -183,16 +216,18 @@ def load_settings(path=DEFAULT_SETTINGS_PATH):
     trip = data['trip']
     transport = data['transport']
     if not isinstance(trip, dict) or set(trip) != {
-            'timing', 'gpx', 'quality', 'analysis', 'route_structure'}:
-        raise ValueError('trip richiede timing, gpx, quality, analysis e route_structure')
+            'timing', 'gpx', 'quality', 'analysis', 'grouping', 'route_structure'}:
+        raise ValueError('trip richiede timing, gpx, quality, analysis, grouping e route_structure')
     if not isinstance(transport, dict) or set(transport) != {'osc'}:
         raise ValueError('transport richiede soltanto la sezione osc')
+    analysis = _analysis_settings(trip['analysis'])
     settings = Settings(
         trip=TripSettings(
             timing=_require_fields(trip['timing'], TimingConfig, 'trip.timing'),
             gpx=_require_fields(trip['gpx'], GpxConfig, 'trip.gpx'),
             quality=_require_fields(trip['quality'], QualitySettings, 'trip.quality'),
-            analysis=_analysis_settings(trip['analysis']),
+            analysis=analysis,
+            grouping=_grouping_settings(trip['grouping'], analysis),
             route_structure=_require_fields(
                 trip['route_structure'], RouteStructureSettings, 'trip.route_structure'),
         ),

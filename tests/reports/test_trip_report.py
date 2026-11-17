@@ -56,8 +56,7 @@ def test_profile_preserves_endpoints_and_midpoints_in_distance_coordinates():
     assert [p['elevation_m'] for p in profile] == pytest.approx([100, 102, 104, 104.5, 105])
 
 
-@pytest.mark.parametrize('with_grouping', [False, True])
-def test_cli_embeds_exactly_the_exported_analysis(tmp_path, with_grouping):
+def test_cli_embeds_exactly_the_exported_analysis(tmp_path):
     from desnivel.cli.analyze_trip import main
 
     root = Path(__file__).resolve().parents[2]
@@ -65,16 +64,10 @@ def test_cli_embeds_exactly_the_exported_analysis(tmp_path, with_grouping):
     args = ['--gpx', str(root/'gpx/tappa05_Firenze_San_Gimignano.gpx'),
             '--settings', str(root/'settings/desnivel.toml'),
             '--output', str(output), '--html', str(report)]
-    if with_grouping:
-        args += ['--grouping', str(root/'presets/macrosezioni-percorso.json')]
     assert main(args) == 0
     result = json.loads(output.read_text())
     assert json.loads(EmbeddedAnalysis(report.read_text()).payload) == result
-    if with_grouping:
-        assert len(result['grouping']['sections']) < len(result['zones'])
-        grouped = result
-        assert main(args[:-2]) == 0
-        assert {key: value for key, value in grouped.items() if key != 'grouping'} == json.loads(output.read_text())
+    assert len(result['grouping']['sections']) < len(result['zones'])
 
 
 def test_cli_rejects_colliding_output_paths_before_writing(tmp_path):
@@ -98,7 +91,7 @@ def test_timeline_report_and_json_use_same_beat_allocation_without_changing_anal
 
     result_path, html = tmp_path/'result.json', tmp_path/'report.html'
     args = ['--gpx', 'gpx/tappa05_Firenze_San_Gimignano.gpx', '--settings', 'settings/desnivel.toml',
-            '--grouping', 'presets/macrosezioni-percorso.json', '--output', str(result_path), '--html', str(html)]
+            '--output', str(result_path), '--html', str(html)]
     assert main(args) == 0
     original = json.loads(result_path.read_text())
     assert main(args+['--timeline-session', 'presets/organico.json']) == 0
@@ -126,16 +119,14 @@ def test_linear_reference_uses_time_instead_of_distance_and_includes_stops():
     assert spans[0]['start_beat'] == 0 and spans[-1]['end_beat'] == 100
 
 
-def test_timeline_requires_grouping_and_reports_extension(tmp_path, capsys):
+def test_timeline_reports_extension(tmp_path, capsys):
     from desnivel.cli.analyze_trip import main
 
     args = ['--gpx', 'gpx/tappa05_Firenze_San_Gimignano.gpx', '--settings', 'settings/desnivel.toml']
-    with pytest.raises(SystemExit):
-        main(args+['--timeline-session', 'presets/organico.json'])
     session = tmp_path/'session.json'
     session.write_text(json.dumps({'window_beats': 4,
                                   'timeline': {'target_beats': 4, 'min_windows': 2, 'distance_exponent': .5}}))
-    assert main(args+['--grouping', 'presets/macrosezioni-percorso.json', '--timeline-session', str(session)]) == 0
+    assert main(args+['--timeline-session', str(session)]) == 0
     assert 'minimi garantiti: 4 → 352 beat' in capsys.readouterr().out
 
 
@@ -145,7 +136,7 @@ def test_pause_context_is_optional_and_preserves_original_grouping(tmp_path):
 
     output, html = tmp_path/'analysis.json', tmp_path/'analysis.html'
     args = ['--gpx', 'gpx/tappa05_Firenze_San_Gimignano.gpx', '--settings', 'settings/desnivel.toml',
-            '--grouping', 'presets/macrosezioni-percorso.json', '--output', str(output), '--html', str(html)]
+            '--output', str(output), '--html', str(html)]
     assert main(args) == 0
     baseline = json.loads(output.read_text())
     assert main(args+['--pause-context', 'ascent', 'level']) == 0
@@ -166,8 +157,9 @@ def test_pause_context_is_optional_and_preserves_original_grouping(tmp_path):
         main(args+['--pause-context', 'missing', 'level'])
 
 
-def test_pause_context_requires_grouping():
+def test_pause_context_rejects_unknown_families():
     from desnivel.cli.analyze_trip import main
 
     with pytest.raises(SystemExit):
-        main(['--gpx', 'unused.gpx', '--settings', 'unused.toml', '--pause-context', 'ascent', 'level'])
+        main(['--gpx', 'gpx/tappa05_Firenze_San_Gimignano.gpx',
+              '--settings', 'settings/desnivel.toml', '--pause-context', 'missing', 'level'])

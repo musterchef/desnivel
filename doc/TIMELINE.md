@@ -122,14 +122,13 @@ rapporto beat/km. Il report mostra la scala e la durata effettiva.
 .venv/bin/python -m desnivel.cli.analyze_trip \
   --gpx gpx/tappa05_Firenze_San_Gimignano.gpx \
   --settings settings/desnivel.toml \
-  --grouping presets/macrosezioni-percorso.json \
   --timeline-session presets/organico.json \
   --output output/analisi-percorso.json \
   --html output/analisi-percorso.html
 ```
 
-`--timeline-session` richiede `--grouping`. L'analisi JSON mantiene zone,
-profilo e macrosezioni e aggiunge `timeline` con il piano e la posizione
+L'analisi JSON mantiene zone, profilo e macrosezioni e aggiunge `timeline`
+con il piano e la posizione
 iniziale del manager. L'HTML usa questi dati senza ricalcolare i pesi.
 
 Nel report la sezione «Timeline musicale in beat» mostra budget, avvisi,

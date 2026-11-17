@@ -22,6 +22,8 @@ def test_analysis_bands_restore_the_open_lower_bound_from_toml(tmp_path):
     assert analysis['bands'][0] == {
         'name': 'steep_descent', 'from_slope_ratio': None}
     assert analysis['bands'][-1]['from_slope_ratio'] == .06
+    assert load_settings(path).trip.grouping.as_dict()['families']['ascent'] == [
+        'climb', 'steep_climb']
 
 
 def test_toml_values_build_the_loader_and_transport_config(tmp_path):

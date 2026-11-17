@@ -32,7 +32,6 @@ def direction(tmp_path):
     settings = settings.replace('slope_window_m = 300.0', 'slope_window_m = 100.0')
     settings = settings.replace('min_zone_distance_m = 300.0', 'min_zone_distance_m = 100.0')
     (tmp_path/'desnivel.toml').write_text(settings)
-    (tmp_path/'macrosezioni-percorso.json').write_text((definitions/'macrosezioni-percorso.json').read_text())
     path = tmp_path/'direction.json'
     path.write_text(json.dumps(definition))
     return path
@@ -239,14 +238,15 @@ def test_invalid_directions_fail_before_any_note_is_sent(direction, problem):
 
 
 def test_family_names_are_configuration_data(direction):
-    grouping_path = direction.parent/'macrosezioni-percorso.json'
-    grouping = json.loads(grouping_path.read_text())
-    grouping['families']['incline'] = grouping['families'].pop('ascent')
-    grouping_path.write_text(json.dumps(grouping))
+    settings_path = settings_for(direction)
+    settings = settings_path.read_text().replace(
+        'ascent = ["climb", "steep_climb"]',
+        'incline = ["climb", "steep_climb"]')
+    settings_path.write_text(settings)
     definition = json.loads(direction.read_text())
     definition['families']['incline'] = definition['families'].pop('ascent')
     direction.write_text(json.dumps(definition))
-    assert load_trip_sections(track(), direction, settings_for(direction))[0]['name'] == 'incline'
+    assert load_trip_sections(track(), direction, settings_path)[0]['name'] == 'incline'
 
 
 def test_dry_run_checks_every_macrosection_without_opening_server(monkeypatch, capsys):

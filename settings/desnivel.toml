@@ -53,6 +53,11 @@ from_slope_ratio = 0.015
 name = "steep_climb"
 from_slope_ratio = 0.06
 
+[trip.grouping.families]
+ascent = ["climb", "steep_climb"]
+descent = ["descent", "steep_descent"]
+level = ["level"]
+
 [trip.route_structure]
 merge_reversals = true
 max_relative_elevation = 0.2

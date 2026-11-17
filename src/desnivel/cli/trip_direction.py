@@ -39,14 +39,12 @@ def _validate_override(data, palette_ids):
 def _resolve(track, path, settings_path=DEFAULT_SETTINGS_PATH):
     path = Path(path)
     definition = json.loads(path.read_text(encoding='utf-8'))
-    required = {'grouping', 'families'}
+    required = {'families'}
     if not isinstance(definition, dict) or required-definition.keys() or definition.keys()-required-{'automatic_music'}:
-        raise ValueError('la direzione richiede grouping, families ed eventuale automatic_music')
-    if not isinstance(definition['grouping'], str) or not definition['grouping']:
-        raise ValueError('grouping deve indicare un file JSON')
+        raise ValueError('la direzione richiede families ed eventuale automatic_music')
     application_settings = load_settings(settings_path)
     analysis_config = application_settings.trip.analysis.as_dict()
-    grouping_config = json.loads((path.parent/definition['grouping']).read_text(encoding='utf-8'))
+    grouping_config = application_settings.trip.grouping.as_dict()
     analysis = analyze_track(track, analysis_config)
     grouping = group_zones(analysis, grouping_config)
     route_form = describe_route_form(

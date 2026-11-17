@@ -148,12 +148,11 @@ I preset dei generatori sono insiemi di parametri. Le modifiche manuali persisto
 
 | Campo | Contenuto |
 |---|---|
-| `grouping` | Percorso del JSON delle famiglie di macrosezioni |
 | `families` | Assegnazioni per ciascuna famiglia; root e scala esplicite oppure risolte automaticamente |
 | `automatic_music` | Tavolozze selezionate dal profilo, materiale melodico e override |
 
-Il percorso di `grouping` è relativo al file di direzione. I criteri
-altimetrici sono letti da `trip.analysis` nel TOML applicativo. Ogni famiglia del
+I criteri altimetrici e le famiglie sono letti da `trip.analysis` e
+`trip.grouping` nel TOML applicativo. Ogni famiglia del
 raggruppamento richiede un assetto musicale; famiglie mancanti o aggiuntive
 producono un errore. Ruoli, parametri e dipendenze delle sezioni prodotte
 sono verificati tramite la validazione della sessione esistente.

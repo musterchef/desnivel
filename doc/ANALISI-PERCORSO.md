@@ -71,7 +71,6 @@ cd /Users/marco/ogni-tanto-programmo/desnivel
 .venv/bin/python -m desnivel.cli.analyze_trip \
   --gpx gpx/tappa05_Firenze_San_Gimignano.gpx \
   --settings settings/desnivel.toml \
-  --grouping presets/macrosezioni-percorso.json \
   --output output/analisi-percorso.json \
   --html output/analisi-percorso.html
 ```
@@ -342,18 +341,15 @@ L'assenza di segnalazioni non certifica l'accuratezza del GPX.
 Il modulo `desnivel.trip.sections.group_zones` riceve l'analisi e una
 configurazione distinta di famiglie. Raggruppa soltanto zone consecutive
 della stessa famiglia, con confini adiacenti; mantiene i dati originali
-dell'analisi. Il comando attiva questo passaggio con `--grouping`.
+dell'analisi. I comandi applicano sempre questo passaggio.
 
-`presets/macrosezioni-percorso.json` configura:
+La sezione `trip.grouping` di `settings/desnivel.toml` configura:
 
-```json
-{
-  "families": {
-    "ascent": ["climb", "steep_climb"],
-    "descent": ["descent", "steep_descent"],
-    "level": ["level"]
-  }
-}
+```toml
+[trip.grouping.families]
+ascent = ["climb", "steep_climb"]
+descent = ["descent", "steep_descent"]
+level = ["level"]
 ```
 
 Ogni fascia definita nella configurazione di analisi deve appartenere
@@ -371,8 +367,6 @@ indice, famiglia (`kind`), confini in metri, avanzamento sulla distanza
 totale, dislivello netto, pendenza media e `zone_indices`: gli indici delle
 zone originali incluse. Gli indici nel JSON partono da zero; report e tabella
 nel terminale li mostrano a partire da uno.
-
-Senza `--grouping` vengono prodotte soltanto le zone dell'analisi.
 
 ## Forma neutra della tappa
 
@@ -457,11 +451,11 @@ raggruppamento ricevuto senza ricalcolarlo nel browser.
 
 L'opzione `--timeline-session presets/organico.json` aggiunge al report
 l'[anteprima della timeline musicale in beat](TIMELINE.md), utilizzando le
-stesse macrosezioni. Richiede `--grouping` e non modifica zone o profilo.
+stesse macrosezioni e non modifica zone o profilo.
 
 ## Pianure tra salite o discese: confronto locale
 
-Con `--grouping`, l'opzione `--pause-context ascent level` aggiunge una
+L'opzione `--pause-context ascent level` aggiunge una
 misura delle macrosezioni `level` immediatamente precedute e seguite da
 `ascent`. Ripetendo l'opzione con `--pause-context descent level` si
 misurano anche le pianure tra due discese nello stesso report. Le pianure
@@ -491,7 +485,6 @@ Il confronto serve a valutare una futura soglia per le pause interne.
 .venv/bin/python -m desnivel.cli.analyze_trip \
   --gpx gpx/tappa05_Firenze_San_Gimignano.gpx \
   --settings settings/desnivel.toml \
-  --grouping presets/macrosezioni-percorso.json \
   --pause-context ascent level \
   --pause-context descent level \
   --timeline-session presets/organico.json \
@@ -513,7 +506,6 @@ configurazioni e misure.
 .venv/bin/python -m desnivel.cli.analyze_trips \
   --track-dir fit \
   --settings settings/desnivel.toml \
-  --grouping presets/macrosezioni-percorso.json \
   --pause-context ascent level \
   --pause-context descent level \
   --timeline-session presets/organico.json \

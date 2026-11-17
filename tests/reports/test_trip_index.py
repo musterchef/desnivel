@@ -36,7 +36,7 @@ def test_collection_has_sorted_working_reports_with_same_analysis_as_single_comm
     (sources/'ignore.txt').write_text('non GPX')
     output = tmp_path/'report'
     assert main(['--gpx-dir', str(sources), '--settings', 'settings/desnivel.toml',
-                 '--grouping', 'presets/macrosezioni-percorso.json', '--pause-context', 'ascent', 'level',
+                 '--pause-context', 'ascent', 'level',
                  '--pause-context', 'descent', 'level', '--timeline-session', 'presets/organico.json',
                  '--output-dir', str(output)]) == 0
     index = IndexLinks((output/'index.html').read_text())
@@ -55,7 +55,6 @@ def test_collection_has_sorted_working_reports_with_same_analysis_as_single_comm
         for segment in stage['segments']:
             assert f'{stage["stage"]}:{segment["id"]}' in page
     expected = analyze_trip(sources/'tappa01_uno.gpx', Path('settings/desnivel.toml'),
-                            grouping=Path('presets/macrosezioni-percorso.json'),
                             pause_context=[['ascent', 'level'], ['descent', 'level']],
                             timeline_session=Path('presets/organico.json'))
     assert json.loads((output/'report-tappa01_uno.json').read_text()) == expected

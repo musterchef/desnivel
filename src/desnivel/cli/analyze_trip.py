@@ -31,11 +31,9 @@ def _linear_spans(track, sections, total_beats):
              'duration_beats': end-start} for index, (start, end) in enumerate(zip(beats, beats[1:]))]
 
 
-def analyze_trip(gpx, settings_path=DEFAULT_SETTINGS_PATH, *, grouping=None, pause_context=None,
+def analyze_trip(gpx, settings_path=DEFAULT_SETTINGS_PATH, *, pause_context=None,
                  timeline_session=None, timing_reference=None):
     """Prepara gli stessi dati per report singoli e raccolte di tappe."""
-    if (pause_context or timeline_session) and not grouping:
-        raise ValueError('contesto locale e timeline richiedono il raggruppamento')
     settings = load_settings(settings_path)
     track = load_track(gpx, timing_reference=timing_reference, config=settings.config)
     result = analyze_track(track, settings.trip.analysis.as_dict())
@@ -47,8 +45,7 @@ def analyze_trip(gpx, settings_path=DEFAULT_SETTINGS_PATH, *, grouping=None, pau
                                             max_speed_kmh=track.metadata['source_filter']['max_speed_kmh'],
                                             review_settings=review)
     result['source_filter'] = track.metadata['source_filter']
-    if grouping:
-        result['grouping'] = group_zones(result, json.loads(grouping.read_text()))
+    result['grouping'] = group_zones(result, settings.trip.grouping.as_dict())
     if pause_context:
         families = result['grouping']['config']['families']
         if any(name not in families for pair in pause_context for name in pair):
@@ -79,22 +76,17 @@ def main(argv=None):
     add_track_arguments(parser)
     parser.add_argument('--settings', type=Path, default=DEFAULT_SETTINGS_PATH,
                         help='Impostazioni TOML applicative.')
-    parser.add_argument('--grouping', type=Path, help='Famiglie JSON per raggruppare le zone in macrosezioni.')
     parser.add_argument('--pause-context', nargs=2, action='append', metavar=('FLANK', 'MIDDLE'),
-                        help='Misura MIDDLE tra due FLANK, per esempio ascent level; ripetibile, richiede --grouping.')
+                        help='Misura MIDDLE tra due FLANK, per esempio ascent level; ripetibile.')
     parser.add_argument('--timeline-session', type=Path,
                         help='Sessione JSON da cui leggere window_beats e timeline per l’anteprima musicale.')
     parser.add_argument('--output', type=Path, help='Salva zone, misure e configurazione in JSON.')
     parser.add_argument('--html', type=Path, help='Salva il report visuale HTML autonomo.')
     args = parser.parse_args(argv)
-    if args.timeline_session and not args.grouping:
-        parser.error('--timeline-session richiede --grouping')
-    if args.pause_context and not args.grouping:
-        parser.error('--pause-context richiede --grouping')
     if args.output and args.html and args.output.resolve() == args.html.resolve():
         parser.error('JSON e HTML richiedono percorsi distinti')
     try:
-        result = analyze_trip(args.gpx, args.settings, grouping=args.grouping,
+        result = analyze_trip(args.gpx, args.settings,
                               pause_context=args.pause_context, timeline_session=args.timeline_session,
                               timing_reference=args.timing_reference)
         if args.output:

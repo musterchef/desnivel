@@ -30,13 +30,10 @@ def main(argv=None):
                         help='Cartella FIT/GPX; a parità di tappa viene usato il FIT.')
     parser.add_argument('--settings', type=Path, default=DEFAULT_SETTINGS_PATH,
                         help='Impostazioni TOML applicative.')
-    parser.add_argument('--grouping', type=Path)
     parser.add_argument('--pause-context', nargs=2, action='append', metavar=('FLANK', 'MIDDLE'))
     parser.add_argument('--timeline-session', type=Path)
     parser.add_argument('--output-dir', type=Path, default=Path('output/tappe'))
     args = parser.parse_args(argv)
-    if (args.pause_context or args.timeline_session) and not args.grouping:
-        parser.error('--pause-context e --timeline-session richiedono --grouping')
     try:
         sources = stage_sources(args.gpx_dir)
         if not sources:
@@ -44,7 +41,7 @@ def main(argv=None):
         reports = []
         for source in sources:
             try:
-                result = analyze_trip(source, args.settings, grouping=args.grouping,
+                result = analyze_trip(source, args.settings,
                                       pause_context=args.pause_context, timeline_session=args.timeline_session)
             except (ValueError, KeyError, TypeError, OSError) as error:
                 raise ValueError(f'{source.name}: {error}') from error
