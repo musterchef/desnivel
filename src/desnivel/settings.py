@@ -115,9 +115,40 @@ class TransportSettings:
 
 
 @dataclass(frozen=True)
+class WeatherContextSettings:
+    distance_step_m: float
+    batch_size: int
+    cache_dir: str
+
+
+@dataclass(frozen=True)
+class SurfaceContextSettings:
+    distance_step_m: float
+    match_radius_m: float
+    ambiguity_m: float
+    batch_size: int
+    bbox_padding_degrees: float
+
+
+@dataclass(frozen=True)
+class ContextSettings:
+    weather: WeatherContextSettings
+    surface: SurfaceContextSettings
+
+
+@dataclass(frozen=True)
+class NetworkSettings:
+    context_timeout_s: float
+    strava_timeout_s: float
+    strava_page_size: int
+
+
+@dataclass(frozen=True)
 class Settings:
     trip: TripSettings
     transport: TransportSettings
+    context: ContextSettings
+    network: NetworkSettings
 
     @property
     def config(self):
@@ -208,18 +239,41 @@ def _grouping_settings(section, analysis):
     return GroupingSettings(tuple(parsed))
 
 
+def _validate_external_settings(settings):
+    weather = settings.context.weather
+    surface = settings.context.surface
+    network = settings.network
+    _positive(weather, ('distance_step_m', 'batch_size'), 'context.weather')
+    if type(weather.batch_size) is not int:
+        raise ValueError('context.weather.batch_size deve essere un intero positivo')
+    if not isinstance(weather.cache_dir, str) or not weather.cache_dir:
+        raise ValueError('context.weather.cache_dir deve essere una stringa non vuota')
+    _positive(surface, ('distance_step_m', 'match_radius_m', 'ambiguity_m',
+                        'batch_size', 'bbox_padding_degrees'), 'context.surface')
+    if type(surface.batch_size) is not int:
+        raise ValueError('context.surface.batch_size deve essere un intero positivo')
+    if surface.ambiguity_m > surface.match_radius_m:
+        raise ValueError('context.surface.ambiguity_m non può superare match_radius_m')
+    _positive(network, ('context_timeout_s', 'strava_timeout_s', 'strava_page_size'), 'network')
+    if type(network.strava_page_size) is not int or network.strava_page_size > 200:
+        raise ValueError('network.strava_page_size deve essere un intero tra 1 e 200')
+
+
 def load_settings(path=DEFAULT_SETTINGS_PATH):
     """Legge e valida un file TOML senza valori sostitutivi impliciti."""
     data = tomllib.loads(Path(path).read_text(encoding='utf-8'))
-    if not isinstance(data, dict) or set(data) != {'trip', 'transport'}:
-        raise ValueError('le impostazioni richiedono le sezioni trip e transport')
+    if not isinstance(data, dict) or set(data) != {'trip', 'transport', 'context', 'network'}:
+        raise ValueError('le impostazioni richiedono trip, transport, context e network')
     trip = data['trip']
     transport = data['transport']
+    context = data['context']
     if not isinstance(trip, dict) or set(trip) != {
             'timing', 'gpx', 'quality', 'analysis', 'grouping', 'route_structure'}:
         raise ValueError('trip richiede timing, gpx, quality, analysis, grouping e route_structure')
     if not isinstance(transport, dict) or set(transport) != {'osc'}:
         raise ValueError('transport richiede soltanto la sezione osc')
+    if not isinstance(context, dict) or set(context) != {'weather', 'surface'}:
+        raise ValueError('context richiede weather e surface')
     analysis = _analysis_settings(trip['analysis'])
     settings = Settings(
         trip=TripSettings(
@@ -234,8 +288,14 @@ def load_settings(path=DEFAULT_SETTINGS_PATH):
         transport=TransportSettings(
             osc=_require_fields(transport['osc'], OscConfig, 'transport.osc'),
         ),
+        context=ContextSettings(
+            weather=_require_fields(context['weather'], WeatherContextSettings, 'context.weather'),
+            surface=_require_fields(context['surface'], SurfaceContextSettings, 'context.surface'),
+        ),
+        network=_require_fields(data['network'], NetworkSettings, 'network'),
     )
     _validate_config(settings.config)
+    _validate_external_settings(settings)
     return settings
 
 

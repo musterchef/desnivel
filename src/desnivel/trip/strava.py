@@ -4,6 +4,8 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
+from desnivel.settings import DEFAULT_SETTINGS
+
 
 def request_json(url, *, token=None, form=None):
     """Richiesta JSON con timeout; gli errori non riportano credenziali o corpo."""
@@ -15,7 +17,8 @@ def request_json(url, *, token=None, form=None):
         data = urlencode(form).encode('utf-8')
         headers['Content-Type'] = 'application/x-www-form-urlencoded'
     try:
-        with urlopen(Request(url, data=data, headers=headers), timeout=30) as response:
+        with urlopen(Request(url, data=data, headers=headers),
+                     timeout=DEFAULT_SETTINGS.network.strava_timeout_s) as response:
             return json.load(response)
     except HTTPError as error:
         hints = {401: 'autorizzazione scaduta o non valida',
@@ -30,13 +33,14 @@ def request_json(url, *, token=None, form=None):
 def list_activities(token, after, before):
     """Legge tutte le pagine nell'intervallo indicato, in secondi Unix."""
     activities, page = [], 1
+    page_size = DEFAULT_SETTINGS.network.strava_page_size
     while True:
-        query = urlencode(dict(after=int(after), before=int(before), page=page, per_page=100))
+        query = urlencode(dict(after=int(after), before=int(before), page=page, per_page=page_size))
         batch = request_json(f'https://www.strava.com/api/v3/athlete/activities?{query}', token=token)
         if not isinstance(batch, list):
             raise ValueError('elenco attività Strava non valido')
         activities.extend(batch)
-        if len(batch) < 100:
+        if len(batch) < page_size:
             return activities
         page += 1
 

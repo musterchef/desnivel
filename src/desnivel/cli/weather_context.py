@@ -4,15 +4,17 @@ from tempfile import NamedTemporaryFile
 
 from desnivel.trip.context import ContextSource, track_signature
 from desnivel.trip.weather import WeatherFetcher
+from desnivel.settings import DEFAULT_SETTINGS
 
 
-DEFAULT_CACHE = Path(__file__).resolve().parents[3]/'output'/'context'/'weather'
-
-
-def prepare_weather_context(track, path=None, *, download=True, cache_dir=DEFAULT_CACHE):
+def prepare_weather_context(track, path=None, *, download=True, cache_dir=None, settings=None,
+                            network_settings=None):
     """Riusa il file esplicito o la cache; acquisisce soltanto il meteo assente."""
+    settings = settings or DEFAULT_SETTINGS.context.weather
+    cache_dir = Path(settings.cache_dir) if cache_dir is None else Path(cache_dir)
     explicit = path is not None
-    path = Path(path) if explicit else Path(cache_dir)/f'era5-5000m-v1-{track_signature(track)}.json'
+    step = f'{settings.distance_step_m:g}m'
+    path = Path(path) if explicit else cache_dir/f'era5-{step}-v1-{track_signature(track)}.json'
     if explicit or path.exists():
         source = ContextSource.load(path, track)
         print(f'Meteo caricato: {path}', flush=True)
@@ -21,7 +23,7 @@ def prepare_weather_context(track, path=None, *, download=True, cache_dir=DEFAUL
         print('Meteo non in cache: verrà acquisito all’avvio senza --dry-run.', flush=True)
         return None
     print('Acquisizione del meteo storico lungo la tappa…', flush=True)
-    source = WeatherFetcher().fetch(track)
+    source = WeatherFetcher(settings=settings, network_settings=network_settings).fetch(track)
     path.parent.mkdir(parents=True, exist_ok=True)
     with NamedTemporaryFile(dir=path.parent, suffix='.json', delete=False) as handle:
         temporary = Path(handle.name)

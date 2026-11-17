@@ -35,6 +35,16 @@ def test_toml_values_build_the_loader_and_transport_config(tmp_path):
     assert config.osc.port == 9010
 
 
+def test_external_context_and_network_values_are_typed(tmp_path):
+    path = tmp_path/'desnivel.toml'
+    path.write_text(VALID.replace('distance_step_m = 5000.0', 'distance_step_m = 2500.0')
+                    .replace('context_timeout_s = 90.0', 'context_timeout_s = 45.0'))
+    settings = load_settings(path)
+    assert settings.context.weather.distance_step_m == 2500
+    assert settings.context.surface.match_radius_m == 25
+    assert settings.network.context_timeout_s == 45
+
+
 @pytest.mark.parametrize('content', [
     '[trip]\nunexpected = 1\n',
     VALID.replace('max_relative_distance = 0.2\n', ''),

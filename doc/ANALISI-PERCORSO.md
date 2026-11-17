@@ -534,6 +534,11 @@ mostrate come esempio nella pagina non vengono salvate dal report.
 
 ## Importazione dei dati Strava per il confronto
 
+`network.strava_timeout_s` e `network.strava_page_size` in
+`settings/desnivel.toml` controllano rispettivamente il timeout HTTP e il
+numero di attività richieste per pagina. Endpoint e contratto degli stream
+restano definiti dall'adattatore Strava.
+
 `cli.import_strava` scarica una copia locale del dettaglio di un'attività e
 dei suoi stream. L'importazione non modifica il GPX, il filtro del loader,
 le analisi o la generazione musicale. Lo snapshot costituisce l'ingresso

@@ -10,6 +10,7 @@ from desnivel.trip.context import ContextSource, route_intervals, track_signatur
 from desnivel.trip.surface import SurfaceFetcher
 from desnivel.trip.track import Track, TrackSegment
 from desnivel.trip.weather import WeatherFetcher
+from desnivel.settings import DEFAULT_SETTINGS
 
 
 def track():
@@ -75,7 +76,7 @@ def weather_response():
 
 def test_weather_uses_local_hourly_accumulation_and_previous_hour_at_same_location():
     requests = []
-    def request(url, params):
+    def request(url, params, **kwargs):
         requests.append(params)
         return [weather_response() for _ in params['latitude'].split(',')]
     source = WeatherFetcher(request).fetch(track(), distance_step_m=1000)
@@ -126,4 +127,5 @@ def test_surface_fetcher_uses_generic_distance_context_and_keeps_attribution():
     assert source.data['records'][1]['values']['surface'] is None
     assert source.data['provenance']['historical'] is False
     assert 'ODbL' in source.data['provenance']['attribution']
-    assert requests[0][1] == {'post': True}
+    assert requests[0][1] == {
+        'post': True, 'timeout_s': DEFAULT_SETTINGS.network.context_timeout_s}

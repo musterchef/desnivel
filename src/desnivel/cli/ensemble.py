@@ -88,7 +88,10 @@ def main(argv=None):
         from desnivel.cli.session_config import resolve_configuration
         config = resolve_configuration(track, config, direction, args.settings)
         from desnivel.cli.weather_context import prepare_weather_context
-        weather_source = prepare_weather_context(track, args.weather_context, download=not args.dry_run)
+        weather_source = prepare_weather_context(
+            track, args.weather_context, download=not args.dry_run,
+            settings=application_settings.context.weather,
+            network_settings=application_settings.network)
         if args.dry_run:
             bridge = VoiceDeviceBridge({}, lambda *args: None)
         else:

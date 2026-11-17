@@ -106,6 +106,9 @@ producono un errore:
 | `trip.analysis` | Campionamento altimetrico, persistenza e fasce di pendenza |
 | `trip.grouping` | Appartenenza delle fasce altimetriche alle famiglie di macrosezioni |
 | `trip.route_structure` | Riduzione delle campate in continuità strutturali e variazioni locali |
+| `context.weather` | Campionamento, batch e cartella della cache meteorologica |
+| `context.surface` | Campionamento e criteri geometrici dell'associazione OSM |
+| `network` | Timeout dei contesti e parametri delle richieste Strava |
 | `transport.osc` | Destinazione e frequenza del trasporto OSC delle metriche |
 
 `--settings` permette ai comandi che lo espongono di caricare un file TOML

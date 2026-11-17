@@ -7,6 +7,7 @@ from desnivel.cli.track_source import add_track_arguments
 from desnivel.trip.loader import load_track
 from desnivel.trip.surface import SurfaceFetcher
 from desnivel.trip.weather import WeatherFetcher
+from desnivel.settings import DEFAULT_SETTINGS_PATH, load_settings
 
 
 def main(argv=None):
@@ -15,13 +16,21 @@ def main(argv=None):
     add_track_arguments(parser)
     parser.add_argument('--infer-fit-pauses', action='store_true')
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--settings', type=Path, default=DEFAULT_SETTINGS_PATH,
+                        help='Impostazioni TOML applicative.')
     parser.add_argument('--distance-step-m', type=float,
                         help='Passo spaziale massimo di campionamento (meteo: 5000 m; fondo: 100 m).')
     args = parser.parse_args(argv)
     try:
+        settings = load_settings(args.settings)
         track = load_track(args.gpx, timing_reference=args.timing_reference,
-                           infer_missing_fit_timer=args.infer_fit_pauses)
-        fetcher = WeatherFetcher() if args.source == 'weather' else SurfaceFetcher()
+                           infer_missing_fit_timer=args.infer_fit_pauses,
+                           config=settings.config)
+        fetcher = (WeatherFetcher(settings=settings.context.weather,
+                                  network_settings=settings.network)
+                   if args.source == 'weather'
+                   else SurfaceFetcher(settings=settings.context.surface,
+                                       network_settings=settings.network))
         options = {} if args.distance_step_m is None else {'distance_step_m': args.distance_step_m}
         source = fetcher.fetch(track, **options)
         source.save(args.output)

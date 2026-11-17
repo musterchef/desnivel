@@ -63,10 +63,12 @@ L'acquisizione usa la
 modello `era5`, dati orari UTC di vento a 10 m e precipitazioni.
 Si tratta di dati di rianalisi su griglia, non di misure effettuate dal ciclista.
 
-Ogni tratto viene diviso ogni 5 km e ai confini delle ore originali.
+Ogni tratto viene diviso secondo `context.weather.distance_step_m` e ai
+confini delle ore originali. Il valore fornito è 5 km.
 Le richieste usano coordinate e orario del punto centrale di ciascun
-intervallo, in gruppi di massimo 20 località. Il passo spaziale è
-modificabile con `--distance-step-m`; un passo minore non aumenta la
+intervallo, in gruppi definiti da `context.weather.batch_size`, inizialmente
+20 località. Il passo spaziale è modificabile per una singola acquisizione
+con `--distance-step-m`; un passo minore non aumenta la
 risoluzione della sorgente meteorologica.
 
 - `wind_speed_kmh`: vento interpolato fra i due campioni orari adiacenti
@@ -111,11 +113,13 @@ I valori manuali del singolo parametro mantengono la precedenza.
 L'acquisizione interroga Overpass per le strade OSM vicine al percorso,
 conservando il valore originale del
 [tag `surface`](https://wiki.openstreetmap.org/wiki/Key:surface).
-Il campionamento predefinito è ogni 100 m, separatamente per tratto; il
+Il campionamento è definito da `context.surface.distance_step_m`, inizialmente
+100 m, separatamente per tratto; il
 punto centrale rappresenta l'intervallo campionato.
 
-La classe cerca la polilinea più vicina entro 25 m. Se una seconda strada
-si trova a non più di 5 m dalla distanza della prima, l'associazione viene
+La classe cerca la polilinea più vicina entro `context.surface.match_radius_m`,
+inizialmente 25 m. Se una seconda strada si trova entro
+`context.surface.ambiguity_m`, inizialmente 5 m, dalla distanza della prima, l'associazione viene
 segnalata come ambigua. La ricerca include anche strade prive di `surface`:
 una strada vicina senza tag non viene sostituita con una più lontana dotata
 di tag. Stati disponibili: `matched`, `ambiguous`, `surface_not_tagged`,
@@ -136,7 +140,8 @@ musicale delle categorie rimane da definire.
 ## Acquisizione e confronto in ascolto
 
 All'avvio di `ensemble`, il meteo della tappa viene caricato automaticamente
-da `output/context/weather/`. Se manca, viene acquisito e salvato prima di
+dalla cartella `context.weather.cache_dir`, inizialmente
+`output/context/weather/`. Se manca, viene acquisito e salvato prima di
 avviare il server della sessione. La cache è identificata dall'impronta
 della traccia, dal modello ERA5 e dal passo spaziale di 5 km. Durante
 l'ascolto non sono effettuate richieste esterne. `--weather-context` permette
@@ -144,6 +149,10 @@ di scegliere un file esplicito al posto della cache. I file salvati
 conservano anche richieste e risposte originali.
 Errori HTTP o risposte non valide interrompono l'acquisizione senza
 sostituire i dati con valori predefiniti.
+
+`network.context_timeout_s` controlla il timeout delle richieste Open-Meteo
+e Overpass. Endpoint, modello ERA5, unità e formato delle risposte restano
+contratti dei provider implementati e non sono impostazioni applicative.
 
 L'acquisizione separata rimane disponibile:
 

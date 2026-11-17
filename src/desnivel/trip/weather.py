@@ -5,27 +5,32 @@ import math
 
 from desnivel.trip.context import ContextSource, route_intervals, track_signature
 from desnivel.trip.context_http import request_json
+from desnivel.settings import DEFAULT_SETTINGS
 
 
 class WeatherFetcher:
     endpoint = 'https://archive-api.open-meteo.com/v1/archive'
 
-    def __init__(self, request=request_json):
+    def __init__(self, request=request_json, settings=None, network_settings=None):
         self.request = request
+        self.settings = settings or DEFAULT_SETTINGS.context.weather
+        self.network_settings = network_settings or DEFAULT_SETTINGS.network
 
-    def fetch(self, track, *, distance_step_m=5000.):
+    def fetch(self, track, *, distance_step_m=None):
+        distance_step_m = self.settings.distance_step_m if distance_step_m is None else distance_step_m
         intervals = route_intervals(track, distance_step_m=distance_step_m, hourly=True)
         date = lambda timestamp: datetime.fromtimestamp(timestamp, timezone.utc).date().isoformat()
         records, responses = [], []
-        for start in range(0, len(intervals), 20):
-            batch = intervals[start:start+20]
+        for start in range(0, len(intervals), self.settings.batch_size):
+            batch = intervals[start:start+self.settings.batch_size]
             params = dict(latitude=','.join(str(r['latitude']) for r in batch),
                           longitude=','.join(str(r['longitude']) for r in batch),
                           start_date=date(min(r['source_unix'] for r in batch)-7200),
                           end_date=date(max(r['source_unix'] for r in batch)+3600),
                           hourly='wind_speed_10m,precipitation', models='era5',
                           wind_speed_unit='kmh', precipitation_unit='mm', timeformat='unixtime', timezone='UTC')
-            response = self.request(self.endpoint, params)
+            response = self.request(
+                self.endpoint, params, timeout_s=self.network_settings.context_timeout_s)
             locations = response if isinstance(response, list) else [response]
             if len(locations) != len(batch):
                 raise ValueError('numero di località meteo diverso dalla richiesta')
