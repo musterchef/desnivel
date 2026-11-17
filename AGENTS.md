@@ -33,3 +33,5 @@
 ## Modalità operativa
 - Applicare l'intento e il principio generale della richiesta senza estenderne lo scopo o riprogettare il sistema.
 - Fare modifiche concrete e verificabili; riportare sinteticamente modifiche ed esito dei controlli.
+- Leggere soltanto file e porzioni necessari alla decisione corrente; evitare output estesi e verifiche esplorative non richieste.
+- Eseguire il sottoinsieme minimo di test che copre la modifica; ampliare la verifica solo per dipendenze effettive, rischi proporzionati o su richiesta esplicita.
